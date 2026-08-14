@@ -658,6 +658,20 @@ button.small {
   filter: none;
 }
 
+/* Am Finger bedient brauchen die Knöpfe mehr Fläche – 28 px trifft man auf
+   dem Handy nicht zuverlässig, und einer davon löscht. */
+@media (pointer: coarse) {
+  .icon-button {
+    width: 2.75rem;
+    height: 2.75rem;
+    font-size: 1.3rem;
+  }
+
+  button.small {
+    padding: 0.6rem 0.9rem;
+  }
+}
+
 .run.editing {
   outline: 1px solid var(--accent);
   outline-offset: 2px;

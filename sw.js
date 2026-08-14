@@ -6,7 +6,7 @@
  * alte Stand im Cache.
  */
 
-const CACHE_VERSION = 'laufapp-v10';
+const CACHE_VERSION = 'laufapp-v12';
 
 const APP_SHELL = [
   './',
@@ -25,6 +25,9 @@ const APP_SHELL = [
   './js/storage.js',
   './manifest.json',
   './icons/icon.svg',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/icon-180.png',
 ];
 
 self.addEventListener('install', (event) => {

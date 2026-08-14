@@ -15,6 +15,34 @@ npx serve .
 Danach die angezeigte `http://localhost:…`-Adresse öffnen. Alternativ
 `python -m http.server 8000`.
 
+## Aufs Handy bringen
+
+Zum Aufzeichnen echter Läufe muss die App auf dem Telefon liegen. Dafür braucht
+sie **HTTPS** – Geolocation und Service Worker gibt es sonst nicht. `localhost`
+ist die einzige Ausnahme, und die hilft unterwegs nicht.
+
+Es ist reines HTML/CSS/JS ohne Build-Step, also genügt jeder Hoster, der
+statische Dateien ausliefert. Der Ordner wird unverändert hochgeladen.
+
+**Schnellster Weg – Netlify Drop:** [app.netlify.com/drop](https://app.netlify.com/drop)
+öffnen, den Projektordner ins Fenster ziehen. Ergibt sofort eine
+HTTPS-Adresse, ohne Konto. Gut zum Ausprobieren.
+
+**Dauerhafter Weg – GitHub Pages:** Repo auf GitHub anlegen, pushen, unter
+*Settings → Pages* den Branch als Quelle wählen. Die App liegt dann unter
+`https://<name>.github.io/<repo>/`. Alle Pfade im Projekt sind relativ, der
+Unterordner macht also keine Probleme.
+
+**Installieren:** Adresse auf dem Handy öffnen. Android/Chrome bietet
+„App installieren" an, unter iOS/Safari geht es über *Teilen → Zum
+Home-Bildschirm*. Danach startet sie ohne Browserleiste und funktioniert auch
+offline.
+
+⚠️ **Die Daten hängen an der Adresse.** Der `localStorage` gehört zur Domain –
+ein Wechsel von Netlify zu GitHub Pages nimmt die Läufe nicht mit, und auf dem
+Handy fängst du ohnehin bei null an. Dafür gibt es Export und Import: auf dem
+alten Gerät exportieren, auf dem neuen importieren.
+
 ## XP- und Level-System
 
 - **10 XP pro Kilometer** (auf ganze XP gerundet)
