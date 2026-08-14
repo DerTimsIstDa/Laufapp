@@ -93,13 +93,52 @@ body {
 
 /* ------------------------------------------------------------ Typografie */
 
-h1 {
-  margin: 0 0 var(--space-1);
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
   padding-inline: var(--space-1);
+}
+
+h1 {
+  margin: 0;
   font-size: 1.375rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--text);
+}
+
+/* Hinweis, die App zum Startbildschirm hinzuzufügen. Dezent: getönte Fläche
+   mit Akzentkante links, kein Neon-Vollton – er soll informieren, nicht
+   den Fortschritt überstrahlen. */
+.install-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+}
+
+.install-hint-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.install-hint-text strong {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.install-hint-text span {
+  font-size: 0.8125rem;
+  color: var(--muted);
 }
 
 h2 {
@@ -959,7 +998,6 @@ input:focus {
 
   h1 {
     font-size: 1.625rem;
-    margin-bottom: var(--space-2);
   }
 
   .card {

@@ -49,7 +49,22 @@ offline.
 Nach einer Aktualisierung liefert der Service Worker zunächst noch den alten
 Stand aus – erst der zweite Aufruf zeigt die neue Version. Das ist gewollt
 (so funktioniert sie offline) und der Grund, warum `CACHE_VERSION` in `sw.js`
-bei jeder Änderung hochgezählt werden muss.
+bei jeder Änderung hochgezählt werden muss. Wer nicht warten will, drückt oben
+**Aktualisieren**.
+
+**Installationshinweis:** Läuft die App in einem Browser-Tab statt vom
+Startbildschirm, erscheint einmalig ein Banner mit dem Hinweis, sie zu
+installieren – dort überleben die Daten zuverlässiger. Weggeklickt kommt es
+nicht wieder; gemerkt wird das unter `laufapp.installHint.dismissed`.
+
+**Aktualisieren-Knopf** oben rechts: leert den Zwischenspeicher, meldet den
+Service Worker ab und lädt neu. Eingetragene Läufe liegen im `localStorage`
+und bleiben unberührt.
+
+Dabei werden bewusst **nur die eigenen** Caches und Registrierungen angefasst
+(Präfix `laufapp-` bzw. Scope des eigenen Verzeichnisses). Auf `github.io`
+teilen sich alle Projekte eines Kontos denselben Origin – ein pauschales
+Leeren würde einem Nachbarprojekt den Cache wegräumen.
 
 ⚠️ **Die Daten hängen an der Adresse.** Der `localStorage` gehört zur Domain –
 ein Wechsel von Netlify zu GitHub Pages nimmt die Läufe nicht mit, und auf dem
@@ -161,7 +176,7 @@ Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 node --test
 ```
 
-236 Tests im Ordner `tests/`, ausgeführt vom eingebauten Testrunner von Node —
+255 Tests im Ordner `tests/`, ausgeführt vom eingebauten Testrunner von Node —
 keine Abhängigkeiten, kein Framework, nichts zu installieren.
 
 | Datei | prüft |
@@ -176,6 +191,7 @@ keine Abhängigkeiten, kein Framework, nichts zu installieren.
 | `tests/storage.test.mjs` | Anlegen/Ändern/Löschen/Ersetzen, Neuberechnung danach |
 | `tests/stats.test.mjs` | Summen, Serien mit Lücken, Wochen-/Monatsraster |
 | `tests/route.test.mjs` | Projektion, Seitenverhältnis, Geraden, Ausdünnen |
+| `tests/pwa.test.mjs` | Installationshinweis, Trennung eigener und fremder Caches |
 
 Getestet wird das Verhalten an den **Grenzen**: 4 gegen 5 Läufe, 49,9 gegen
 50 km, 13 gegen 14 Tage Pause, 06:59 gegen 07:00 Uhr, +19 % gegen +20 %. Ein
@@ -292,6 +308,7 @@ js/validation.js    Prüfung der Lauf-Eingaben – ebenfalls pur
 js/transfer.js      Export-/Importformat – ebenfalls pur
 js/stats.js         Summen, Durchschnitte, Serien, Zeitreihen – ebenfalls pur
 js/route.js         GPS-Strecke auf Zeichenflächen-Koordinaten – ebenfalls pur
+js/pwa.js           Installationshinweis, eigene Caches erkennen – ebenfalls pur
 js/tracker.js       Live-Aufzeichnung: watchPosition, Pausen, Wake Lock
 js/storage.js       Laden/Speichern/Ändern der Läufe im localStorage
 js/app.js           Formular, Rendering, Verdrahtung

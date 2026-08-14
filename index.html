@@ -30,7 +30,29 @@
   </div>
 
   <main class="app">
-    <h1>Laufapp</h1>
+    <header class="app-header">
+      <h1>Laufapp</h1>
+      <button
+        type="button"
+        id="refresh-button"
+        class="secondary small"
+        title="Leert den Zwischenspeicher und lädt die neueste Version. Deine Läufe bleiben erhalten."
+      >Aktualisieren</button>
+    </header>
+
+    <!-- Erscheint nur im Browser-Tab, nicht in der installierten App. -->
+    <aside class="install-hint" id="install-hint" role="note" hidden>
+      <div class="install-hint-text">
+        <strong>Zum Startbildschirm hinzufügen</strong>
+        <span>Als installierte App bleiben deine Läufe zuverlässiger erhalten.</span>
+      </div>
+      <button
+        type="button"
+        id="install-hint-close"
+        class="icon-button"
+        aria-label="Hinweis schließen"
+      >×</button>
+    </aside>
 
     <!-- Fortschritt -->
     <section class="card" aria-labelledby="progress-title">

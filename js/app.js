@@ -11,6 +11,7 @@
  *   transfer.js     Export-/Importformat
  *   stats.js        Summen, Durchschnitte, Serien, Zeitreihen
  *   route.js        GPS-Strecke auf Zeichenflächen-Koordinaten
+ *   pwa.js          Installationshinweis und Aktualisierung
  *   storage.js      Persistenz
  */
 
@@ -23,6 +24,14 @@ import { validateRun, firstErrorMessage } from './validation.js';
 import { serializeExport, exportFileName, parseImport } from './transfer.js';
 import { buildStats, distanceByWeek, distanceByMonth } from './stats.js';
 import { projectTrack, hasDrawableRoute, toStorageTrack, DEFAULT_VIEWPORT } from './route.js';
+import {
+  isStandalone,
+  wasInstallHintDismissed,
+  rememberInstallHintDismissed,
+  shouldShowInstallHint,
+  ownCacheNames,
+  ownRegistrations,
+} from './pwa.js';
 import { loadRuns, addRun, updateRun, removeRun, replaceRuns } from './storage.js';
 
 /** @type {import('./storage.js').Run[]} */
@@ -114,6 +123,10 @@ const el = {
     herausforderung: document.getElementById('achievements-herausforderung'),
   },
 
+  refreshButton: document.getElementById('refresh-button'),
+  installHint: document.getElementById('install-hint'),
+  installHintClose: document.getElementById('install-hint-close'),
+
   detailCard: document.getElementById('detail-card'),
   detailFacts: document.getElementById('detail-facts'),
   detailClose: document.getElementById('detail-close'),
@@ -153,6 +166,8 @@ function init() {
   el.formCancel.addEventListener('click', stopEditing);
   el.runsList.addEventListener('click', handleListClick);
 
+  el.refreshButton.addEventListener('click', handleRefresh);
+  el.installHintClose.addEventListener('click', dismissInstallHint);
   el.detailClose.addEventListener('click', closeDetail);
   el.chartWeeks.addEventListener('click', () => setChartRange('weeks'));
   el.chartMonths.addEventListener('click', () => setChartRange('months'));
@@ -178,8 +193,71 @@ function init() {
       'Standortzugriff braucht HTTPS oder localhost. Über diese Adresse geht kein Tracking.';
   }
 
+  maybeShowInstallHint();
   render({ announceUnlocks: false });
   registerServiceWorker();
+}
+
+/* ----------------------------------------------- Installationshinweis */
+
+function maybeShowInstallHint() {
+  const show = shouldShowInstallHint({
+    standalone: isStandalone(window),
+    dismissed: wasInstallHintDismissed(safeLocalStorage()),
+  });
+
+  el.installHint.hidden = !show;
+}
+
+function dismissInstallHint() {
+  el.installHint.hidden = true;
+  rememberInstallHintDismissed(safeLocalStorage());
+}
+
+/** Der Zugriff auf localStorage selbst kann werfen, etwa im Privatmodus. */
+function safeLocalStorage() {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+/* ------------------------------------------------------ Aktualisieren */
+
+/**
+ * Leert den Zwischenspeicher und lädt neu. Gespeicherte Läufe liegen im
+ * localStorage und bleiben davon unberührt.
+ */
+async function handleRefresh() {
+  el.refreshButton.disabled = true;
+  el.refreshButton.textContent = 'Aktualisiere …';
+
+  try {
+    await clearOwnCaches();
+    await unregisterOwnServiceWorkers();
+  } catch (err) {
+    console.warn('Aufräumen vor dem Neuladen fehlgeschlagen:', err);
+  }
+
+  // Ohne Cache-Buster liefert der Browser sonst womöglich seinen eigenen
+  // Zwischenspeicher aus.
+  location.reload();
+}
+
+async function clearOwnCaches() {
+  if (!('caches' in window)) return;
+
+  const eigene = ownCacheNames(await caches.keys());
+  await Promise.all(eigene.map((name) => caches.delete(name)));
+}
+
+async function unregisterOwnServiceWorkers() {
+  if (!('serviceWorker' in navigator)) return;
+
+  const basis = new URL('./', location.href).href;
+  const eigene = ownRegistrations(await navigator.serviceWorker.getRegistrations(), basis);
+  await Promise.all(eigene.map((registration) => registration.unregister()));
 }
 
 /* ---------------------------------------------------------------- Events */
