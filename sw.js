@@ -6,7 +6,14 @@
  * alte Stand im Cache.
  */
 
-const CACHE_VERSION = 'laufapp-v15';
+/**
+ * Muss mit CACHE_PREFIX in js/pwa.js übereinstimmen – ein Test wacht darüber.
+ * Der Service Worker kann die Konstante nicht importieren, ohne ein
+ * Modul-Worker zu werden.
+ */
+const CACHE_PREFIX = 'laufapp-';
+
+const CACHE_VERSION = `${CACHE_PREFIX}v16`;
 
 const APP_SHELL = [
   './',
@@ -47,7 +54,10 @@ self.addEventListener('activate', (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((key) => key !== CACHE_VERSION)
+            // Nur eigene Altlasten wegräumen. Auf github.io teilen sich alle
+            // Projekte eines Kontos denselben Origin – ohne die Präfixprüfung
+            // löscht dieser Service Worker dem Nachbarprojekt den Cache.
+            .filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_VERSION)
             .map((key) => caches.delete(key))
         )
       )

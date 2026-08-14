@@ -1,5 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import {
   isStandalone,
@@ -120,6 +121,37 @@ describe('ownCacheNames', () => {
     assert.deepEqual(ownCacheNames([]), []);
     assert.deepEqual(ownCacheNames(null), []);
     assert.deepEqual(ownCacheNames([null, 42, undefined, 'laufapp-v1']), ['laufapp-v1']);
+  });
+});
+
+/**
+ * Der Service Worker kann CACHE_PREFIX nicht importieren, ohne ein
+ * Modul-Worker zu werden. Diese Tests wachen deshalb über die Quelle – die
+ * Regel lässt sich in Node nicht am Verhalten prüfen, sie muss aber halten.
+ */
+describe('Service Worker hält sich an dasselbe Präfix', () => {
+  const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+
+  test('benutzt dieselbe Konstante', () => {
+    const treffer = /const CACHE_PREFIX = '([^']+)'/.exec(sw);
+    assert.ok(treffer, 'CACHE_PREFIX steht nicht in sw.js');
+    assert.equal(treffer[1], CACHE_PREFIX, 'Präfix läuft mit js/pwa.js auseinander');
+  });
+
+  test('die Cache-Version trägt das Präfix', () => {
+    const treffer = /const CACHE_VERSION = `\$\{CACHE_PREFIX\}([^`]+)`/.exec(sw);
+    assert.ok(treffer, 'CACHE_VERSION wird nicht aus dem Präfix gebildet');
+    assert.match(treffer[1], /^v\d+$/, `unerwartete Version: ${treffer?.[1]}`);
+  });
+
+  test('räumt beim Aktivieren nur eigene Caches weg', () => {
+    // Ohne diese Prüfung löscht der Service Worker auf einem geteilten Origin
+    // fremden Projekten den Cache.
+    assert.match(
+      sw,
+      /key\.startsWith\(CACHE_PREFIX\)\s*&&\s*key !== CACHE_VERSION/,
+      'die Aufräumregel im activate-Handler filtert nicht nach Präfix'
+    );
   });
 });
 
