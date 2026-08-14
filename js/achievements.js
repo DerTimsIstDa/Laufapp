@@ -303,6 +303,32 @@ export function evaluateAchievements(runs, exerciseLog = []) {
   }));
 }
 
+/** Die Gruppen, in denen Achievements angezeigt werden. */
+export const ACHIEVEMENT_CATEGORIES = [
+  { id: 'meilenstein', label: 'Meilensteine' },
+  { id: 'herausforderung', label: 'Herausforderungen' },
+  { id: 'uebung', label: 'Übungen' },
+];
+
+/**
+ * Wie viele Achievements sind je Gruppe freigeschaltet?
+ *
+ * @param {ReturnType<typeof evaluateAchievements>} evaluated
+ * @returns {{ id: string, label: string, unlocked: number, total: number }[]}
+ */
+export function achievementsByCategory(evaluated) {
+  return ACHIEVEMENT_CATEGORIES.map(({ id, label }) => {
+    const eigene = (evaluated ?? []).filter((a) => a.category === id);
+
+    return {
+      id,
+      label,
+      unlocked: eigene.filter((a) => a.unlocked).length,
+      total: eigene.length,
+    };
+  });
+}
+
 /** Summe der Bonus-XP aus allen freigeschalteten Achievements. */
 export function achievementXp(evaluated) {
   return evaluated.reduce((sum, a) => (a.unlocked ? sum + a.xp : sum), 0);

@@ -13,7 +13,7 @@
  */
 const CACHE_PREFIX = 'laufapp-';
 
-const CACHE_VERSION = `${CACHE_PREFIX}v23`;
+const CACHE_VERSION = `${CACHE_PREFIX}v24`;
 
 const APP_SHELL = [
   './',

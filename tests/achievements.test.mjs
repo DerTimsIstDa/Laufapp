@@ -1,9 +1,16 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ACHIEVEMENTS, buildRunStats, evaluateAchievements, achievementXp } from '../js/achievements.js';
+import {
+  ACHIEVEMENTS,
+  buildRunStats,
+  evaluateAchievements,
+  achievementXp,
+  achievementsByCategory,
+} from '../js/achievements.js';
 import { getProgress, totalXpFromRuns } from '../js/xp.js';
 import { CATEGORIES, EXERCISES } from '../js/exercises.js';
+import { setExerciseCount } from '../js/exercise-log.js';
 import { makeRun, day } from './helpers.mjs';
 
 /** IDs aller freigeschalteten Achievements, alphabetisch. */
@@ -269,6 +276,92 @@ describe('Übungs-Achievements', () => {
 
   test('das Protokoll ist wahlfrei – alter Aufruf bleibt gültig', () => {
     assert.doesNotThrow(() => evaluateAchievements([makeRun(0, 5)]));
+  });
+});
+
+describe('Handkorrektur setzt Achievements zurück', () => {
+  const zehnTage = Array.from({ length: 10 }, (_, i) => ({
+    id: `u${i}`,
+    exerciseId: 'kraft-plank',
+    date: day(i),
+  }));
+
+  const frei = (log) => evaluateAchievements([], log).filter((a) => a.unlocked).map((a) => a.id);
+
+  test('unter die Schwelle korrigiert verliert das Achievement', () => {
+    assert.ok(frei(zehnTage).includes('dranbleiber'), 'Ausgangslage stimmt nicht');
+
+    const nachKorrektur = setExerciseCount(zehnTage, 'kraft-plank', 9, { date: day(20) });
+
+    assert.equal(frei(nachKorrektur).includes('dranbleiber'), false, 'bleibt fälschlich frei');
+    assert.ok(frei(nachKorrektur).includes('erste-uebung'), 'die kleinere Stufe bleibt');
+  });
+
+  test('auf null korrigiert verliert auch die erste Stufe', () => {
+    const leer = setExerciseCount(zehnTage, 'kraft-plank', 0, {});
+    assert.deepEqual(frei(leer), []);
+  });
+
+  test('Vielseitig fällt weg, wenn eine Kategorie geleert wird', () => {
+    const ids = CATEGORIES.map((k) => EXERCISES.find((e) => e.category === k.id).id);
+    const alleFuenf = ids.map((id, i) => ({ id: `v${i}`, exerciseId: id, date: day(i) }));
+
+    assert.ok(frei(alleFuenf).includes('vielseitig'));
+
+    const ohneEine = setExerciseCount(alleFuenf, ids[2], 0, {});
+    assert.equal(frei(ohneEine).includes('vielseitig'), false);
+  });
+
+  test('die XP fallen mit', () => {
+    const vorher = achievementXp(evaluateAchievements([], zehnTage));
+    const nachher = achievementXp(evaluateAchievements([], setExerciseCount(zehnTage, 'kraft-plank', 5, {})));
+
+    assert.ok(nachher < vorher, `XP sind nicht gefallen: ${vorher} -> ${nachher}`);
+  });
+
+  test('wieder hochkorrigiert kommt es zurück', () => {
+    const runter = setExerciseCount(zehnTage, 'kraft-plank', 5, {});
+    const rauf = setExerciseCount(runter, 'kraft-plank', 10, { date: day(20) });
+
+    assert.ok(frei(rauf).includes('dranbleiber'));
+  });
+});
+
+describe('achievementsByCategory', () => {
+  test('zählt je Gruppe', () => {
+    const bewertet = evaluateAchievements([], []);
+    const gruppen = achievementsByCategory(bewertet);
+
+    assert.deepEqual(gruppen.map((g) => g.id), ['meilenstein', 'herausforderung', 'uebung']);
+    for (const gruppe of gruppen) {
+      assert.equal(gruppe.unlocked, 0, `${gruppe.id} sollte leer starten`);
+      assert.ok(gruppe.total > 0, `${gruppe.id} ohne Achievements`);
+    }
+  });
+
+  test('die Summen ergeben den Gesamtbestand', () => {
+    const gruppen = achievementsByCategory(evaluateAchievements([], []));
+    assert.equal(gruppen.reduce((n, g) => n + g.total, 0), ACHIEVEMENTS.length);
+  });
+
+  test('jede vergebene Kategorie hat eine Gruppe', () => {
+    const bekannt = new Set(achievementsByCategory([]).map((g) => g.id));
+    for (const achievement of ACHIEVEMENTS) {
+      assert.ok(bekannt.has(achievement.category), `${achievement.category} fehlt in der Übersicht`);
+    }
+  });
+
+  test('zählt Freigeschaltetes richtig', () => {
+    const log = [{ id: 'u1', exerciseId: 'kraft-plank', date: day(0) }];
+    const uebungen = achievementsByCategory(evaluateAchievements([], log)).find((g) => g.id === 'uebung');
+
+    assert.equal(uebungen.unlocked, 1);
+    assert.equal(uebungen.total, 4);
+  });
+
+  test('leere Eingabe kippt nicht', () => {
+    assert.doesNotThrow(() => achievementsByCategory(null));
+    assert.equal(achievementsByCategory(null).every((g) => g.total === 0), true);
   });
 });
 

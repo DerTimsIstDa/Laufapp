@@ -109,7 +109,8 @@ Eine Tab-Leiste am unteren Rand führt durch fünf Bereiche:
 - **Training** – Platzhalter für die spätere Planung eigener Einheiten
 - **Trophäen** – alle Achievements als grosse Kacheln, freigeschaltete mit
   Datum, offene mit Fortschrittsbalken sofern die Bedingung einen Zähler hat
-- **Profil** – Titel und Level gross, darunter die Titel-Historie und eine
+- **Profil** – Titel und Level gross mit XP-Balken bis zum nächsten Level,
+  darunter eine Trophäen-Übersicht je Gruppe, die Titel-Historie und eine
   Zusammenfassung der Gesamtstatistik
 
 In der Leiste heisst der dritte Bereich nur **Training** – fünf Beschriftungen
@@ -161,6 +162,26 @@ Gerechnet wird in `js/exercise-log.js`, pur und ohne DOM. Einträge zu
 Übungen, die es in der Bibliothek nicht mehr gibt, zählen weiter mit, tragen
 aber zu keiner Kategorie bei – sonst ginge der Zähler nach einer Änderung an
 der Bibliothek verloren.
+
+### Zähler von Hand korrigieren
+
+Der Stift an einer Übung öffnet ein Zahlenfeld direkt auf der Karte. Weil es
+keinen gespeicherten Zähler gibt – die Zahl **ist** die Anzahl der Einträge –
+muss eine Korrektur Einträge entfernen oder ergänzen:
+
+- **Verringern** entfernt die *neuesten* Einträge. Das entspricht dem
+  Rückgängigmachen der letzten Tipps und lässt alte Freischaltdaten in Ruhe.
+- **Erhöhen** legt Einträge mit dem heutigen Datum an. Damit greift die
+  Tagesgrenze weiterhin: eine Korrektur von 9 auf 30 bringt drei XP, nicht
+  63.
+
+Fällt der Zähler dabei unter eine Achievement-Schwelle, **verliert das
+Achievement seinen Status** – es wird wie alles andere bei jedem Rendern neu
+abgeleitet, nichts ist eingefroren.
+
+Ein leeres Eingabefeld gilt **nicht** als Null. `Number('')` ist 0, und ohne
+diese Prüfung hätte ein versehentlich geleertes Feld beim Übernehmen den
+ganzen Zähler gelöscht. Eine ausdrücklich eingetragene 0 löscht sehr wohl.
 
 Die beiden neuen Bereiche werden erst beim Ansehen berechnet, nicht bei jeder
 Änderung. Grund ist `js/history.js`.
@@ -267,7 +288,7 @@ Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 node --test
 ```
 
-367 Tests im Ordner `tests/`, ausgeführt vom eingebauten Testrunner von Node —
+392 Tests im Ordner `tests/`, ausgeführt vom eingebauten Testrunner von Node —
 keine Abhängigkeiten, kein Framework, nichts zu installieren.
 
 | Datei | prüft |

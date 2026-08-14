@@ -18,7 +18,7 @@
  */
 
 import { getProgress, totalXpFromRuns, xpForDistance } from './xp.js';
-import { evaluateAchievements, achievementXp } from './achievements.js';
+import { evaluateAchievements, achievementXp, achievementsByCategory } from './achievements.js';
 import { titleForLevel, nextTitle } from './titles.js';
 import { paceMinPerKm, formatDuration, formatPace } from './geo.js';
 import { createTracker } from './tracker.js';
@@ -58,7 +58,9 @@ import {
   countsByExercise,
   awardsXp,
   doneOnDay,
+  setExerciseCount,
   XP_PER_EXERCISE,
+  MAX_EXERCISE_COUNT,
 } from './exercise-log.js';
 
 /** @type {import('./storage.js').Run[]} */
@@ -93,6 +95,9 @@ let updateReady = false;
 
 /** Gewählte Übungskategorie; ALL_CATEGORIES zeigt alles. */
 let exerciseCategory = ALL_CATEGORIES;
+
+/** id der Übung, deren Zähler gerade von Hand korrigiert wird. */
+let editingExerciseId = null;
 
 /** Tastensperre während der Aufzeichnung. */
 let locked = false;
@@ -206,6 +211,10 @@ const el = {
   profileLevel: document.getElementById('profile-level'),
   profileXp: document.getElementById('profile-xp'),
   profileNext: document.getElementById('profile-next'),
+  profileProgress: document.getElementById('profile-progress'),
+  profileProgressFill: document.getElementById('profile-progress-fill'),
+  profileProgressCaption: document.getElementById('profile-progress-caption'),
+  profileTrophySummary: document.getElementById('profile-trophy-summary'),
   titleHistory: document.getElementById('title-history'),
   profileStats: document.getElementById('profile-stats'),
   profileStatsEmpty: document.getElementById('profile-stats-empty'),
@@ -479,6 +488,16 @@ function createExerciseCard(exercise, position, { anzahl, heuteErledigt }) {
     links.append(heute);
   }
 
+  const korrigieren = document.createElement('button');
+  korrigieren.type = 'button';
+  korrigieren.className = 'icon-button';
+  korrigieren.textContent = '✎';
+  korrigieren.setAttribute('aria-label', `Zähler von ${exercise.name} korrigieren`);
+  korrigieren.addEventListener('click', () => {
+    editingExerciseId = exercise.id;
+    renderExercises();
+  });
+
   const knopf = document.createElement('button');
   knopf.type = 'button';
   knopf.className = heuteErledigt ? 'secondary small' : 'small';
@@ -486,10 +505,102 @@ function createExerciseCard(exercise, position, { anzahl, heuteErledigt }) {
   knopf.setAttribute('aria-label', `${exercise.name} als erledigt eintragen`);
   knopf.addEventListener('click', () => handleExerciseDone(exercise));
 
-  fuss.append(links, knopf);
+  const aktionen = document.createElement('div');
+  aktionen.className = 'exercise-actions';
+  aktionen.append(korrigieren, knopf);
+
+  fuss.append(links, aktionen);
   karte.append(fuss);
 
+  if (exercise.id === editingExerciseId) karte.append(createCountEditor(exercise, anzahl));
+
   return karte;
+}
+
+/**
+ * Handkorrektur des Zählers, direkt auf der Karte statt in einem Systemdialog –
+ * wie die Löschrückfrage bei den Läufen.
+ */
+function createCountEditor(exercise, anzahl) {
+  const box = document.createElement('form');
+  box.className = 'count-editor';
+
+  const label = document.createElement('label');
+  label.className = 'count-label';
+  label.setAttribute('for', 'count-input');
+  label.textContent = 'Wie oft insgesamt gemacht?';
+
+  const feld = document.createElement('input');
+  feld.type = 'number';
+  feld.id = 'count-input';
+  feld.min = '0';
+  feld.max = String(MAX_EXERCISE_COUNT);
+  feld.step = '1';
+  feld.inputMode = 'numeric';
+  feld.value = String(anzahl);
+
+  const hinweis = document.createElement('p');
+  hinweis.className = 'count-hint muted';
+  hinweis.textContent =
+    'Weniger entfernt die neuesten Einträge. Mehr wird auf heute datiert – ' +
+    'XP gibt es weiterhin nur einmal je Tag.';
+
+  const knoepfe = document.createElement('div');
+  knoepfe.className = 'count-buttons';
+
+  const speichern = document.createElement('button');
+  speichern.type = 'submit';
+  speichern.className = 'small';
+  speichern.textContent = 'Übernehmen';
+
+  const abbrechen = document.createElement('button');
+  abbrechen.type = 'button';
+  abbrechen.className = 'secondary small';
+  abbrechen.textContent = 'Abbrechen';
+  abbrechen.addEventListener('click', () => {
+    editingExerciseId = null;
+    renderExercises();
+  });
+
+  knoepfe.append(speichern, abbrechen);
+  box.append(label, feld, hinweis, knoepfe);
+
+  box.addEventListener('submit', (event) => {
+    event.preventDefault();
+    handleCountCorrection(exercise, feld.value, anzahl);
+  });
+
+  return box;
+}
+
+function handleCountCorrection(exercise, rohwert, vorher) {
+  // Leeres Feld ist keine Null – sonst löscht ein versehentlich geleertes
+  // Eingabefeld den ganzen Zähler.
+  if (typeof rohwert !== 'string' || rohwert.trim() === '') {
+    showExerciseFeedback('Bitte eine Zahl eintragen.', false);
+    return;
+  }
+
+  const ziel = Math.trunc(Number(rohwert));
+
+  if (!Number.isFinite(ziel) || ziel < 0 || ziel > MAX_EXERCISE_COUNT) {
+    showExerciseFeedback(`Bitte eine Zahl zwischen 0 und ${MAX_EXERCISE_COUNT} eintragen.`, false);
+    return;
+  }
+
+  exerciseLog = replaceExerciseLog(
+    setExerciseCount(exerciseLog, exercise.id, ziel, { date: todayIso() })
+  );
+
+  editingExerciseId = null;
+  showExerciseFeedback(
+    ziel === vorher
+      ? `${exercise.name}: unverändert bei ${vorher}.`
+      : `${exercise.name}: Zähler von ${vorher} auf ${ziel} gesetzt.`,
+    false
+  );
+
+  render({ announceUnlocks: false });
 }
 
 /* -------------------------------------------------------------- Trophäen */
@@ -586,12 +697,48 @@ function renderProfile() {
   el.profileTitleName.textContent = titleForLevel(progress.level);
   el.profileLevel.textContent = progress.level;
   el.profileXp.textContent = numberFormat.format(progress.totalXp);
-  el.profileNext.textContent =
-    `Nächster Titel: ${upcoming.title} ab Level ${upcoming.level} – ` +
+  el.profileNext.textContent = `Nächster Titel: ${upcoming.title} ab Level ${upcoming.level}`;
+
+  const prozent = Math.min(100, Math.max(0, progress.progressPercent));
+  el.profileProgressFill.style.width = `${prozent}%`;
+  el.profileProgress.setAttribute('aria-valuenow', Math.round(prozent));
+  el.profileProgressCaption.textContent =
+    `${numberFormat.format(progress.xpIntoLevel)} / ${numberFormat.format(progress.xpForLevel)} XP – ` +
     `noch ${numberFormat.format(progress.xpToNextLevel)} XP bis Level ${progress.level + 1}`;
 
+  renderTrophySummary(achievements);
   renderTitleHistory(progress.level);
   renderProfileStats();
+}
+
+/** Kompakte Übersicht: wie viele Achievements je Gruppe. */
+function renderTrophySummary(achievements) {
+  el.profileTrophySummary.replaceChildren(
+    ...achievementsByCategory(achievements).map(({ label, unlocked, total }) => {
+      const zeile = document.createElement('li');
+      zeile.className = unlocked === total ? 'category-row complete' : 'category-row';
+
+      const name = document.createElement('span');
+      name.className = 'category-name';
+      name.textContent = label;
+
+      const zahl = document.createElement('span');
+      zahl.className = 'category-count';
+      zahl.textContent = `${unlocked}/${total}`;
+
+      const spur = document.createElement('span');
+      spur.className = 'category-track';
+
+      const balken = document.createElement('span');
+      balken.className = 'category-bar';
+      balken.style.width = total > 0 ? `${(unlocked / total) * 100}%` : '0';
+      spur.append(balken);
+
+      zeile.append(name, zahl, spur);
+      zeile.setAttribute('aria-label', `${label}: ${unlocked} von ${total} freigeschaltet`);
+      return zeile;
+    })
+  );
 }
 
 function renderTitleHistory(currentLevel) {

@@ -396,7 +396,25 @@
           Level <strong id="profile-level">1</strong>
           &middot; <span id="profile-xp">0</span> XP
         </p>
+        <div
+          class="progress"
+          id="profile-progress"
+          role="progressbar"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+          aria-labelledby="profile-title"
+        >
+          <div class="progress-fill" id="profile-progress-fill"></div>
+        </div>
+        <p class="muted progress-caption" id="profile-progress-caption"></p>
+
         <p class="muted" id="profile-next">Nächster Titel: Läufer ab Level 5</p>
+      </section>
+
+      <section class="card" aria-labelledby="profile-trophies-title">
+        <h2 id="profile-trophies-title">Trophäen</h2>
+        <ul class="category-summary" id="profile-trophy-summary"></ul>
       </section>
 
       <section class="card" aria-labelledby="titles-title">
