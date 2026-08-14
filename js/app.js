@@ -10,6 +10,7 @@
  *   validation.js   Prüfung der Eingaben
  *   transfer.js     Export-/Importformat
  *   stats.js        Summen, Durchschnitte, Serien, Zeitreihen
+ *   route.js        GPS-Strecke auf Zeichenflächen-Koordinaten
  *   storage.js      Persistenz
  */
 
@@ -21,6 +22,7 @@ import { createTracker } from './tracker.js';
 import { validateRun, firstErrorMessage } from './validation.js';
 import { serializeExport, exportFileName, parseImport } from './transfer.js';
 import { buildStats, distanceByWeek, distanceByMonth } from './stats.js';
+import { projectTrack, hasDrawableRoute, toStorageTrack, DEFAULT_VIEWPORT } from './route.js';
 import { loadRuns, addRun, updateRun, removeRun, replaceRuns } from './storage.js';
 
 /** @type {import('./storage.js').Run[]} */
@@ -40,6 +42,9 @@ let pendingImport = null;
 
 /** Zeitraum des Balkendiagramms: 'weeks' oder 'months'. */
 let chartRange = 'weeks';
+
+/** id des Laufs, dessen Detailansicht offen ist; null = zu. */
+let detailId = null;
 
 const el = {
   level: document.getElementById('level'),
@@ -109,10 +114,17 @@ const el = {
     herausforderung: document.getElementById('achievements-herausforderung'),
   },
 
+  detailCard: document.getElementById('detail-card'),
+  detailFacts: document.getElementById('detail-facts'),
+  detailClose: document.getElementById('detail-close'),
+  routeContainer: document.getElementById('route-container'),
+
   runCount: document.getElementById('run-count'),
   runsEmpty: document.getElementById('runs-empty'),
   runsList: document.getElementById('runs-list'),
 };
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
 
 const numberFormat = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 });
 const distanceFormat = new Intl.NumberFormat('de-DE', {
@@ -141,6 +153,7 @@ function init() {
   el.formCancel.addEventListener('click', stopEditing);
   el.runsList.addEventListener('click', handleListClick);
 
+  el.detailClose.addEventListener('click', closeDetail);
   el.chartWeeks.addEventListener('click', () => setChartRange('weeks'));
   el.chartMonths.addEventListener('click', () => setChartRange('months'));
 
@@ -201,6 +214,9 @@ function handleSubmit(event) {
 }
 
 function handleListClick(event) {
+  const detailButton = event.target.closest('[data-detail-id]');
+  if (detailButton) return toggleDetail(detailButton.dataset.detailId);
+
   const editButton = event.target.closest('[data-edit-id]');
   if (editButton) return startEditing(editButton.dataset.editId);
 
@@ -222,9 +238,152 @@ function handleListClick(event) {
   const id = confirmButton.dataset.confirmDeleteId;
   pendingDeleteId = null;
   if (editingId === id) stopEditing();
+  if (detailId === id) detailId = null;
 
   runs = removeRun(runs, id);
   render({ announceUnlocks: false });
+}
+
+/* ------------------------------------------------------------ Detailansicht */
+
+function toggleDetail(id) {
+  detailId = detailId === id ? null : id;
+  renderDetail();
+  renderRuns();
+
+  if (detailId !== null) {
+    el.detailCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function closeDetail() {
+  detailId = null;
+  renderDetail();
+  renderRuns();
+}
+
+function renderDetail() {
+  const run = detailId === null ? null : runs.find((entry) => entry.id === detailId);
+
+  // Der Lauf kann zwischenzeitlich gelöscht oder ersetzt worden sein.
+  if (!run) {
+    detailId = null;
+    el.detailCard.hidden = true;
+    return;
+  }
+
+  el.detailCard.hidden = false;
+  el.detailFacts.replaceChildren(...buildDetailFacts(run));
+  el.routeContainer.replaceChildren(createRouteView(run));
+}
+
+function buildDetailFacts(run) {
+  const facts = [
+    ['Distanz', `${numberFormat.format(run.distanceKm)} km`],
+    ['Datum', formatDate(run.date)],
+  ];
+
+  if (run.timeOfDay) facts.push(['Startzeit', `${run.timeOfDay} Uhr`]);
+  if (run.durationMinutes) {
+    facts.push(['Dauer', `${numberFormat.format(run.durationMinutes)} min`]);
+    facts.push([
+      'Pace',
+      `${formatPace(paceMinPerKm(run.distanceKm, run.durationMinutes * 60_000))} min/km`,
+    ]);
+  }
+
+  facts.push(['Erfasst', run.source === 'gps' ? 'GPS-Aufzeichnung' : 'von Hand']);
+  facts.push(['Verdient', `${numberFormat.format(xpForDistance(run.distanceKm))} XP`]);
+
+  return facts.map(([label, value]) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'stat';
+
+    const term = document.createElement('dt');
+    term.textContent = label;
+
+    const definition = document.createElement('dd');
+    definition.textContent = value;
+
+    wrapper.append(term, definition);
+    return wrapper;
+  });
+}
+
+/** Zeichnet die Route – oder sagt, dass es keine gibt. */
+function createRouteView(run) {
+  if (!hasDrawableRoute(run.track)) {
+    const hint = document.createElement('p');
+    hint.className = 'muted route-empty';
+    hint.textContent = 'Keine GPS-Daten für diesen Lauf.';
+    return hint;
+  }
+
+  const wrapper = document.createElement('div');
+  wrapper.append(createRouteSvg(run.track), createRouteLegend(run.track.length));
+  return wrapper;
+}
+
+function createRouteSvg(track) {
+  const { width, height } = DEFAULT_VIEWPORT;
+  const projection = projectTrack(track, { width, height, padding: 14 });
+
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  // Die Breite kommt aus dem CSS; das Seitenverhältnis hält das viewBox fest,
+  // damit die Strecke auch auf schmalen Schirmen nicht verzerrt.
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  svg.setAttribute('class', 'route-svg');
+  svg.setAttribute('role', 'img');
+
+  const title = document.createElementNS(SVG_NS, 'title');
+  title.textContent = `Aufgezeichnete Strecke mit ${projection.pointCount} Messpunkten`;
+  svg.append(title);
+
+  const line = document.createElementNS(SVG_NS, 'polyline');
+  line.setAttribute('class', 'route-line');
+  line.setAttribute('points', projection.points.map((p) => `${r1(p.x)},${r1(p.y)}`).join(' '));
+  svg.append(line);
+
+  svg.append(
+    createRouteMarker(projection.start, 'route-start'),
+    createRouteMarker(projection.end, 'route-end')
+  );
+
+  return svg;
+}
+
+function createRouteMarker(point, className) {
+  const marker = document.createElementNS(SVG_NS, 'circle');
+  marker.setAttribute('class', className);
+  marker.setAttribute('cx', r1(point.x));
+  marker.setAttribute('cy', r1(point.y));
+  marker.setAttribute('r', '5');
+  return marker;
+}
+
+function createRouteLegend(pointCount) {
+  const legend = document.createElement('p');
+  legend.className = 'muted route-legend';
+
+  const start = document.createElement('span');
+  start.className = 'route-key start';
+  start.textContent = 'Start';
+
+  const end = document.createElement('span');
+  end.className = 'route-key end';
+  end.textContent = 'Ziel';
+
+  const count = document.createElement('span');
+  count.textContent = `${pointCount} Messpunkte`;
+
+  legend.append(start, end, count);
+  return legend;
+}
+
+/** Eine Nachkommastelle reicht für Pixel und hält das Markup kurz. */
+function r1(value) {
+  return Math.round(value * 10) / 10;
 }
 
 /* ------------------------------------------------------------ Bearbeiten */
@@ -396,6 +555,9 @@ function handleTrackStop() {
     timeOfDay: toTimeOfDay(summary.startedAt),
     durationMinutes: summary.durationMinutes,
     source: 'gps',
+    // Ausgedünnt gespeichert: der localStorage ist knapp, und für die kleine
+    // Vorschau reicht ein Punkt alle paar Meter.
+    track: toStorageTrack(summary.track),
   });
 
   el.trackStatus.textContent =
@@ -422,6 +584,7 @@ function render({ announceUnlocks }) {
   renderProgress(progress, runXp, bonusXp);
   renderStats();
   renderAchievements(achievements, announceUnlocks);
+  renderDetail();
   renderRuns();
 }
 
@@ -702,10 +865,17 @@ function createRunItem(run) {
   const item = document.createElement('li');
   item.className = 'run';
   if (run.id === editingId) item.classList.add('editing');
+  if (run.id === detailId) item.classList.add('open');
 
   if (run.id === pendingDeleteId) return fillDeleteConfirm(item, run);
 
-  const info = document.createElement('div');
+  // Der linke Teil öffnet die Detailansicht – als Knopf, damit er auch mit
+  // der Tastatur erreichbar ist.
+  const info = document.createElement('button');
+  info.type = 'button';
+  info.className = 'run-open';
+  info.dataset.detailId = run.id;
+  info.setAttribute('aria-expanded', String(run.id === detailId));
 
   const distance = document.createElement('span');
   distance.className = 'run-distance';

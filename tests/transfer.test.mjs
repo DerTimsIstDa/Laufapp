@@ -52,6 +52,20 @@ describe('Roundtrip', () => {
     const runs = [{ id: 'x', distanceKm: 3, date: '2026-01-01' }];
     assert.deepEqual(roundtrip(runs).runs, runs);
   });
+
+  test('die aufgezeichnete Route übersteht Export und Import', () => {
+    const runs = [
+      {
+        id: 'g',
+        distanceKm: 5,
+        date: '2026-08-14',
+        source: 'gps',
+        track: [[52.5, 13.4], [52.505, 13.405], [52.51, 13.41]],
+      },
+    ];
+
+    assert.deepEqual(roundtrip(runs).runs, runs);
+  });
 });
 
 describe('Import – kaputte Dateien', () => {

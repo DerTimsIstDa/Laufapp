@@ -93,7 +93,7 @@ verworfen.
 node --test
 ```
 
-191 Tests im Ordner `tests/`, ausgeführt vom eingebauten Testrunner von Node —
+236 Tests im Ordner `tests/`, ausgeführt vom eingebauten Testrunner von Node —
 keine Abhängigkeiten, kein Framework, nichts zu installieren.
 
 | Datei | prüft |
@@ -107,6 +107,7 @@ keine Abhängigkeiten, kein Framework, nichts zu installieren.
 | `tests/transfer.test.mjs` | Export-Roundtrip, kaputte und halbe Importdateien |
 | `tests/storage.test.mjs` | Anlegen/Ändern/Löschen/Ersetzen, Neuberechnung danach |
 | `tests/stats.test.mjs` | Summen, Serien mit Lücken, Wochen-/Monatsraster |
+| `tests/route.test.mjs` | Projektion, Seitenverhältnis, Geraden, Ausdünnen |
 
 Getestet wird das Verhalten an den **Grenzen**: 4 gegen 5 Läufe, 49,9 gegen
 50 km, 13 gegen 14 Tage Pause, 06:59 gegen 07:00 Uhr, +19 % gegen +20 %. Ein
@@ -151,9 +152,42 @@ Grenzen, die im Browser nicht zu umgehen sind:
 - Die Strecke ist Luftlinie zwischen Messpunkten. Bei engen Kurven misst das
   minimal zu kurz.
 
-Der Streckenverlauf wird **nicht** gespeichert, nur das Ergebnis. Für eine Karte
-später müsste `tracker.js` die akzeptierten Punkte mit herausgeben –
-`reduceTrack()` in `js/geo.js` kann eine solche Punktfolge bereits verarbeiten.
+Der Streckenverlauf wird als `track` am Lauf mitgespeichert – siehe
+[Routenanzeige](#routenanzeige).
+
+## Routenanzeige
+
+Ein Klick auf einen Lauf in der Liste öffnet die Detailansicht: Kennzahlen des
+Laufs und darunter die aufgezeichnete Strecke als Linienzug in einem SVG.
+Kein Kartenhintergrund, keine Chart- oder Karten-Bibliothek. Start und Ziel
+sind als Punkte markiert, Start grün, Ziel hell.
+
+Läufe ohne Aufzeichnung – von Hand eingetragene und alle aus der Zeit vor
+diesem Feature – zeigen stattdessen „Keine GPS-Daten für diesen Lauf."
+
+`js/route.js` rechnet, pur und ohne DOM:
+
+- **Flache Projektion mit Längengrad-Korrektur.** Ohne Kartenhintergrund
+  braucht es keine echte Kartenprojektion, aber ein Längengrad ist auf 52° Nord
+  nur etwa 61 % so lang wie ein Breitengrad. Ohne die Korrektur mit
+  `cos(Breite)` würde eine Ost-West-Runde in die Breite gezogen.
+- **Eine Skala für beide Achsen**, der Rest wird zentriert. Liegen alle Punkte
+  auf einer Geraden, hat eine Achse keine Ausdehnung – dann bestimmt allein die
+  andere die Skala, statt durch null zu teilen.
+- Norden liegt oben: die y-Achse wird negiert, weil Bildschirmkoordinaten nach
+  unten wachsen.
+- Das `viewBox` ist 320 × 200; dasselbe Verhältnis steht als `aspect-ratio` im
+  CSS. Sonst würde `preserveAspectRatio` die Zeichnung einpassen und links und
+  rechts leere Ränder lassen.
+
+**Gespeichert wird ausgedünnt:** höchstens 500 Punkte je Lauf als
+`[[lat, lon], …]` mit fünf Nachkommastellen (gut ein Meter). Eine Stunde
+Aufzeichnung sind schnell ein paar tausend Punkte, und der `localStorage` fasst
+nur wenige Megabyte. Anfang und Ende bleiben beim Ausdünnen erhalten. Eine
+1,6-km-Runde mit 161 Punkten braucht so knapp 3 KB.
+
+Die Route überlebt Bearbeiten, Export und Import. Das Formular kann sie nicht
+ändern, deshalb trägt `updateRun()` sie unverändert weiter – wie `source`.
 
 ## Achievements
 
@@ -189,6 +223,7 @@ js/geo.js           Haversine, GPS-Filter, Pace/Zeit-Formatierung – ebenfalls 
 js/validation.js    Prüfung der Lauf-Eingaben – ebenfalls pur
 js/transfer.js      Export-/Importformat – ebenfalls pur
 js/stats.js         Summen, Durchschnitte, Serien, Zeitreihen – ebenfalls pur
+js/route.js         GPS-Strecke auf Zeichenflächen-Koordinaten – ebenfalls pur
 js/tracker.js       Live-Aufzeichnung: watchPosition, Pausen, Wake Lock
 js/storage.js       Laden/Speichern/Ändern der Läufe im localStorage
 js/app.js           Formular, Rendering, Verdrahtung

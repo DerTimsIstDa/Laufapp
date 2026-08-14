@@ -153,3 +153,34 @@ describe('validateRun – optionale Felder', () => {
     assert.deepEqual(Object.keys(result.run).sort(), ['date', 'distanceKm']);
   });
 });
+
+describe('validateRun – aufgezeichnete Strecke', () => {
+  const track = [[52.5, 13.4], [52.51, 13.41]];
+
+  test('wird als kompakte Paare übernommen', () => {
+    assert.deepEqual(validateRun(input({ track })).run.track, track);
+  });
+
+  test('Objektform wird in Paare umgewandelt', () => {
+    const objekte = [{ lat: 52.5, lon: 13.4 }, { lat: 52.51, lon: 13.41 }];
+    assert.deepEqual(validateRun(input({ track: objekte })).run.track, track);
+  });
+
+  test('unter zwei Punkten gibt es nichts zu zeichnen', () => {
+    assert.equal('track' in validateRun(input({ track: [[52.5, 13.4]] })).run, false);
+    assert.equal('track' in validateRun(input({ track: [] })).run, false);
+  });
+
+  test('eine unbrauchbare Strecke macht den Lauf nicht ungültig', () => {
+    for (const kaputt of ['text', 42, {}, [[NaN, NaN]], [[999, 999], [1, 1]]]) {
+      const result = validateRun(input({ track: kaputt }));
+      assert.equal(result.ok, true, `${JSON.stringify(kaputt)} sollte den Lauf nicht kippen`);
+      assert.equal('track' in result.run, false);
+    }
+  });
+
+  test('einzelne kaputte Punkte fallen raus, der Rest bleibt', () => {
+    const result = validateRun(input({ track: [[52.5, 13.4], [NaN, 13.4], [52.51, 13.41]] }));
+    assert.deepEqual(result.run.track, track);
+  });
+});

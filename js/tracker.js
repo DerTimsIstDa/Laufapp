@@ -43,6 +43,9 @@ export function createTracker({ onUpdate, onError, filter = DEFAULT_FILTER } = {
   let rejectedCount = 0;
   let stillCount = 0;
 
+  /** Angenommene Punkte der Strecke – Grundlage für die Routenanzeige. */
+  let track = [];
+
   /* ------------------------------------------------------------- Öffentlich */
 
   function isSupported() {
@@ -65,6 +68,7 @@ export function createTracker({ onUpdate, onError, filter = DEFAULT_FILTER } = {
     pointCount = 0;
     rejectedCount = 0;
     stillCount = 0;
+    track = [];
     status = 'tracking';
 
     beginWatching();
@@ -95,7 +99,14 @@ export function createTracker({ onUpdate, onError, filter = DEFAULT_FILTER } = {
 
   /**
    * Beendet die Aufzeichnung und liefert das Ergebnis.
-   * @returns {?{ distanceKm: number, durationMinutes: number, startedAt: Date, pointCount: number }}
+   *
+   * `track` enthält die angenommenen Punkte in Reihenfolge; eine Pause
+   * hinterlässt darin eine Lücke, weil dazwischen nichts aufgezeichnet wurde.
+   *
+   * @returns {?{
+   *   distanceKm: number, durationMinutes: number, startedAt: Date,
+   *   pointCount: number, track: {lat: number, lon: number}[]
+   * }}
    */
   function stop() {
     if (status === 'idle') return null;
@@ -106,6 +117,7 @@ export function createTracker({ onUpdate, onError, filter = DEFAULT_FILTER } = {
       durationMinutes: Math.round((elapsedMs / 60_000) * 10) / 10,
       startedAt,
       pointCount,
+      track,
     };
 
     reset();
@@ -171,6 +183,7 @@ export function createTracker({ onUpdate, onError, filter = DEFAULT_FILTER } = {
     pointCount = 0;
     rejectedCount = 0;
     stillCount = 0;
+    track = [];
   }
 
   function handlePosition(position) {
@@ -190,6 +203,7 @@ export function createTracker({ onUpdate, onError, filter = DEFAULT_FILTER } = {
       distanceKm += result.distanceKm;
       lastPoint = point;
       pointCount++;
+      track.push({ lat: point.lat, lon: point.lon });
     } else if (result.reason === 'jitter') {
       // Normalfall: bei 1 Fix/Sekunde liegt ein Laufschritt oft unter der
       // Mindeststrecke. Der Bezugspunkt bleibt stehen, die Distanz wird beim

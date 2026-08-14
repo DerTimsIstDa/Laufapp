@@ -218,6 +218,19 @@
       </div>
     </section>
 
+    <!-- Detailansicht eines Laufs -->
+    <section class="card" id="detail-card" aria-labelledby="detail-title" hidden>
+      <div class="detail-header">
+        <h2 id="detail-title">Lauf-Details</h2>
+        <button type="button" id="detail-close" class="ghost small">Schließen</button>
+      </div>
+
+      <dl class="stat-grid" id="detail-facts"></dl>
+
+      <h3 class="group-title">Strecke</h3>
+      <div class="route" id="route-container"></div>
+    </section>
+
     <!-- Läufe -->
     <section class="card" aria-labelledby="runs-title">
       <h2 id="runs-title">Läufe (<span id="run-count">0</span>)</h2>

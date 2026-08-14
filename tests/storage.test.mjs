@@ -99,6 +99,17 @@ describe('updateRun', () => {
     assert.equal(next[0].source, 'gps');
   });
 
+  test('die aufgezeichnete Route überlebt das Bearbeiten', () => {
+    // Das Formular kennt die Route nicht – sie darf trotzdem nicht verloren
+    // gehen, nur weil jemand die Distanz korrigiert.
+    const track = [[52.5, 13.4], [52.51, 13.41]];
+    const runs = addRun([], { distanceKm: 5, date: '2026-08-14', source: 'gps', track });
+
+    const next = updateRun(runs, runs[0].id, { distanceKm: 5.2, date: '2026-08-10' });
+
+    assert.deepEqual(next[0].track, track);
+  });
+
   test('sortiert nach einer Datumsänderung neu', () => {
     let runs = addRun([], { distanceKm: 5, date: '2026-08-14' });
     runs = addRun(runs, { distanceKm: 6, date: '2026-08-10' });

@@ -6,6 +6,8 @@
  * Weg in den Speicher an der Validierung vorbeiführen.
  */
 
+import { normalizeTrack, MIN_POINTS } from './route.js';
+
 export const MAX_DISTANCE_KM = 1000;
 export const MAX_DURATION_MINUTES = 1440;
 
@@ -116,6 +118,13 @@ export function validateRun(input) {
   if (timeOfDay) run.timeOfDay = timeOfDay;
   if (durationMinutes) run.durationMinutes = durationMinutes;
   if (input.source === 'gps' || input.source === 'manual') run.source = input.source;
+
+  // Eine unbrauchbare Strecke macht den Lauf nicht ungültig – sie fällt
+  // stillschweigend weg, dann zeigt die Detailansicht eben keine Route.
+  const track = normalizeTrack(input.track);
+  if (track.length >= MIN_POINTS) {
+    run.track = track.map((point) => [point.lat, point.lon]);
+  }
 
   return { ok: true, run };
 }

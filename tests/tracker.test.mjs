@@ -221,6 +221,72 @@ describe('Fehler', () => {
   });
 });
 
+describe('Aufgezeichnete Strecke', () => {
+  test('nur angenommene Punkte landen in der Strecke', () => {
+    tracker.start();
+    gps.feed({ meters: 0, seconds: 0 });
+    gps.feed({ meters: 10, accuracy: 90, seconds: 1 }); // ungenau
+    gps.feed({ meters: 2, seconds: 2 }); // Jitter
+    gps.feed({ meters: 10, seconds: 3 });
+
+    const summary = tracker.stop();
+
+    assert.equal(summary.track.length, 2);
+    for (const point of summary.track) {
+      assert.ok(Number.isFinite(point.lat) && Number.isFinite(point.lon));
+    }
+  });
+
+  test('die Punkte stehen in der gelaufenen Reihenfolge', () => {
+    tracker.start();
+    runMeters(50);
+    const summary = tracker.stop();
+
+    for (let i = 1; i < summary.track.length; i++) {
+      assert.ok(
+        summary.track[i].lat > summary.track[i - 1].lat,
+        `Punkt ${i} liegt nicht nördlicher als sein Vorgänger`
+      );
+    }
+  });
+
+  test('eine Pause hinterlässt eine Lücke, keine Luftlinie durch die Pause', () => {
+    tracker.start();
+    runMeters(20);
+    const vorPause = tracker.getState().pointCount;
+
+    tracker.pause();
+    gps.feed({ meters: 5000, seconds: 300 }); // Transport
+    tracker.resume();
+    runMeters(20, { from: 6000, startSecond: 400 });
+
+    const summary = tracker.stop();
+    assert.equal(summary.track.length, vorPause * 2, 'nur die gelaufenen Punkte');
+    assert.equal(
+      summary.track.some((point) => Math.abs(point.lat - (52.5 + 5000 * 0.000008993)) < 1e-9),
+      false,
+      'der Transportpunkt darf nicht in der Strecke stehen'
+    );
+  });
+
+  test('ein neuer Start beginnt mit leerer Strecke', () => {
+    tracker.start();
+    runMeters(50);
+    tracker.stop();
+
+    tracker.start();
+    assert.deepEqual(tracker.getState().pointCount, 0);
+    gps.feed({ meters: 0, seconds: 0 });
+    assert.equal(tracker.stop().track.length, 1);
+  });
+
+  test('ohne Signal bleibt die Strecke leer', () => {
+    tracker.start();
+    const summary = tracker.stop();
+    assert.deepEqual(summary.track, []);
+  });
+});
+
 describe('Meldungen an die Anzeige', () => {
   test('jeder Zustandswechsel und jeder Punkt löst ein Update aus', () => {
     tracker.start();

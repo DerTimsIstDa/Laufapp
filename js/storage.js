@@ -62,13 +62,14 @@ export function saveRuns(runs) {
  * @param {Run[]} runs
  * @returns {Run[]}
  */
-export function addRun(runs, { distanceKm, date, timeOfDay, durationMinutes, source }) {
+export function addRun(runs, { distanceKm, date, timeOfDay, durationMinutes, source, track }) {
   const run = { id: createId(), distanceKm, date };
 
   // Optionale Felder nur setzen, wenn sie ausgefüllt wurden.
   if (timeOfDay) run.timeOfDay = timeOfDay;
   if (durationMinutes) run.durationMinutes = durationMinutes;
   if (source) run.source = source;
+  if (track?.length) run.track = track;
 
   const next = [run, ...runs].sort(byDateDesc);
   saveRuns(next);
@@ -79,9 +80,10 @@ export function addRun(runs, { distanceKm, date, timeOfDay, durationMinutes, sou
  * Überschreibt einen Lauf mit geprüften Feldern und gibt die neue Liste zurück.
  *
  * Der Lauf wird komplett neu aufgebaut, damit geleerte Felder auch wirklich
- * verschwinden. `id` und `source` bleiben erhalten: ein aufgezeichneter Lauf
- * bleibt als GPS-Lauf erkennbar, auch wenn die Distanz nachträglich korrigiert
- * wurde.
+ * verschwinden. `id`, `source` und die aufgezeichnete `track` bleiben
+ * erhalten: ein aufgezeichneter Lauf bleibt als GPS-Lauf erkennbar und behält
+ * seine Route, auch wenn die Distanz nachträglich korrigiert wurde. Das
+ * Formular kann die Route gar nicht bearbeiten.
  *
  * @param {Run[]} runs
  * @returns {Run[]} unverändert, falls es die id nicht gibt
@@ -94,6 +96,7 @@ export function updateRun(runs, id, { distanceKm, date, timeOfDay, durationMinut
   if (timeOfDay) updated.timeOfDay = timeOfDay;
   if (durationMinutes) updated.durationMinutes = durationMinutes;
   if (existing.source) updated.source = existing.source;
+  if (existing.track?.length) updated.track = existing.track;
 
   const next = runs.map((run) => (run.id === id ? updated : run)).sort(byDateDesc);
   saveRuns(next);
