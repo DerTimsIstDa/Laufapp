@@ -3,6 +3,10 @@
 Prototyp einer Lauf-App mit Gamification. Reines HTML/CSS/JS, kein Build-Step,
 kein Backend. Läufe liegen im `localStorage` des Browsers.
 
+**Live: https://dertimsistda.github.io/Laufapp/**
+
+Auf dem Handy öffnen und installieren – siehe [Aufs Handy bringen](#aufs-handy-bringen).
+
 ## Starten
 
 Ein lokaler Server ist nötig – die App nutzt ES-Module und einen Service
@@ -28,15 +32,24 @@ statische Dateien ausliefert. Der Ordner wird unverändert hochgeladen.
 öffnen, den Projektordner ins Fenster ziehen. Ergibt sofort eine
 HTTPS-Adresse, ohne Konto. Gut zum Ausprobieren.
 
-**Dauerhafter Weg – GitHub Pages:** Repo auf GitHub anlegen, pushen, unter
-*Settings → Pages* den Branch als Quelle wählen. Die App liegt dann unter
-`https://<name>.github.io/<repo>/`. Alle Pfade im Projekt sind relativ, der
-Unterordner macht also keine Probleme.
+**Eingerichteter Weg – GitHub Pages:** Läuft bereits unter
+https://dertimsistda.github.io/Laufapp/, gespeist aus dem `master`-Branch.
+Ein `git push` aktualisiert die Seite nach etwa einer Minute. Alle Pfade im
+Projekt sind relativ, der Unterordner macht also keine Probleme.
+
+```bash
+git push
+```
 
 **Installieren:** Adresse auf dem Handy öffnen. Android/Chrome bietet
 „App installieren" an, unter iOS/Safari geht es über *Teilen → Zum
 Home-Bildschirm*. Danach startet sie ohne Browserleiste und funktioniert auch
 offline.
+
+Nach einer Aktualisierung liefert der Service Worker zunächst noch den alten
+Stand aus – erst der zweite Aufruf zeigt die neue Version. Das ist gewollt
+(so funktioniert sie offline) und der Grund, warum `CACHE_VERSION` in `sw.js`
+bei jeder Änderung hochgezählt werden muss.
 
 ⚠️ **Die Daten hängen an der Adresse.** Der `localStorage` gehört zur Domain –
 ein Wechsel von Netlify zu GitHub Pages nimmt die Läufe nicht mit, und auf dem
