@@ -67,6 +67,19 @@
   box-sizing: border-box;
 }
 
+/**
+ * Muss stehen bleiben und braucht das !important.
+ *
+ * Das eingebaute [hidden] des Browsers ist nur `display: none` mit niedrigster
+ * Priorität. Jede eigene Regel wie `.view { display: flex }` gewinnt dagegen –
+ * das Element trägt dann hidden und steht trotzdem auf dem Schirm. Genau das
+ * hat hier die Tab-Umschaltung wirkungslos gemacht: alle Bereiche lagen
+ * gleichzeitig untereinander.
+ */
+[hidden] {
+  display: none !important;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
 }
