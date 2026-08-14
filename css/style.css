@@ -1,68 +1,127 @@
-/* Minimales Grundlayout – bewusst schlicht, kein Design-Feinschliff. */
+/**
+ * Laufapp – dunkel, reduziert, sportlich.
+ *
+ * Mobile first: die Grundregeln gelten fürs Handy, die Medienabfrage weiter
+ * unten erweitert für breitere Schirme.
+ *
+ * Neongrün ist der einzige Farbakzent und bleibt vier Dingen vorbehalten:
+ * Fortschritt, freigeschaltete Achievements, die aufgezeichnete Strecke und
+ * die primäre Aktion. Alles andere ist Grauabstufung – sonst verliert der
+ * Akzent seine Wirkung.
+ */
 
 :root {
-  --bg: #16181d;
-  --surface: #1f232b;
-  --border: #2e343f;
-  --text: #e8eaed;
-  --muted: #98a1ae;
-  --accent: #4ade80;
-  --danger: #f87171;
+  color-scheme: dark;
+
+  /* Flächen, von tief nach hoch */
+  --bg: #0d0f12;
+  --sunken: #090b0e;
+  --surface: #15181d;
+  --surface-hover: #1b1f26;
+  --line: #242932;
+  --line-strong: #333a45;
+
+  /* Schrift */
+  --text: #ffffff;
+  --body: #b8c0c9;
+  --muted: #8b939d;
+  /* Nicht dunkler: darunter reisst der Kontrast bei 12px die 4,5:1 von
+     WCAG AA. Der Unterschied zwischen offen und freigeschaltet kommt über
+     Fläche, Rahmen und Akzentfarbe, nicht über unlesbaren Text. */
+  --dim: #7c848e;
+
+  /* Akzent */
+  --accent: #c4f000;
+  --accent-soft: rgba(196, 240, 0, 0.12);
+  --accent-line: rgba(196, 240, 0, 0.34);
+  --accent-glow: rgba(196, 240, 0, 0.28);
+  --accent-ink: #0f1300;
+
+  --danger: #ff5c5c;
+  --danger-soft: rgba(255, 92, 92, 0.12);
+  --danger-line: rgba(255, 92, 92, 0.38);
+
+  /* Abstände – eine Skala, damit nichts krumm wird */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+
+  /* Rundungen, angelehnt an die Ecken des App-Icons */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.125rem;
+  --radius-pill: 999px;
+
+  --font: system-ui, -apple-system, "Segoe UI Variable Text", "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --ease: cubic-bezier(0.2, 0.8, 0.3, 1);
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   margin: 0;
-  padding: 1.5rem 1rem 3rem;
+  padding: var(--space-4) var(--space-3) var(--space-6);
   background: var(--bg);
-  color: var(--text);
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  line-height: 1.5;
+  color: var(--body);
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  overflow-wrap: break-word;
 }
 
 .app {
-  max-width: 32rem;
+  max-width: 34rem;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-3);
 }
 
+/* ------------------------------------------------------------ Typografie */
+
 h1 {
-  margin: 0 0 0.5rem;
-  font-size: 1.5rem;
+  margin: 0 0 var(--space-1);
+  padding-inline: var(--space-1);
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
 }
 
 h2 {
-  margin: 0 0 0.75rem;
-  font-size: 0.8rem;
-  font-weight: 600;
+  margin: 0 0 var(--space-3);
+  font-size: 0.6875rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
   color: var(--muted);
 }
 
 .group-title {
-  margin: 1rem 0 0.4rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: 0.625rem;
+  font-weight: 700;
   text-transform: uppercase;
-  color: var(--muted);
+  letter-spacing: 0.14em;
+  color: var(--dim);
 }
 
 .group-title:first-of-type {
   margin-top: 0;
-}
-
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 0.75rem;
-  padding: 1rem;
 }
 
 .muted {
@@ -70,163 +129,378 @@ h2 {
   font-size: 0.875rem;
 }
 
+strong {
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Zahlen sollen beim Hochzählen nicht springen. */
+.level-badge strong,
+.metric-value,
+.stat dd,
+.chart-label,
+.chart-value,
+.run-xp,
+.achievement-xp,
+#total-xp {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ----------------------------------------------------------------- Karte */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
 .hint {
-  max-width: 32rem;
-  margin: 0 auto 1rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--danger);
-  border-radius: 0.5rem;
+  max-width: 34rem;
+  margin: 0 auto var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-line);
+  border-radius: var(--radius-md);
+  color: var(--body);
   font-size: 0.875rem;
 }
 
 .hint code {
+  padding: 0.1em 0.4em;
   background: rgba(255, 255, 255, 0.08);
-  padding: 0.1em 0.35em;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9em;
 }
 
-/* Fortschritt */
+/* ----------------------------------------------- Fortschritt (Blickfang) */
+
+.card:has(#progress-bar) {
+  background: linear-gradient(180deg, #191d24 0%, var(--surface) 60%);
+  border-color: var(--line-strong);
+  padding: var(--space-5) var(--space-4);
+}
 
 .level-row {
   display: flex;
-  align-items: baseline;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 
 .level-block {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--space-2) var(--space-3);
+  min-width: 0;
 }
 
 .level-badge {
-  font-size: 1.25rem;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--muted);
 }
 
 .level-badge strong {
+  font-size: 3.25rem;
+  font-weight: 700;
+  line-height: 0.85;
+  letter-spacing: -0.03em;
   color: var(--accent);
 }
 
 .title-badge {
-  padding: 0.15rem 0.55rem;
-  background: rgba(74, 222, 128, 0.14);
-  border: 1px solid rgba(74, 222, 128, 0.35);
-  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-pill);
   color: var(--accent);
-  font-size: 0.95rem;
+  font-size: 0.75rem;
   font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
-.xp-breakdown {
-  margin: 0.35rem 0 0;
-  font-size: 0.8rem;
+.level-row > .muted {
+  flex: none;
+  text-align: right;
+  font-size: 0.8125rem;
+  line-height: 1.3;
+}
+
+.level-row > .muted strong {
+  display: block;
+  font-size: 1.0625rem;
 }
 
 .progress {
-  height: 0.75rem;
-  background: rgba(255, 255, 255, 0.07);
-  border-radius: 999px;
+  height: 0.875rem;
+  padding: 3px;
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
   overflow: hidden;
 }
 
 .progress-fill {
+  display: block;
   height: 100%;
   width: 0;
   background: var(--accent);
-  border-radius: 999px;
-  transition: width 0.35s ease;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 0 12px var(--accent-glow);
+  transition: width 0.45s var(--ease);
 }
 
 .progress-caption {
-  margin: 0.5rem 0 0;
+  margin: var(--space-3) 0 0;
+  font-size: 0.8125rem;
+  color: var(--body);
 }
 
-/* Formular */
-
-.fields {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
+.xp-breakdown {
+  margin: var(--space-1) 0 0;
+  font-size: 0.75rem;
+  color: var(--dim);
 }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  flex: 1 1 8rem;
-}
+/* --------------------------------------------------------------- Knöpfe */
 
-label {
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-
-.optional {
-  font-size: 0.7rem;
-  opacity: 0.7;
-}
-
-input {
-  padding: 0.55rem 0.7rem;
-  background: var(--bg);
-  color: inherit;
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
+button {
+  appearance: none;
+  margin: 0;
+  padding: 0.7rem 1.1rem;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
   font: inherit;
-  width: 100%;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease),
+    color 0.15s var(--ease), transform 0.08s var(--ease), box-shadow 0.15s var(--ease);
 }
 
-input:focus-visible,
+button:hover {
+  background: #d4ff1a;
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+
+button:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
 button:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-button {
-  margin-top: 0.85rem;
-  padding: 0.6rem 1rem;
-  background: var(--accent);
-  color: #10231a;
-  border: none;
-  border-radius: 0.5rem;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
+button.secondary {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--line-strong);
 }
 
-button:hover {
-  filter: brightness(1.08);
+button.secondary:hover {
+  background: var(--surface-hover);
+  border-color: var(--dim);
+  box-shadow: none;
+}
+
+button.ghost {
+  padding-inline: 0.7rem;
+  background: transparent;
+  color: var(--muted);
+  border-color: transparent;
+  font-weight: 500;
+}
+
+button.ghost:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+  box-shadow: none;
+}
+
+button.danger {
+  background: var(--danger);
+  color: #2a0505;
+}
+
+button.danger:hover {
+  background: #ff7373;
+  box-shadow: 0 0 16px var(--danger-line);
+}
+
+button.small {
+  padding: 0.45rem 0.8rem;
+  font-size: 0.8125rem;
+}
+
+button:disabled {
+  background: var(--surface-hover);
+  color: var(--dim);
+  border-color: var(--line);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.icon-button {
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--muted);
+  border-color: var(--line);
+  border-radius: var(--radius-sm);
+  font-size: 1.05rem;
+  font-weight: 400;
+}
+
+.icon-button:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+  border-color: var(--line-strong);
+  box-shadow: none;
+}
+
+.icon-button[data-ask-delete-id]:hover {
+  color: var(--danger);
+  border-color: var(--danger-line);
+}
+
+/* Am Finger bedient brauchen Knöpfe mehr Fläche – einer davon löscht. */
+@media (pointer: coarse) {
+  .icon-button {
+    width: 2.75rem;
+    height: 2.75rem;
+    font-size: 1.2rem;
+  }
+
+  button.small {
+    padding: 0.6rem 0.95rem;
+  }
+}
+
+/* ------------------------------------------------------------- Formular */
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.optional {
+  font-size: 0.625rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--dim);
+}
+
+input {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  background: var(--sunken);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 1rem;
+  transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
+}
+
+input::placeholder {
+  color: var(--dim);
+}
+
+input:hover {
+  border-color: var(--line-strong);
+}
+
+input:focus {
+  outline: none;
+  background: var(--bg);
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.form-buttons,
+.data-buttons,
+.tracking-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
 }
 
 .error {
-  margin: 0.75rem 0 0;
-  color: var(--danger);
-  font-size: 0.875rem;
+  margin: var(--space-3) 0 0;
+  padding: 0.55rem 0.75rem;
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-line);
+  border-radius: var(--radius-sm);
+  color: #ffb3b3;
+  font-size: 0.8125rem;
 }
 
-/* Live-Tracking */
+.card.editing {
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 1px var(--accent-soft);
+}
+
+/* ------------------------------------------------------- Live-Tracking */
 
 .tracking-readout {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
 }
 
 .metric {
   display: flex;
   flex-direction: column;
-  flex: 1 1 5rem;
+  min-width: 0;
 }
 
 .metric-value {
-  font-size: 1.75rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.2;
+  font-size: 1.875rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  transition: color 0.2s var(--ease);
 }
 
 .tracking-readout.active .metric-value {
@@ -234,137 +508,77 @@ button:hover {
 }
 
 .metric-label {
-  font-size: 0.75rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--dim);
 }
 
 .tracking-status {
-  margin: 0.6rem 0 0;
+  margin: var(--space-3) 0 0;
   min-height: 1.25rem;
-}
-
-.tracking-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.tracking-buttons button {
-  margin-top: 0.6rem;
-}
-
-button.secondary {
-  background: transparent;
-  color: var(--text);
-  border: 1px solid var(--border);
-}
-
-button.ghost {
-  background: transparent;
-  color: var(--muted);
-  border: 1px solid transparent;
-  font-weight: 400;
-}
-
-button.ghost:hover {
-  color: var(--danger);
-}
-
-button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  filter: none;
-}
-
-button.danger {
-  background: var(--danger);
-  color: #2a0a0a;
-}
-
-button.small {
-  margin-top: 0;
-  padding: 0.35rem 0.7rem;
-  font-size: 0.85rem;
-}
-
-/* Formular im Bearbeiten-Modus */
-
-.form-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.card.editing {
-  border-color: var(--accent);
-}
-
-/* Sicherung */
-
-.data-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.import-confirm {
-  margin-top: 0.85rem;
-  padding: 0.75rem;
-  border: 1px solid var(--danger);
-  border-radius: 0.5rem;
-}
-
-.import-confirm p {
-  margin: 0 0 0.25rem;
-  font-size: 0.875rem;
-}
-
-.data-status {
-  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
 }
 
 .unlock-notice {
-  margin: 0.75rem 0 0;
-  padding: 0.5rem 0.7rem;
-  background: rgba(74, 222, 128, 0.12);
-  border: 1px solid rgba(74, 222, 128, 0.35);
-  border-radius: 0.5rem;
+  margin: var(--space-3) 0 0;
+  padding: 0.6rem 0.8rem;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-sm);
   color: var(--accent);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
 }
 
-/* Statistik */
+/* ----------------------------------------------------------- Statistik */
 
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
-  gap: 0.85rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
   margin: 0;
 }
 
+.stat {
+  min-width: 0;
+  padding: var(--space-3);
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
 .stat dt {
-  font-size: 0.75rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
   color: var(--muted);
 }
 
 .stat dd {
-  margin: 0.1rem 0 0;
-  font-size: 1.15rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+  margin: var(--space-1) 0 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text);
 }
 
 .stat dd.stat-note {
+  margin-top: 0;
   font-size: 0.75rem;
-  font-weight: 400;
+  font-weight: 500;
+  color: var(--muted);
 }
 
 .chart-header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 1.25rem;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
 }
 
 .chart-header .group-title {
@@ -373,75 +587,98 @@ button.small {
 
 .chart-toggle {
   display: flex;
-  gap: 0.35rem;
+  gap: var(--space-1);
+  padding: 3px;
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+}
+
+.chart-toggle button {
+  border-radius: var(--radius-pill);
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.chart-toggle button.secondary {
+  border-color: transparent;
+  color: var(--muted);
+}
+
+.chart-toggle button.secondary:hover {
+  background: var(--surface-hover);
+  border-color: transparent;
+  color: var(--text);
 }
 
 .chart {
   list-style: none;
-  margin: 0.5rem 0 0;
+  margin: var(--space-3) 0 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: var(--space-1);
 }
 
 .chart-row {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--space-2);
 }
 
 .chart-label {
-  flex: 0 0 4.5rem;
-  font-size: 0.8rem;
+  flex: 0 0 3.75rem;
+  font-size: 0.75rem;
   color: var(--muted);
-  font-variant-numeric: tabular-nums;
 }
 
 .chart-track {
   flex: 1;
-  height: 0.9rem;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 0.25rem;
+  min-width: 0;
+  height: 0.6rem;
+  background: var(--sunken);
+  border-radius: var(--radius-pill);
   overflow: hidden;
 }
 
 .chart-bar {
   display: block;
   height: 100%;
-  min-width: 2px;
+  min-width: 3px;
   background: var(--accent);
-  border-radius: 0.25rem;
-  transition: width 0.3s ease;
+  border-radius: var(--radius-pill);
+  transition: width 0.35s var(--ease);
 }
 
 .chart-value {
-  flex: 0 0 4.5rem;
+  flex: 0 0 4.25rem;
   text-align: right;
-  font-size: 0.8rem;
-  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--body);
   white-space: nowrap;
 }
 
 .chart-row.empty .chart-value {
-  color: var(--muted);
+  color: var(--dim);
+  font-weight: 500;
 }
 
-/* Detailansicht mit Route */
+/* ------------------------------------------------- Detailansicht, Route */
 
 .detail-header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 
 .detail-header h2 {
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-3);
 }
 
 .route {
-  margin-top: 0.4rem;
+  margin-top: var(--space-2);
 }
 
 .route-svg {
@@ -451,9 +688,9 @@ button.small {
   /* Gleiches Verhältnis wie das viewBox in route.js – sonst bliebe innen ein
      leerer Rand, weil preserveAspectRatio die Zeichnung einpasst. */
   aspect-ratio: 320 / 200;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
 }
 
 .route-line {
@@ -462,34 +699,35 @@ button.small {
   stroke-width: 2.5;
   stroke-linejoin: round;
   stroke-linecap: round;
+  filter: drop-shadow(0 0 3px var(--accent-glow));
 }
 
 .route-start {
   fill: var(--accent);
-  stroke: var(--surface);
-  stroke-width: 2;
+  stroke: var(--sunken);
+  stroke-width: 2.5;
 }
 
 .route-end {
   fill: var(--text);
-  stroke: var(--surface);
-  stroke-width: 2;
+  stroke: var(--sunken);
+  stroke-width: 2.5;
 }
 
 .route-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.9rem;
-  margin: 0.5rem 0 0;
-  font-size: 0.8rem;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-2) 0 0;
+  font-size: 0.75rem;
 }
 
 .route-key::before {
   content: "";
   display: inline-block;
-  width: 0.6rem;
-  height: 0.6rem;
-  margin-right: 0.35rem;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-right: 0.4rem;
   border-radius: 50%;
   vertical-align: baseline;
 }
@@ -504,13 +742,14 @@ button.small {
 
 .route-empty {
   margin: 0;
-  padding: 1.5rem 1rem;
+  padding: var(--space-6) var(--space-4);
   text-align: center;
-  border: 1px dashed var(--border);
-  border-radius: 0.5rem;
+  color: var(--dim);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-md);
 }
 
-/* Achievements */
+/* -------------------------------------------------------- Achievements */
 
 .achievements {
   list-style: none;
@@ -518,35 +757,44 @@ button.small {
   padding: 0;
   display: flex;
   flex-direction: column;
+  gap: var(--space-1);
 }
 
 .achievement {
   display: flex;
   align-items: flex-start;
-  gap: 0.7rem;
-  padding: 0.5rem 0;
-  border-top: 1px solid var(--border);
-  opacity: 0.55;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--sunken);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
 }
 
-.achievement:first-child {
-  border-top: none;
-}
-
+/* Freigeschaltet: Neon und volle Helligkeit. Offen: grau und zurückgenommen,
+   aber lesbar – gedimmt heisst nicht unleserlich. */
 .achievement.unlocked {
-  opacity: 1;
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
 }
 
 .achievement-mark {
-  width: 1.1rem;
   flex: none;
-  text-align: center;
-  color: var(--muted);
-  line-height: 1.5;
+  width: 1.375rem;
+  height: 1.375rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--dim);
+  font-size: 0.75rem;
+  line-height: 1;
 }
 
 .achievement.unlocked .achievement-mark {
-  color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
 }
 
 .achievement-info {
@@ -557,27 +805,38 @@ button.small {
 }
 
 .achievement-name {
+  font-size: 0.9375rem;
   font-weight: 600;
-  font-size: 0.925rem;
+  color: var(--muted);
+}
+
+.achievement.unlocked .achievement-name {
+  color: var(--text);
 }
 
 .achievement-description {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  color: var(--dim);
+}
+
+.achievement.unlocked .achievement-description {
+  color: var(--body);
 }
 
 .achievement-xp {
   flex: none;
-  font-size: 0.8rem;
-  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--dim);
   white-space: nowrap;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .achievement.unlocked .achievement-xp {
   color: var(--accent);
 }
 
-/* Lauf-Liste */
+/* ----------------------------------------------------------- Lauf-Liste */
 
 .runs {
   list-style: none;
@@ -590,9 +849,9 @@ button.small {
 .run {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.6rem 0;
-  border-top: 1px solid var(--border);
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--line);
 }
 
 .run:first-child {
@@ -604,87 +863,136 @@ button.small {
   flex-direction: column;
   align-items: flex-start;
   flex: 1;
+  min-width: 0;
   gap: 0;
-  margin: 0;
-  padding: 0.15rem 0.25rem;
+  padding: var(--space-2);
   background: transparent;
   color: inherit;
-  border: none;
-  border-radius: 0.35rem;
-  font: inherit;
+  border-color: transparent;
+  border-radius: var(--radius-sm);
   font-weight: 400;
   text-align: left;
 }
 
 .run-open:hover {
-  background: rgba(255, 255, 255, 0.05);
-  filter: none;
+  background: var(--surface-hover);
+  box-shadow: none;
 }
 
 .run.open .run-open {
-  background: rgba(74, 222, 128, 0.1);
+  background: var(--accent-soft);
 }
 
 .run-distance {
+  font-size: 1rem;
   font-weight: 600;
+  color: var(--text);
 }
 
 .run-date {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  color: var(--muted);
 }
 
 .run-xp {
+  flex: none;
+  font-size: 0.8125rem;
+  font-weight: 700;
   color: var(--accent);
-  font-size: 0.875rem;
   white-space: nowrap;
 }
 
-.icon-button {
-  margin: 0;
-  padding: 0;
-  width: 1.75rem;
-  height: 1.75rem;
-  background: transparent;
-  color: var(--muted);
-  border: 1px solid var(--border);
-  border-radius: 0.4rem;
-  font-size: 1.1rem;
-  line-height: 1;
-}
-
-.icon-button:hover {
-  color: var(--danger);
-  border-color: var(--danger);
-  filter: none;
-}
-
-/* Am Finger bedient brauchen die Knöpfe mehr Fläche – 28 px trifft man auf
-   dem Handy nicht zuverlässig, und einer davon löscht. */
-@media (pointer: coarse) {
-  .icon-button {
-    width: 2.75rem;
-    height: 2.75rem;
-    font-size: 1.3rem;
-  }
-
-  button.small {
-    padding: 0.6rem 0.9rem;
-  }
-}
-
 .run.editing {
-  outline: 1px solid var(--accent);
+  outline: 1px solid var(--accent-line);
   outline-offset: 2px;
-  border-radius: 0.35rem;
+  border-radius: var(--radius-sm);
 }
 
 .run.confirming {
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-line);
+  border-radius: var(--radius-md);
+  margin-block: var(--space-1);
 }
 
 .run-question {
   flex: 1 1 100%;
   font-size: 0.875rem;
-  color: var(--danger);
+  font-weight: 600;
+  color: #ffb3b3;
+}
+
+/* --------------------------------------------------------------- Daten */
+
+.import-confirm {
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-line);
+  border-radius: var(--radius-md);
+}
+
+.import-confirm p {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--body);
+}
+
+.data-status {
+  margin: var(--space-3) 0 0;
+  font-size: 0.8125rem;
+}
+
+/* ------------------------------------------------------ Breitere Schirme */
+
+@media (min-width: 40em) {
+  body {
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .app {
+    gap: var(--space-4);
+  }
+
+  h1 {
+    font-size: 1.625rem;
+    margin-bottom: var(--space-2);
+  }
+
+  .card {
+    padding: var(--space-5);
+  }
+
+  .card:has(#progress-bar) {
+    padding: var(--space-6) var(--space-5);
+  }
+
+  .level-badge strong {
+    font-size: 4rem;
+  }
+
+  .fields {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .metric-value {
+    font-size: 2.25rem;
+  }
+}
+
+/* Wer Bewegung reduziert haben will, bekommt keine. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }

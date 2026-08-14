@@ -128,6 +128,33 @@ Jeder Weg in den Speicher läuft über `validateRun()` in `js/validation.js` —
 Formular wie Import. Unbekannte Felder aus einer Importdatei werden dabei
 verworfen.
 
+## Gestaltung
+
+Dunkel, reduziert, sportlich. Alle Werte stehen als Custom Properties oben in
+`css/style.css` – Farben, Abstandsskala, Rundungen. Wer etwas ändern will,
+ändert dort einen Token statt dreißig Regeln.
+
+- **Hintergrund** `#0d0f12`, Karten und Flächen in abgestuften Grautönen
+- **Neongrün** `#c4f000` als einziger Akzent, bewusst sparsam: Fortschritt,
+  freigeschaltete Achievements, Streckenlinie, primäre Aktion. Käme es überall
+  vor, hebt es nichts mehr hervor.
+- **Text** weiß für Überschriften und Werte, helles Grau für Fließtext
+
+Der Level-/XP-Bereich ist der Blickfang: Levelzahl in 52 px Neon, breiter
+Fortschrittsbalken, alles Weitere tritt zurück.
+
+Freigeschaltete Achievements bekommen Neonrahmen, getönte Fläche und einen
+gefüllten Haken; offene bleiben grau auf dunkler Fläche. Der Unterschied läuft
+über Fläche und Farbe, **nicht** über unleserlichen Text – jede Textfarbe hält
+mindestens 4,5:1 Kontrast (WCAG AA), auch die gedimmte.
+
+Mobile first: die Grundregeln gelten fürs Handy, eine Medienabfrage ab 40 rem
+erweitert für breitere Schirme. Bei grobem Zeiger wachsen Icon-Knöpfe auf
+44 px Kantenlänge.
+
+Keine Schriftart wird nachgeladen – der Systemfont-Stack landet auf Android bei
+Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
+
 ## Tests
 
 ```bash
