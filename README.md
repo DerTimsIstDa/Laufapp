@@ -34,13 +34,43 @@ Weder XP-Stand noch Achievements werden **gespeichert** – beides wird immer au
 den Läufen berechnet. Dadurch bleibt alles konsistent, wenn ein Lauf gelöscht
 oder eine Regel angepasst wird.
 
+## Daten bearbeiten und sichern
+
+**Bearbeiten:** Der Stift an einem Lauf lädt ihn ins Formular. Distanz, Datum,
+Startzeit und Dauer lassen sich ändern; `id` und die GPS-Markierung bleiben
+erhalten. Geleerte Felder verschwinden auch wirklich aus dem Datensatz.
+
+**Löschen** fragt nach: das × wechselt die Zeile in eine Rückfrage, gelöscht
+wird erst nach dem zweiten Klick.
+
+**Export/Import** im Abschnitt „Daten sichern". Der Export ist die einzige
+Sicherung und der einzige Weg auf ein anderes Gerät. Format:
+
+```json
+{ "format": "laufapp-export", "version": 1, "exportedAt": "…", "runCount": 2, "runs": [ … ] }
+```
+
+Der Import **ersetzt** den Bestand und fragt vorher nach, mit Angabe, wie
+viele Läufe gefunden wurden und wie viele ersetzt werden. `parseImport()` in
+`js/transfer.js` prüft die Datei stufenweise und meldet jeden Fehlerfall im
+Klartext statt abzustürzen: kein JSON, fremdes Format, neuere Dateiversion,
+fehlende Lauf-Liste, leere Liste. Einzelne kaputte Einträge brechen den Import
+nicht ab — sie werden übersprungen und gezählt. Erst wenn kein einziger Lauf
+lesbar ist, gilt die Datei als unbrauchbar. Eine nackte JSON-Liste von Läufen
+wird ebenfalls angenommen, damit von Hand zusammengestellte Dateien
+funktionieren.
+
+Jeder Weg in den Speicher läuft über `validateRun()` in `js/validation.js` —
+Formular wie Import. Unbekannte Felder aus einer Importdatei werden dabei
+verworfen.
+
 ## Tests
 
 ```bash
 node --test
 ```
 
-94 Tests im Ordner `tests/`, ausgeführt vom eingebauten Testrunner von Node —
+161 Tests im Ordner `tests/`, ausgeführt vom eingebauten Testrunner von Node —
 keine Abhängigkeiten, kein Framework, nichts zu installieren.
 
 | Datei | prüft |
@@ -50,6 +80,9 @@ keine Abhängigkeiten, kein Framework, nichts zu installieren.
 | `tests/titles.test.mjs` | feste Stufen, endlose Legenden, `nextTitle` bis Level 3000 |
 | `tests/achievements.test.mjs` | jede Bedingung knapp darunter und darauf |
 | `tests/tracker.test.mjs` | Start/Pause/Beenden, Fehlerfälle, Geolocation-Attrappe |
+| `tests/validation.test.mjs` | Pflicht- und Optionalfelder, erfundene Kalendertage |
+| `tests/transfer.test.mjs` | Export-Roundtrip, kaputte und halbe Importdateien |
+| `tests/storage.test.mjs` | Anlegen/Ändern/Löschen/Ersetzen, Neuberechnung danach |
 
 Getestet wird das Verhalten an den **Grenzen**: 4 gegen 5 Läufe, 49,9 gegen
 50 km, 13 gegen 14 Tage Pause, 06:59 gegen 07:00 Uhr, +19 % gegen +20 %. Ein
@@ -129,8 +162,10 @@ js/xp.js            XP-/Level-Logik – pur, kein DOM, kein Storage
 js/achievements.js  Achievement-Definitionen + Auswertung – ebenfalls pur
 js/titles.js        Titel zum Level – ebenfalls pur
 js/geo.js           Haversine, GPS-Filter, Pace/Zeit-Formatierung – ebenfalls pur
+js/validation.js    Prüfung der Lauf-Eingaben – ebenfalls pur
+js/transfer.js      Export-/Importformat – ebenfalls pur
 js/tracker.js       Live-Aufzeichnung: watchPosition, Pausen, Wake Lock
-js/storage.js       Laden/Speichern der Läufe im localStorage
+js/storage.js       Laden/Speichern/Ändern der Läufe im localStorage
 js/app.js           Formular, Rendering, Verdrahtung
 manifest.json       PWA-Manifest
 sw.js               Service Worker (App-Shell-Cache)

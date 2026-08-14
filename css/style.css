@@ -298,6 +298,30 @@ button.small {
   border-color: var(--accent);
 }
 
+/* Sicherung */
+
+.data-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.import-confirm {
+  margin-top: 0.85rem;
+  padding: 0.75rem;
+  border: 1px solid var(--danger);
+  border-radius: 0.5rem;
+}
+
+.import-confirm p {
+  margin: 0 0 0.25rem;
+  font-size: 0.875rem;
+}
+
+.data-status {
+  margin: 0.75rem 0 0;
+}
+
 .unlock-notice {
   margin: 0.75rem 0 0;
   padding: 0.5rem 0.7rem;

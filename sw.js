@@ -6,7 +6,7 @@
  * alte Stand im Cache.
  */
 
-const CACHE_VERSION = 'laufapp-v6';
+const CACHE_VERSION = 'laufapp-v7';
 
 const APP_SHELL = [
   './',
@@ -19,6 +19,7 @@ const APP_SHELL = [
   './js/geo.js',
   './js/tracker.js',
   './js/validation.js',
+  './js/transfer.js',
   './js/storage.js',
   './manifest.json',
   './icons/icon.svg',

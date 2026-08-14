@@ -111,6 +111,17 @@ export function removeRun(runs, id) {
   return next;
 }
 
+/**
+ * Ersetzt den kompletten Bestand – für den Import.
+ * @param {Run[]} nextRuns bereits geprüfte Läufe
+ * @returns {Run[]}
+ */
+export function replaceRuns(nextRuns) {
+  const next = [...nextRuns].sort(byDateDesc);
+  saveRuns(next);
+  return next;
+}
+
 function isValidRun(run) {
   return (
     run !== null &&

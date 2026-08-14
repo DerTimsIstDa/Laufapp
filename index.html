@@ -172,6 +172,33 @@
       <p class="muted" id="runs-empty">Noch keine Läufe eingetragen.</p>
       <ul class="runs" id="runs-list"></ul>
     </section>
+
+    <!-- Sicherung -->
+    <section class="card" aria-labelledby="data-title">
+      <h2 id="data-title">Daten sichern</h2>
+
+      <p class="muted">
+        Die Läufe liegen nur in diesem Browser. Ein Export ist die einzige
+        Sicherung und der einzige Weg auf ein anderes Gerät.
+      </p>
+
+      <div class="data-buttons">
+        <button type="button" id="export-button">Als JSON exportieren</button>
+        <button type="button" id="import-button" class="secondary">Datei importieren</button>
+        <input type="file" id="import-input" accept="application/json,.json" hidden>
+      </div>
+
+      <div class="import-confirm" id="import-confirm" hidden>
+        <p id="import-summary"></p>
+        <div class="data-buttons">
+          <button type="button" id="import-apply" class="danger">Jetzt ersetzen</button>
+          <button type="button" id="import-cancel" class="secondary">Abbrechen</button>
+        </div>
+      </div>
+
+      <p class="data-status muted" id="data-status" role="status" hidden></p>
+      <p class="error" id="data-error" role="alert" hidden></p>
+    </section>
   </main>
 
   <!-- Hinweis, falls ohne Server geöffnet: dann lädt das Modul unten nicht. -->

@@ -8,6 +8,7 @@
  *   geo.js          Streckenberechnung und Formatierung
  *   tracker.js      Live-Aufzeichnung über die Geolocation-API
  *   validation.js   Prüfung der Eingaben
+ *   transfer.js     Export-/Importformat
  *   storage.js      Persistenz
  */
 
@@ -17,7 +18,8 @@ import { titleForLevel, nextTitle } from './titles.js';
 import { paceMinPerKm, formatDuration, formatPace } from './geo.js';
 import { createTracker } from './tracker.js';
 import { validateRun, firstErrorMessage } from './validation.js';
-import { loadRuns, addRun, updateRun, removeRun } from './storage.js';
+import { serializeExport, exportFileName, parseImport } from './transfer.js';
+import { loadRuns, addRun, updateRun, removeRun, replaceRuns } from './storage.js';
 
 /** @type {import('./storage.js').Run[]} */
 let runs = [];
@@ -30,6 +32,9 @@ let editingId = null;
 
 /** id des Laufs, für den die Löschrückfrage offen ist. */
 let pendingDeleteId = null;
+
+/** Geprüftes Importergebnis, das auf die Bestätigung wartet. */
+let pendingImport = null;
 
 const el = {
   level: document.getElementById('level'),
@@ -68,6 +73,16 @@ const el = {
   formError: document.getElementById('form-error'),
   unlockNotice: document.getElementById('unlock-notice'),
 
+  exportButton: document.getElementById('export-button'),
+  importButton: document.getElementById('import-button'),
+  importInput: document.getElementById('import-input'),
+  importConfirm: document.getElementById('import-confirm'),
+  importSummary: document.getElementById('import-summary'),
+  importApply: document.getElementById('import-apply'),
+  importCancel: document.getElementById('import-cancel'),
+  dataStatus: document.getElementById('data-status'),
+  dataError: document.getElementById('data-error'),
+
   achievementCount: document.getElementById('achievement-count'),
   achievementLists: {
     meilenstein: document.getElementById('achievements-meilenstein'),
@@ -105,6 +120,12 @@ function init() {
   el.formCancel.addEventListener('click', stopEditing);
   el.runsList.addEventListener('click', handleListClick);
 
+  el.exportButton.addEventListener('click', handleExport);
+  el.importButton.addEventListener('click', () => el.importInput.click());
+  el.importInput.addEventListener('change', handleImportFile);
+  el.importApply.addEventListener('click', handleImportApply);
+  el.importCancel.addEventListener('click', cancelImport);
+
   el.trackStart.addEventListener('click', handleTrackStart);
   el.trackPause.addEventListener('click', handleTrackPause);
   el.trackStop.addEventListener('click', handleTrackStop);
@@ -129,6 +150,7 @@ function init() {
 function handleSubmit(event) {
   event.preventDefault();
 
+  // Dieselbe Prüfung wie beim Import – siehe validation.js.
   const result = validateRun({
     distanceKm: el.distance.value,
     date: el.date.value,
@@ -221,6 +243,103 @@ function renderFormMode() {
   el.formSubmit.textContent = editing ? 'Änderungen speichern' : 'Lauf speichern';
   el.formCancel.hidden = !editing;
   el.formCard.classList.toggle('editing', editing);
+}
+
+/* --------------------------------------------------------------- Sichern */
+
+function handleExport() {
+  clearDataMessages();
+
+  if (runs.length === 0) {
+    return showDataError('Es gibt noch keine Läufe zum Exportieren.');
+  }
+
+  const blob = new Blob([serializeExport(runs)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = exportFileName();
+  link.click();
+
+  URL.revokeObjectURL(url);
+  showDataStatus(`${runs.length} ${runs.length === 1 ? 'Lauf' : 'Läufe'} exportiert.`);
+}
+
+async function handleImportFile(event) {
+  const file = event.target.files?.[0];
+  el.importInput.value = ''; // dieselbe Datei soll erneut wählbar sein
+  if (!file) return;
+
+  clearDataMessages();
+
+  let text;
+  try {
+    text = await file.text();
+  } catch {
+    return showDataError('Die Datei konnte nicht gelesen werden.');
+  }
+
+  const result = parseImport(text);
+  if (!result.ok) return showDataError(result.error);
+
+  // Import ersetzt den Bestand, deshalb erst nachfragen.
+  pendingImport = result;
+  el.importSummary.textContent = buildImportSummary(result);
+  el.importConfirm.hidden = false;
+}
+
+function buildImportSummary(result) {
+  const found = `${result.runs.length} ${result.runs.length === 1 ? 'Lauf' : 'Läufe'} gefunden`;
+  const skipped =
+    result.skipped.length > 0
+      ? `, ${result.skipped.length} unlesbare übersprungen`
+      : '';
+  const replaced =
+    runs.length > 0
+      ? `Ersetzt die aktuellen ${runs.length} ${runs.length === 1 ? 'Lauf' : 'Läufe'}.`
+      : 'Aktuell sind keine Läufe gespeichert.';
+
+  return `${found}${skipped}. ${replaced}`;
+}
+
+function handleImportApply() {
+  if (!pendingImport) return;
+
+  const imported = pendingImport.runs;
+  cancelImport();
+  stopEditing();
+
+  runs = replaceRuns(imported);
+
+  // Ohne Freischalt-Meldung: nach einem Import wäre sie eine Aufzählung
+  // sämtlicher Achievements statt einer Neuigkeit.
+  render({ announceUnlocks: false });
+
+  showDataStatus(`${imported.length} ${imported.length === 1 ? 'Lauf' : 'Läufe'} importiert.`);
+}
+
+function cancelImport() {
+  pendingImport = null;
+  el.importConfirm.hidden = true;
+  el.importSummary.textContent = '';
+}
+
+function showDataStatus(message) {
+  el.dataStatus.textContent = message;
+  el.dataStatus.hidden = false;
+}
+
+function showDataError(message) {
+  el.dataError.textContent = message;
+  el.dataError.hidden = false;
+}
+
+function clearDataMessages() {
+  el.dataStatus.hidden = true;
+  el.dataStatus.textContent = '';
+  el.dataError.hidden = true;
+  el.dataError.textContent = '';
 }
 
 /* -------------------------------------------------------------- Tracking */
@@ -372,10 +491,11 @@ function renderAchievements(achievements, announceUnlocks) {
   }
 
   const currentIds = new Set(unlocked.map((a) => a.id));
-  if (announceUnlocks) {
-    const fresh = unlocked.filter((a) => !unlockedIds.has(a.id));
-    showUnlockNotice(fresh);
-  }
+
+  // Die Meldung gehört zur letzten Speicheraktion. Bei Löschen, Import oder
+  // Neuladen wäre sie veraltet – dann lieber weg damit.
+  showUnlockNotice(announceUnlocks ? unlocked.filter((a) => !unlockedIds.has(a.id)) : []);
+
   unlockedIds = currentIds;
 }
 

@@ -1,7 +1,7 @@
 import { test, describe, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { loadRuns, addRun, updateRun, removeRun } from '../js/storage.js';
+import { loadRuns, addRun, updateRun, removeRun, replaceRuns } from '../js/storage.js';
 import { getProgress, totalXpFromRuns } from '../js/xp.js';
 import { evaluateAchievements, achievementXp } from '../js/achievements.js';
 import { titleForLevel } from '../js/titles.js';
@@ -115,14 +115,29 @@ describe('updateRun', () => {
   });
 });
 
-describe('removeRun', () => {
-  test('entfernt genau einen Lauf', () => {
+describe('removeRun und replaceRuns', () => {
+  test('Löschen entfernt genau einen Lauf', () => {
     let runs = addRun([], { distanceKm: 5, date: '2026-08-14' });
     runs = addRun(runs, { distanceKm: 6, date: '2026-08-10' });
 
     const next = removeRun(runs, runs[0].id);
 
     assert.equal(next.length, 1);
+    assert.deepEqual(store.read(), next);
+  });
+
+  test('replaceRuns überschreibt den Bestand und sortiert', () => {
+    const runs = addRun([], { distanceKm: 5, date: '2026-08-14' });
+    const importiert = [
+      { id: 'i1', distanceKm: 3, date: '2026-01-01' },
+      { id: 'i2', distanceKm: 4, date: '2026-06-01' },
+    ];
+
+    const next = replaceRuns(importiert);
+
+    assert.equal(next.length, 2);
+    assert.deepEqual(next.map((r) => r.id), ['i2', 'i1']);
+    assert.equal(next.some((r) => r.id === runs[0].id), false, 'alter Bestand ist weg');
     assert.deepEqual(store.read(), next);
   });
 });
@@ -208,5 +223,17 @@ describe('Neuberechnung nach dem Bearbeiten', () => {
     });
 
     assert.ok(derive(next).unlocked.includes('fruehaufsteher'));
+  });
+
+  test('nach dem Import gilt allein der importierte Bestand', () => {
+    let runs = addRun([], { distanceKm: 500, date: '2026-08-14' });
+    assert.ok(derive(runs).unlocked.includes('club-500-km'));
+
+    runs = replaceRuns([{ id: 'i1', distanceKm: 2, date: '2026-01-01' }]);
+    const nachher = derive(runs);
+
+    assert.deepEqual(nachher.unlocked, ['erste-meile']);
+    assert.equal(nachher.totalXp, 35, '20 aus dem Lauf plus 15 für Erste Meile');
+    assert.equal(nachher.level, 1);
   });
 });
