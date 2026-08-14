@@ -9,6 +9,7 @@
  *   tracker.js      Live-Aufzeichnung über die Geolocation-API
  *   validation.js   Prüfung der Eingaben
  *   transfer.js     Export-/Importformat
+ *   stats.js        Summen, Durchschnitte, Serien, Zeitreihen
  *   storage.js      Persistenz
  */
 
@@ -19,6 +20,7 @@ import { paceMinPerKm, formatDuration, formatPace } from './geo.js';
 import { createTracker } from './tracker.js';
 import { validateRun, firstErrorMessage } from './validation.js';
 import { serializeExport, exportFileName, parseImport } from './transfer.js';
+import { buildStats, distanceByWeek, distanceByMonth } from './stats.js';
 import { loadRuns, addRun, updateRun, removeRun, replaceRuns } from './storage.js';
 
 /** @type {import('./storage.js').Run[]} */
@@ -35,6 +37,9 @@ let pendingDeleteId = null;
 
 /** Geprüftes Importergebnis, das auf die Bestätigung wartet. */
 let pendingImport = null;
+
+/** Zeitraum des Balkendiagramms: 'weeks' oder 'months'. */
+let chartRange = 'weeks';
 
 const el = {
   level: document.getElementById('level'),
@@ -83,6 +88,21 @@ const el = {
   dataStatus: document.getElementById('data-status'),
   dataError: document.getElementById('data-error'),
 
+  statsEmpty: document.getElementById('stats-empty'),
+  statsBody: document.getElementById('stats-body'),
+  statTotal: document.getElementById('stat-total'),
+  statCount: document.getElementById('stat-count'),
+  statAverage: document.getElementById('stat-average'),
+  statLongest: document.getElementById('stat-longest'),
+  statLongestDate: document.getElementById('stat-longest-date'),
+  statStreakCurrent: document.getElementById('stat-streak-current'),
+  statStreakCurrentWeeks: document.getElementById('stat-streak-current-weeks'),
+  statStreakLongest: document.getElementById('stat-streak-longest'),
+  statStreakLongestWeeks: document.getElementById('stat-streak-longest-weeks'),
+  chartList: document.getElementById('chart-list'),
+  chartWeeks: document.getElementById('chart-weeks'),
+  chartMonths: document.getElementById('chart-months'),
+
   achievementCount: document.getElementById('achievement-count'),
   achievementLists: {
     meilenstein: document.getElementById('achievements-meilenstein'),
@@ -104,6 +124,7 @@ const dateFormat = new Intl.DateTimeFormat('de-DE', {
   month: '2-digit',
   year: 'numeric',
 });
+const monthFormat = new Intl.DateTimeFormat('de-DE', { month: 'short', year: 'numeric' });
 
 const tracker = createTracker({
   onUpdate: renderTracking,
@@ -119,6 +140,9 @@ function init() {
   el.form.addEventListener('submit', handleSubmit);
   el.formCancel.addEventListener('click', stopEditing);
   el.runsList.addEventListener('click', handleListClick);
+
+  el.chartWeeks.addEventListener('click', () => setChartRange('weeks'));
+  el.chartMonths.addEventListener('click', () => setChartRange('months'));
 
   el.exportButton.addEventListener('click', handleExport);
   el.importButton.addEventListener('click', () => el.importInput.click());
@@ -396,8 +420,114 @@ function render({ announceUnlocks }) {
   const progress = getProgress(runXp + bonusXp);
 
   renderProgress(progress, runXp, bonusXp);
+  renderStats();
   renderAchievements(achievements, announceUnlocks);
   renderRuns();
+}
+
+/* ------------------------------------------------------------- Statistik */
+
+function setChartRange(range) {
+  chartRange = range;
+  renderStats();
+}
+
+function renderStats() {
+  const stats = buildStats(runs);
+
+  el.statsEmpty.hidden = stats.runCount > 0;
+  el.statsBody.hidden = stats.runCount === 0;
+  if (stats.runCount === 0) return;
+
+  el.statTotal.textContent = `${numberFormat.format(round(stats.totalDistanceKm))} km`;
+  el.statCount.textContent = stats.runCount;
+  el.statAverage.textContent = `${numberFormat.format(round(stats.averageDistanceKm))} km`;
+
+  el.statLongest.textContent = `${numberFormat.format(stats.longestRun.distanceKm)} km`;
+  el.statLongestDate.textContent = formatDate(stats.longestRun.date);
+
+  el.statStreakCurrent.textContent = formatDays(stats.currentDayStreak);
+  el.statStreakCurrentWeeks.textContent = formatWeeks(stats.currentWeekStreak);
+  el.statStreakLongest.textContent = formatDays(stats.longestDayStreak);
+  el.statStreakLongestWeeks.textContent = formatWeeks(stats.longestWeekStreak);
+
+  renderChart();
+}
+
+function renderChart() {
+  const weekly = chartRange === 'weeks';
+
+  el.chartWeeks.className = weekly ? 'small' : 'small secondary';
+  el.chartMonths.className = weekly ? 'small secondary' : 'small';
+  el.chartWeeks.setAttribute('aria-pressed', String(weekly));
+  el.chartMonths.setAttribute('aria-pressed', String(!weekly));
+
+  const buckets = weekly
+    ? distanceByWeek(runs, { limit: 12 })
+    : distanceByMonth(runs, { limit: 12 });
+
+  // Bezugsgröße für die Balkenbreite; ohne sie wären alle Balken gleich lang.
+  const maximum = Math.max(...buckets.map((bucket) => bucket.distanceKm), 0);
+
+  el.chartList.replaceChildren(
+    ...buckets.map((bucket) =>
+      createChartRow(
+        weekly ? `KW ${bucket.isoWeek}` : formatMonth(bucket.month),
+        bucket,
+        maximum
+      )
+    )
+  );
+}
+
+function createChartRow(label, bucket, maximum) {
+  const item = document.createElement('li');
+  item.className = bucket.distanceKm > 0 ? 'chart-row' : 'chart-row empty';
+
+  const name = document.createElement('span');
+  name.className = 'chart-label';
+  name.textContent = label;
+
+  const track = document.createElement('span');
+  track.className = 'chart-track';
+
+  const bar = document.createElement('span');
+  bar.className = 'chart-bar';
+  // Bei nur einem Balken sieht 100% seltsam aus, ist aber ehrlich.
+  bar.style.width = maximum > 0 ? `${(bucket.distanceKm / maximum) * 100}%` : '0';
+  track.append(bar);
+
+  const value = document.createElement('span');
+  value.className = 'chart-value';
+  value.textContent = `${numberFormat.format(round(bucket.distanceKm))} km`;
+
+  item.append(name, track, value);
+  item.setAttribute(
+    'aria-label',
+    `${label}: ${numberFormat.format(round(bucket.distanceKm))} km aus ` +
+      `${bucket.runCount} ${bucket.runCount === 1 ? 'Lauf' : 'Läufen'}`
+  );
+
+  return item;
+}
+
+function formatDays(count) {
+  return count === 0 ? '–' : `${count} ${count === 1 ? 'Tag' : 'Tage'}`;
+}
+
+function formatWeeks(count) {
+  return count === 0 ? 'keine laufende Woche' : `${count} ${count === 1 ? 'Woche' : 'Wochen'}`;
+}
+
+/** "2026-08" -> "Aug 2026". */
+function formatMonth(month) {
+  const [year, monthNumber] = month.split('-').map(Number);
+  return monthFormat.format(new Date(year, monthNumber - 1, 1));
+}
+
+/** Zwei Nachkommastellen, ohne Fließkomma-Rauschen wie 17.999999999. */
+function round(value) {
+  return Math.round(value * 100) / 100;
 }
 
 /**

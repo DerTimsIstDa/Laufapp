@@ -34,6 +34,29 @@ Weder XP-Stand noch Achievements werden **gespeichert** – beides wird immer au
 den Läufen berechnet. Dadurch bleibt alles konsistent, wenn ein Lauf gelöscht
 oder eine Regel angepasst wird.
 
+## Statistik
+
+Eigene Sektion mit Gesamtdistanz, Anzahl Läufe, Ø Distanz pro Lauf, längstem
+Lauf samt Datum sowie aktueller und längster Serie — jeweils in Tagen und in
+Wochen. Darunter ein Balkendiagramm der Distanz je Woche oder Monat,
+umschaltbar, begrenzt auf die letzten 12 Einheiten.
+
+Die Balken sind reines CSS (`div`-Breite in Prozent des größten Werts), keine
+Chart-Bibliothek und kein Canvas.
+
+Gerechnet wird in `js/stats.js`, pur und ohne DOM:
+
+- **Serien** zählen Tage bzw. Wochen mit mindestens einem Lauf. Mehrere Läufe
+  am selben Tag zählen einmal.
+- Eine **aktuelle** Serie überlebt einen Tag Pause — sonst stünde sie jeden
+  Morgen auf 0, bis man wieder losgelaufen ist. Nach zwei Tagen ohne Lauf ist
+  sie vorbei. Bei Wochen gilt dasselbe mit einer Woche Nachsicht.
+- Der heutige Tag kommt als Parameter herein (`todayIso`), nicht aus der
+  Systemuhr. Nur deshalb lässt sich „aktuelle Serie" überhaupt testen.
+- **Wochen ohne Lauf erscheinen mit 0** statt zu fehlen. Sonst würde das
+  Diagramm eine Pause verschlucken und den Verlauf schönen.
+- Wochen beginnen montags, die Nummerierung folgt ISO 8601.
+
 ## Daten bearbeiten und sichern
 
 **Bearbeiten:** Der Stift an einem Lauf lädt ihn ins Formular. Distanz, Datum,
@@ -70,7 +93,7 @@ verworfen.
 node --test
 ```
 
-161 Tests im Ordner `tests/`, ausgeführt vom eingebauten Testrunner von Node —
+191 Tests im Ordner `tests/`, ausgeführt vom eingebauten Testrunner von Node —
 keine Abhängigkeiten, kein Framework, nichts zu installieren.
 
 | Datei | prüft |
@@ -83,6 +106,7 @@ keine Abhängigkeiten, kein Framework, nichts zu installieren.
 | `tests/validation.test.mjs` | Pflicht- und Optionalfelder, erfundene Kalendertage |
 | `tests/transfer.test.mjs` | Export-Roundtrip, kaputte und halbe Importdateien |
 | `tests/storage.test.mjs` | Anlegen/Ändern/Löschen/Ersetzen, Neuberechnung danach |
+| `tests/stats.test.mjs` | Summen, Serien mit Lücken, Wochen-/Monatsraster |
 
 Getestet wird das Verhalten an den **Grenzen**: 4 gegen 5 Läufe, 49,9 gegen
 50 km, 13 gegen 14 Tage Pause, 06:59 gegen 07:00 Uhr, +19 % gegen +20 %. Ein
@@ -164,6 +188,7 @@ js/titles.js        Titel zum Level – ebenfalls pur
 js/geo.js           Haversine, GPS-Filter, Pace/Zeit-Formatierung – ebenfalls pur
 js/validation.js    Prüfung der Lauf-Eingaben – ebenfalls pur
 js/transfer.js      Export-/Importformat – ebenfalls pur
+js/stats.js         Summen, Durchschnitte, Serien, Zeitreihen – ebenfalls pur
 js/tracker.js       Live-Aufzeichnung: watchPosition, Pausen, Wake Lock
 js/storage.js       Laden/Speichern/Ändern der Läufe im localStorage
 js/app.js           Formular, Rendering, Verdrahtung

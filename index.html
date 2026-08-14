@@ -166,6 +166,58 @@
       <ul class="achievements" id="achievements-herausforderung"></ul>
     </section>
 
+    <!-- Statistik -->
+    <section class="card" aria-labelledby="stats-title">
+      <h2 id="stats-title">Statistik</h2>
+
+      <p class="muted" id="stats-empty">
+        Noch keine Läufe – hier erscheint die Auswertung, sobald der erste
+        eingetragen ist.
+      </p>
+
+      <div id="stats-body" hidden>
+        <dl class="stat-grid">
+          <div class="stat">
+            <dt>Gesamtdistanz</dt>
+            <dd id="stat-total">–</dd>
+          </div>
+          <div class="stat">
+            <dt>Läufe</dt>
+            <dd id="stat-count">–</dd>
+          </div>
+          <div class="stat">
+            <dt>Ø pro Lauf</dt>
+            <dd id="stat-average">–</dd>
+          </div>
+          <div class="stat">
+            <dt>Längster Lauf</dt>
+            <dd id="stat-longest">–</dd>
+            <dd class="stat-note muted" id="stat-longest-date"></dd>
+          </div>
+          <div class="stat">
+            <dt>Aktuelle Serie</dt>
+            <dd id="stat-streak-current">–</dd>
+            <dd class="stat-note muted" id="stat-streak-current-weeks"></dd>
+          </div>
+          <div class="stat">
+            <dt>Längste Serie</dt>
+            <dd id="stat-streak-longest">–</dd>
+            <dd class="stat-note muted" id="stat-streak-longest-weeks"></dd>
+          </div>
+        </dl>
+
+        <div class="chart-header">
+          <h3 class="group-title">Distanz im Verlauf</h3>
+          <div class="chart-toggle" role="group" aria-label="Zeitraum">
+            <button type="button" class="small" id="chart-weeks" aria-pressed="true">Wochen</button>
+            <button type="button" class="small secondary" id="chart-months" aria-pressed="false">Monate</button>
+          </div>
+        </div>
+
+        <ul class="chart" id="chart-list"></ul>
+      </div>
+    </section>
+
     <!-- Läufe -->
     <section class="card" aria-labelledby="runs-title">
       <h2 id="runs-title">Läufe (<span id="run-count">0</span>)</h2>
