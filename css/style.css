@@ -136,20 +136,30 @@ body {
 
 .tab {
   flex: 1 1 0;
-  max-width: 11rem;
+  min-width: 0;
+  max-width: 8rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 3px;
   margin: 0;
-  padding: var(--space-2) var(--space-1);
+  padding: var(--space-2) 0.2rem;
   background: transparent;
   color: var(--muted);
   border: 1px solid transparent;
   border-radius: var(--radius-md);
-  font-size: 0.6875rem;
+  /* Fünf Beschriftungen müssen auf 360 px nebeneinander passen. */
+  font-size: 0.625rem;
   font-weight: 600;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+@media (min-width: 26em) {
+  .tab {
+    font-size: 0.6875rem;
+    letter-spacing: 0.03em;
+  }
 }
 
 .tab svg {
@@ -1066,6 +1076,143 @@ input:focus {
 
 .achievement.unlocked .achievement-xp {
   color: var(--accent);
+}
+
+/* -------------------------------------------------------------- Übungen */
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 var(--space-3);
+}
+
+.chip {
+  margin: 0;
+  padding: 0.4rem 0.75rem;
+  background: var(--sunken);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.chip:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+  border-color: var(--line-strong);
+  box-shadow: none;
+}
+
+.chip.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent-line);
+}
+
+.chip:active {
+  transform: none;
+}
+
+.category-note {
+  margin: 0 0 var(--space-3);
+  font-size: 0.8125rem;
+}
+
+.exercises {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.exercise {
+  padding: var(--space-3);
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+/* In der Aufwärmreihe zählt die Abfolge, deshalb eine Akzentkante links. */
+.exercises.ordered .exercise {
+  border-left: 3px solid var(--accent-line);
+}
+
+.exercise-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.exercise-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.exercise-dose {
+  flex: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.exercise-instruction {
+  margin: var(--space-1) 0 0;
+  font-size: 0.8125rem;
+  color: var(--body);
+}
+
+.exercise-tag {
+  display: inline-block;
+  margin-top: var(--space-2);
+  padding: 0.1rem 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-pill);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+/* ---------------------------------------------------------- Platzhalter */
+
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-md);
+}
+
+.placeholder svg {
+  width: 2.5rem;
+  height: 2.5rem;
+  fill: none;
+  stroke: var(--dim);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.placeholder strong {
+  font-size: 1rem;
+  color: var(--body);
+}
+
+.placeholder span {
+  font-size: 0.8125rem;
+  color: var(--dim);
 }
 
 /* ------------------------------------------------------------- Trophäen */

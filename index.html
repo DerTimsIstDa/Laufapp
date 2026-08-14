@@ -329,6 +329,39 @@
 
     </div><!-- /view-start -->
 
+    <!-- Übungen -->
+    <div class="view" id="view-exercises" role="tabpanel" aria-labelledby="tab-exercises" hidden>
+      <section class="card" aria-labelledby="exercises-title">
+        <h2 id="exercises-title">Übungen</h2>
+        <p class="muted">
+          Kuratierte Übungen fürs Lauftraining. Die Angaben sind Richtwerte,
+          keine medizinische Beratung – bei Schmerzen gehört es abgeklärt,
+          nicht gedehnt.
+        </p>
+
+        <div class="filter-row" id="exercise-filter" role="group" aria-label="Nach Kategorie filtern"></div>
+
+        <p class="muted category-note" id="exercise-note" hidden></p>
+        <ul class="exercises" id="exercise-list"></ul>
+      </section>
+    </div>
+
+    <!-- Training erstellen -->
+    <div class="view" id="view-training" role="tabpanel" aria-labelledby="tab-training" hidden>
+      <section class="card" aria-labelledby="training-title">
+        <h2 id="training-title">Training erstellen</h2>
+        <div class="placeholder">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="4" y="5.5" width="16" height="14" rx="2.5"/>
+            <path d="M8 3.5v4"/><path d="M16 3.5v4"/><path d="M4 10h16"/>
+            <path d="M12 13v4"/><path d="M10 15h4"/>
+          </svg>
+          <strong>Individueller Trainingsplan – kommt bald</strong>
+          <span>Hier entsteht später die Planung eigener Einheiten.</span>
+        </div>
+      </section>
+    </div>
+
     <!-- Trophäen -->
     <div class="view" id="view-trophies" role="tabpanel" aria-labelledby="tab-trophies" hidden>
       <section class="card" aria-labelledby="trophies-title">
@@ -374,6 +407,14 @@
       <button type="button" class="tab" id="tab-start" role="tab" aria-selected="true" aria-controls="view-start" data-view="start">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13.5 12 6l8 7.5"/><path d="M6.5 12v6h11v-6"/></svg>
         <span>Start</span>
+      </button>
+      <button type="button" class="tab" id="tab-exercises" role="tab" aria-selected="false" aria-controls="view-exercises" data-view="exercises" tabindex="-1">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5v5"/><path d="M7.5 6.5v11"/><path d="M16.5 6.5v11"/><path d="M20 9.5v5"/><path d="M7.5 12h9"/></svg>
+        <span>Übungen</span>
+      </button>
+      <button type="button" class="tab" id="tab-training" role="tab" aria-selected="false" aria-controls="view-training" data-view="training" tabindex="-1">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14" rx="2.5"/><path d="M8 3.5v4"/><path d="M16 3.5v4"/><path d="M4 10h16"/><path d="M12 13v4"/><path d="M10 15h4"/></svg>
+        <span>Training</span>
       </button>
       <button type="button" class="tab" id="tab-trophies" role="tab" aria-selected="false" aria-controls="view-trophies" data-view="trophies" tabindex="-1">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5v1.5A3.5 3.5 0 0 0 8 11"/><path d="M17 6h2.5v1.5A3.5 3.5 0 0 1 16 11"/><path d="M9.5 19.5h5"/><path d="M12 14v5.5"/></svg>

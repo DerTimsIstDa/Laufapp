@@ -101,14 +101,38 @@ oder eine Regel angepasst wird.
 
 ## Bereiche
 
-Eine Tab-Leiste am unteren Rand führt durch drei Bereiche:
+Eine Tab-Leiste am unteren Rand führt durch fünf Bereiche:
 
 - **Start** – alles Bisherige: Fortschritt, Aufzeichnung, Eintragen,
   Achievements als kompakte Liste, Statistik, Lauf-Liste, Sicherung
+- **Übungen** – kuratierte Übungsbibliothek mit Filter, siehe unten
+- **Training** – Platzhalter für die spätere Planung eigener Einheiten
 - **Trophäen** – alle Achievements als grosse Kacheln, freigeschaltete mit
   Datum, offene mit Fortschrittsbalken sofern die Bedingung einen Zähler hat
 - **Profil** – Titel und Level gross, darunter die Titel-Historie und eine
   Zusammenfassung der Gesamtstatistik
+
+In der Leiste heisst der dritte Bereich nur **Training** – fünf Beschriftungen
+müssen auf 360 px nebeneinander passen. Die volle Bezeichnung „Training
+erstellen" steht in der Überschrift.
+
+### Übungen
+
+27 Übungen in fünf Kategorien, fest hinterlegt in `js/exercises.js`: Aufwärmen,
+Lauftechnik, Kraft, Dehnen, Regeneration. Jede mit Anleitung und Richtwert für
+Dauer oder Wiederholungen. Keine Nutzereingabe, keine Persistenz – reine
+Anzeige mit Filter.
+
+Zwei Eigenheiten:
+
+- **Aufwärmen ist eine Reihenfolge**, keine Sammlung. Die Kategorie trägt
+  `ordered: true`, ihre Übungen werden nummeriert und bekommen eine
+  Akzentkante.
+- **Ein unbekannter Filter zeigt alles** statt nichts. Eine leere Seite wäre
+  die schlechtere Antwort auf einen Tippfehler.
+
+Die Angaben sind allgemeine Richtwerte aus dem Lauftraining, keine
+medizinische Beratung – das steht auch in der App.
 
 Die beiden neuen Bereiche werden erst beim Ansehen berechnet, nicht bei jeder
 Änderung. Grund ist `js/history.js`.
@@ -215,7 +239,7 @@ Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 node --test
 ```
 
-297 Tests im Ordner `tests/`, ausgeführt vom eingebauten Testrunner von Node —
+324 Tests im Ordner `tests/`, ausgeführt vom eingebauten Testrunner von Node —
 keine Abhängigkeiten, kein Framework, nichts zu installieren.
 
 | Datei | prüft |
@@ -233,6 +257,8 @@ keine Abhängigkeiten, kein Framework, nichts zu installieren.
 | `tests/pwa.test.mjs` | Installationshinweis, Trennung eigener und fremder Caches |
 | `tests/lock.test.mjs` | Halte-Fortschritt, Sperrregeln, Freigabe im Notfall |
 | `tests/history.test.mjs` | Freischaltdaten, Titel-Historie, Monotonie-Annahme |
+| `tests/exercises.test.mjs` | Vollständigkeit der Übungsdaten, Filter, Zählung |
+| `tests/styles.test.mjs` | CSS- und Markup-Regeln, die Node nicht ausführen kann |
 
 Getestet wird das Verhalten an den **Grenzen**: 4 gegen 5 Läufe, 49,9 gegen
 50 km, 13 gegen 14 Tage Pause, 06:59 gegen 07:00 Uhr, +19 % gegen +20 %. Ein
@@ -377,6 +403,7 @@ js/route.js         GPS-Strecke auf Zeichenflächen-Koordinaten – ebenfalls pu
 js/pwa.js           Installationshinweis, eigene Caches erkennen – ebenfalls pur
 js/lock.js          Tastensperre: Halte-Fortschritt und Sperrregeln – ebenfalls pur
 js/history.js       Freischaltdaten und Titel-Historie – ebenfalls pur
+js/exercises.js     Übungsbibliothek und Filter – feste Daten, ebenfalls pur
 js/tracker.js       Live-Aufzeichnung: watchPosition, Pausen, Wake Lock
 js/storage.js       Laden/Speichern/Ändern der Läufe im localStorage
 js/app.js           Formular, Rendering, Verdrahtung

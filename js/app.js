@@ -42,6 +42,13 @@ import {
   shouldReleaseLock,
 } from './lock.js';
 import { achievementUnlockDates, titleHistory } from './history.js';
+import {
+  CATEGORIES,
+  ALL_CATEGORIES,
+  findCategory,
+  filterExercises,
+  countByCategory,
+} from './exercises.js';
 import { loadRuns, addRun, updateRun, removeRun, replaceRuns } from './storage.js';
 
 /** @type {import('./storage.js').Run[]} */
@@ -70,6 +77,9 @@ let activeView = 'start';
 
 /** Eine neuere Fassung liegt bereit und wartet auf ein Neuladen. */
 let updateReady = false;
+
+/** Gewählte Übungskategorie; ALL_CATEGORIES zeigt alles. */
+let exerciseCategory = ALL_CATEGORIES;
 
 /** Tastensperre während der Aufzeichnung. */
 let locked = false;
@@ -157,9 +167,15 @@ const el = {
   tabs: [...document.querySelectorAll('.tab')],
   views: {
     start: document.getElementById('view-start'),
+    exercises: document.getElementById('view-exercises'),
+    training: document.getElementById('view-training'),
     trophies: document.getElementById('view-trophies'),
     profile: document.getElementById('view-profile'),
   },
+
+  exerciseFilter: document.getElementById('exercise-filter'),
+  exerciseList: document.getElementById('exercise-list'),
+  exerciseNote: document.getElementById('exercise-note'),
 
   trophyCount: document.getElementById('trophy-count'),
   trophyTotal: document.getElementById('trophy-total'),
@@ -298,12 +314,102 @@ function setView(view) {
     tab.tabIndex = aktiv ? 0 : -1;
   }
 
-  // Die neuen Bereiche werden erst beim Ansehen berechnet – das Durchspielen
-  // der Historie kostet mehr als eine simple Anzeige.
+  // Erst beim Ansehen aufbauen – das Durchspielen der Historie kostet mehr
+  // als eine simple Anzeige.
   if (view === 'trophies') renderTrophies();
   if (view === 'profile') renderProfile();
+  if (view === 'exercises') renderExercises();
 
   window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+/* --------------------------------------------------------------- Übungen */
+
+function renderExercises() {
+  renderExerciseFilter();
+
+  const kategorie = findCategory(exerciseCategory);
+  el.exerciseNote.hidden = !kategorie;
+  if (kategorie) {
+    el.exerciseNote.textContent = kategorie.ordered
+      ? `${kategorie.description} Der Reihe nach durchgehen.`
+      : kategorie.description;
+  }
+
+  const uebungen = filterExercises(exerciseCategory);
+  const nummeriert = Boolean(kategorie?.ordered);
+
+  el.exerciseList.classList.toggle('ordered', nummeriert);
+  el.exerciseList.replaceChildren(
+    ...uebungen.map((uebung, index) => createExerciseCard(uebung, nummeriert ? index + 1 : null))
+  );
+}
+
+function renderExerciseFilter() {
+  const zaehler = countByCategory();
+  const gesamt = [...zaehler.values()].reduce((a, b) => a + b, 0);
+
+  const knoepfe = [{ id: ALL_CATEGORIES, label: 'Alle', anzahl: gesamt }].concat(
+    CATEGORIES.map((kategorie) => ({
+      id: kategorie.id,
+      label: kategorie.label,
+      anzahl: zaehler.get(kategorie.id) ?? 0,
+    }))
+  );
+
+  el.exerciseFilter.replaceChildren(
+    ...knoepfe.map(({ id, label, anzahl }) => {
+      const aktiv = id === exerciseCategory;
+
+      const knopf = document.createElement('button');
+      knopf.type = 'button';
+      knopf.className = aktiv ? 'chip active' : 'chip';
+      knopf.dataset.category = id;
+      knopf.setAttribute('aria-pressed', String(aktiv));
+      knopf.textContent = `${label} ${anzahl}`;
+      knopf.addEventListener('click', () => {
+        exerciseCategory = id;
+        renderExercises();
+      });
+
+      return knopf;
+    })
+  );
+}
+
+function createExerciseCard(exercise, position) {
+  const karte = document.createElement('li');
+  karte.className = 'exercise';
+
+  const kopf = document.createElement('div');
+  kopf.className = 'exercise-head';
+
+  const name = document.createElement('span');
+  name.className = 'exercise-name';
+  // In der Aufwärmreihe zählt die Reihenfolge, deshalb die Nummer davor.
+  name.textContent = position === null ? exercise.name : `${position}. ${exercise.name}`;
+
+  const dosis = document.createElement('span');
+  dosis.className = 'exercise-dose';
+  dosis.textContent = exercise.dose;
+
+  kopf.append(name, dosis);
+
+  const anleitung = document.createElement('p');
+  anleitung.className = 'exercise-instruction';
+  anleitung.textContent = exercise.instruction;
+
+  karte.append(kopf, anleitung);
+
+  // Ohne Filter ist nicht ersichtlich, wohin eine Übung gehört.
+  if (exerciseCategory === ALL_CATEGORIES) {
+    const marke = document.createElement('span');
+    marke.className = 'exercise-tag';
+    marke.textContent = findCategory(exercise.category)?.label ?? exercise.category;
+    karte.append(marke);
+  }
+
+  return karte;
 }
 
 /* -------------------------------------------------------------- Trophäen */

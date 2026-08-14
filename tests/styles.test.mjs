@@ -30,22 +30,38 @@ describe('[hidden] sticht jede eigene display-Regel', () => {
 });
 
 describe('Bereiche und Umschaltung', () => {
-  const views = ['view-start', 'view-trophies', 'view-profile'];
+  /** Aus dem Markup gelesen statt fest verdrahtet – wächst mit. */
+  const views = [...html.matchAll(/<div class="view" id="(view-[a-z]+)"/g)].map((m) => m[1]);
 
-  test('zu jedem Tab gibt es einen Bereich', () => {
+  test('es gibt die fünf erwarteten Bereiche', () => {
+    assert.deepEqual(views.sort(), [
+      'view-exercises',
+      'view-profile',
+      'view-start',
+      'view-training',
+      'view-trophies',
+    ]);
+  });
+
+  test('jeder Bereich hat einen Tab, der ihn steuert', () => {
     for (const id of views) {
-      assert.ok(html.includes(`id="${id}"`), `${id} fehlt im Markup`);
       assert.ok(html.includes(`aria-controls="${id}"`), `kein Tab steuert ${id}`);
     }
   });
 
+  test('so viele Tabs wie Bereiche', () => {
+    const tabs = [...html.matchAll(/role="tab"/g)];
+    assert.equal(tabs.length, views.length);
+  });
+
   test('nur der Startbereich ist beim Laden offen', () => {
-    // Die beiden anderen tragen hidden – zusammen mit der Regel oben heisst
-    // das: wirklich weg, nicht nur ausgezeichnet.
-    assert.match(html, /id="view-start"[^>]*>/);
+    // Die anderen tragen hidden – zusammen mit der Regel oben heisst das:
+    // wirklich weg, nicht nur ausgezeichnet.
     assert.doesNotMatch(html, /id="view-start"[^>]*\shidden/);
-    assert.match(html, /id="view-trophies"[^>]*\shidden/);
-    assert.match(html, /id="view-profile"[^>]*\shidden/);
+
+    for (const id of views.filter((v) => v !== 'view-start')) {
+      assert.match(html, new RegExp(`id="${id}"[^>]*\\shidden`), `${id} ist nicht versteckt`);
+    }
   });
 
   test('genau ein Tab ist vorausgewählt', () => {
