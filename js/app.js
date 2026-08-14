@@ -23,6 +23,9 @@ let runs = [];
 /** IDs der zuletzt gerenderten Achievements – für die Freischalt-Meldung. */
 let unlockedIds = new Set();
 
+/** id des Laufs, für den die Löschrückfrage offen ist. */
+let pendingDeleteId = null;
+
 const el = {
   level: document.getElementById('level'),
   title: document.getElementById('title'),
@@ -151,10 +154,25 @@ function handleSubmit(event) {
 }
 
 function handleListClick(event) {
-  const button = event.target.closest('[data-remove-id]');
-  if (!button) return;
+  const askButton = event.target.closest('[data-ask-delete-id]');
+  if (askButton) {
+    pendingDeleteId = askButton.dataset.askDeleteId;
+    return renderRuns();
+  }
 
-  runs = removeRun(runs, button.dataset.removeId);
+  const cancelButton = event.target.closest('[data-cancel-delete]');
+  if (cancelButton) {
+    pendingDeleteId = null;
+    return renderRuns();
+  }
+
+  const confirmButton = event.target.closest('[data-confirm-delete-id]');
+  if (!confirmButton) return;
+
+  const id = confirmButton.dataset.confirmDeleteId;
+  pendingDeleteId = null;
+
+  runs = removeRun(runs, id);
   render({ announceUnlocks: false });
 }
 
@@ -375,12 +393,19 @@ function renderRuns() {
   el.runCount.textContent = runs.length;
   el.runsEmpty.hidden = runs.length > 0;
 
+  // Eine Rückfrage zu einem inzwischen verschwundenen Lauf wäre eine Leiche.
+  if (pendingDeleteId !== null && !runs.some((run) => run.id === pendingDeleteId)) {
+    pendingDeleteId = null;
+  }
+
   el.runsList.replaceChildren(...runs.map(createRunItem));
 }
 
 function createRunItem(run) {
   const item = document.createElement('li');
   item.className = 'run';
+
+  if (run.id === pendingDeleteId) return fillDeleteConfirm(item, run);
 
   const info = document.createElement('div');
 
@@ -401,11 +426,36 @@ function createRunItem(run) {
   const remove = document.createElement('button');
   remove.type = 'button';
   remove.className = 'icon-button';
-  remove.dataset.removeId = run.id;
+  remove.dataset.askDeleteId = run.id;
   remove.textContent = '×';
   remove.setAttribute('aria-label', `Lauf vom ${formatDate(run.date)} löschen`);
 
   item.append(info, xp, remove);
+  return item;
+}
+
+/** Zeile im Rückfrage-Zustand: erst hier wird tatsächlich gelöscht. */
+function fillDeleteConfirm(item, run) {
+  item.classList.add('confirming');
+
+  const question = document.createElement('span');
+  question.className = 'run-question';
+  question.textContent =
+    `${numberFormat.format(run.distanceKm)} km vom ${formatDate(run.date)} wirklich löschen?`;
+
+  const confirm = document.createElement('button');
+  confirm.type = 'button';
+  confirm.className = 'danger small';
+  confirm.dataset.confirmDeleteId = run.id;
+  confirm.textContent = 'Löschen';
+
+  const cancel = document.createElement('button');
+  cancel.type = 'button';
+  cancel.className = 'secondary small';
+  cancel.dataset.cancelDelete = 'true';
+  cancel.textContent = 'Abbrechen';
+
+  item.append(question, confirm, cancel);
   return item;
 }
 

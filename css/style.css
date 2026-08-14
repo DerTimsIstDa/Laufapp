@@ -275,6 +275,17 @@ button:disabled {
   filter: none;
 }
 
+button.danger {
+  background: var(--danger);
+  color: #2a0a0a;
+}
+
+button.small {
+  margin-top: 0;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.85rem;
+}
+
 .unlock-notice {
   margin: 0.75rem 0 0;
   padding: 0.5rem 0.7rem;
@@ -411,4 +422,15 @@ button:disabled {
   color: var(--danger);
   border-color: var(--danger);
   filter: none;
+}
+
+.run.confirming {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.run-question {
+  flex: 1 1 100%;
+  font-size: 0.875rem;
+  color: var(--danger);
 }

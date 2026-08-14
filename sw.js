@@ -6,7 +6,7 @@
  * alte Stand im Cache.
  */
 
-const CACHE_VERSION = 'laufapp-v4';
+const CACHE_VERSION = 'laufapp-v5';
 
 const APP_SHELL = [
   './',
