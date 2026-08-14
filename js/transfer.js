@@ -9,7 +9,7 @@
  * einer Ausnahme.
  */
 
-import { validateRun } from './validation.js';
+import { validateRun, isValidIsoDate } from './validation.js';
 
 export const EXPORT_FORMAT = 'laufapp-export';
 export const EXPORT_VERSION = 1;
@@ -18,13 +18,16 @@ export const EXPORT_VERSION = 1;
  * Baut das Export-Objekt.
  * @param {import('./storage.js').Run[]} runs
  */
-export function buildExport(runs, { exportedAt = new Date() } = {}) {
+export function buildExport(runs, { exportedAt = new Date(), exerciseLog = [] } = {}) {
   return {
     format: EXPORT_FORMAT,
     version: EXPORT_VERSION,
     exportedAt: exportedAt.toISOString(),
     runCount: runs.length,
     runs,
+    // Erledigte Übungen gehören mit in die Sicherung, sonst wäre der Export
+    // kein vollständiges Abbild mehr.
+    exerciseLog,
   };
 }
 
@@ -107,7 +110,39 @@ export function parseImport(text) {
     );
   }
 
-  return { ok: true, runs, skipped };
+  return { ok: true, runs, skipped, exerciseLog: readExerciseLog(payload.exerciseLog) };
+}
+
+/**
+ * Erledigte Übungen aus der Datei. Fehlen sie – etwa in einer Sicherung von
+ * vor diesem Feature – ist das kein Fehler, dann gibt es eben keine.
+ *
+ * Unbekannte Übungs-Ids bleiben erhalten: sie zählen weiter mit, auch wenn die
+ * Bibliothek sich inzwischen geändert hat.
+ */
+function readExerciseLog(raw) {
+  if (!Array.isArray(raw)) return [];
+
+  const eintraege = [];
+  const vergebeneIds = new Set();
+
+  raw.forEach((entry, index) => {
+    if (entry === null || typeof entry !== 'object') return;
+    if (typeof entry.exerciseId !== 'string' || entry.exerciseId.trim() === '') return;
+    if (!isValidIsoDate(entry.date)) return;
+
+    let id = typeof entry.id === 'string' && entry.id.trim() !== '' ? entry.id.trim() : '';
+    if (id === '' || vergebeneIds.has(id)) id = `uebung-${index + 1}`;
+    while (vergebeneIds.has(id)) id = `${id}-x`;
+    vergebeneIds.add(id);
+
+    const eintrag = { id, exerciseId: entry.exerciseId.trim(), date: entry.date };
+    if (typeof entry.at === 'string') eintrag.at = entry.at;
+
+    eintraege.push(eintrag);
+  });
+
+  return eintraege;
 }
 
 /* ----------------------------------------------------------------- Intern */

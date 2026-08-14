@@ -109,6 +109,60 @@ describe('achievementUnlockDates', () => {
   });
 });
 
+describe('Übungen in der Historie', () => {
+  const uebung = (exerciseId, tag, n = 0) => ({ id: `u${n}`, exerciseId, date: day(tag) });
+
+  test('Übungen allein ergeben schon eine Zeitachse', () => {
+    const steps = replayHistory([], [uebung('kraft-plank', 3)]);
+
+    assert.equal(steps.length, 1);
+    assert.equal(steps[0].date, day(3));
+    assert.ok(steps[0].unlocked.includes('erste-uebung'));
+  });
+
+  test('Läufe und Übungen werden nach Datum verwoben', () => {
+    const steps = replayHistory(
+      [makeRun(0, 5), makeRun(4, 5)],
+      [uebung('kraft-plank', 2, 1), uebung('mob-wadendehnung', 6, 2)]
+    );
+
+    assert.deepEqual(steps.map((s) => s.date), [day(0), day(2), day(4), day(6)]);
+  });
+
+  test('Übungs-XP fliessen in den Verlauf ein', () => {
+    const ohne = replayHistory([makeRun(0, 5)], []);
+    const mit = replayHistory([makeRun(0, 5)], [uebung('kraft-plank', 0)]);
+
+    assert.ok(mit.at(-1).totalXp > ohne.at(-1).totalXp, 'Übungen bringen keine XP');
+  });
+
+  test('Freischaltdatum nennt den auslösenden Tag', () => {
+    const log = [uebung('kraft-plank', 1, 1), uebung('mob-wadendehnung', 5, 2)];
+    const daten = achievementUnlockDates([], log);
+
+    assert.equal(daten.get('erste-uebung'), day(1), 'nicht der letzte Eintrag');
+  });
+
+  test('auch mit Übungen bleibt alles monoton', () => {
+    const runs = [makeRun(0, 5), makeRun(10, 40)];
+    const log = Array.from({ length: 12 }, (_, i) => uebung('kraft-plank', i, i));
+    const steps = replayHistory(runs, log);
+
+    for (let i = 1; i < steps.length; i++) {
+      assert.ok(steps[i].totalXp >= steps[i - 1].totalXp, `XP fallen bei ${i}`);
+      for (const id of steps[i - 1].unlocked) {
+        assert.ok(steps[i].unlocked.includes(id), `${id} ging bei ${i} verloren`);
+      }
+    }
+  });
+
+  test('das Protokoll ist wahlfrei', () => {
+    assert.doesNotThrow(() => replayHistory([makeRun(0, 5)]));
+    assert.doesNotThrow(() => achievementUnlockDates([makeRun(0, 5)]));
+    assert.doesNotThrow(() => titleHistory([makeRun(0, 5)]));
+  });
+});
+
 describe('titleHistory', () => {
   test('ohne Läufe nur der Starttitel', () => {
     assert.deepEqual(titleHistory([]), [{ title: 'Neuling', level: 1, date: null }]);

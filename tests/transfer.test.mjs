@@ -68,6 +68,79 @@ describe('Roundtrip', () => {
   });
 });
 
+describe('Erledigte Übungen in der Sicherung', () => {
+  const log = [
+    { id: 'u1', exerciseId: 'kraft-plank', date: '2026-08-14', at: '2026-08-14T07:00:00.000Z' },
+    { id: 'u2', exerciseId: 'mob-wadendehnung', date: '2026-08-15' },
+  ];
+
+  test('werden mit exportiert', () => {
+    const payload = buildExport(sampleRuns, { exerciseLog: log });
+    assert.deepEqual(payload.exerciseLog, log);
+  });
+
+  test('überstehen Export und Import unverändert', () => {
+    const text = serializeExport(sampleRuns, { exerciseLog: log });
+    assert.deepEqual(parseImport(text).exerciseLog, log);
+  });
+
+  test('eine Sicherung ohne Übungen ist kein Fehler', () => {
+    // Dateien von vor diesem Feature haben das Feld nicht.
+    const result = parseImport(JSON.stringify({ format: EXPORT_FORMAT, runs: sampleRuns }));
+
+    assert.equal(result.ok, true);
+    assert.deepEqual(result.exerciseLog, []);
+  });
+
+  test('kaputte Einträge fallen raus, der Rest bleibt', () => {
+    const text = JSON.stringify({
+      runs: sampleRuns,
+      exerciseLog: [
+        { id: 'gut', exerciseId: 'kraft-plank', date: '2026-08-14' },
+        null,
+        'text',
+        { exerciseId: '', date: '2026-08-14' },
+        { exerciseId: 'x', date: '14.08.2026' },
+        { exerciseId: 'y' },
+      ],
+    });
+
+    assert.deepEqual(parseImport(text).exerciseLog.map((e) => e.exerciseId), ['kraft-plank']);
+  });
+
+  test('fehlende und doppelte Ids werden aufgelöst', () => {
+    const text = JSON.stringify({
+      runs: sampleRuns,
+      exerciseLog: [
+        { exerciseId: 'kraft-plank', date: '2026-08-14' },
+        { id: 'gleich', exerciseId: 'kraft-plank', date: '2026-08-15' },
+        { id: 'gleich', exerciseId: 'kraft-plank', date: '2026-08-16' },
+      ],
+    });
+
+    const ids = parseImport(text).exerciseLog.map((e) => e.id);
+    assert.equal(new Set(ids).size, 3, `nicht eindeutig: ${ids.join(', ')}`);
+  });
+
+  test('unbekannte Übungs-Ids bleiben erhalten', () => {
+    // Sonst verlöre man den Zähler, nur weil die Bibliothek sich geändert hat.
+    const text = JSON.stringify({
+      runs: sampleRuns,
+      exerciseLog: [{ id: 'a', exerciseId: 'aus-einer-alten-fassung', date: '2026-08-14' }],
+    });
+
+    assert.equal(parseImport(text).exerciseLog.length, 1);
+  });
+
+  test('ein kaputtes Übungsfeld kippt nicht die ganze Datei', () => {
+    const text = JSON.stringify({ runs: sampleRuns, exerciseLog: 'quatsch' });
+    const result = parseImport(text);
+
+    assert.equal(result.ok, true, 'die Läufe müssen trotzdem ankommen');
+    assert.deepEqual(result.exerciseLog, []);
+  });
+});
+
 describe('Import – kaputte Dateien', () => {
   const cases = [
     ['leerer Text', '', /leer/i],

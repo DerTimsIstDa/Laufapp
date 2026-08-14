@@ -97,6 +97,7 @@
 
       <p class="muted xp-breakdown">
         <span id="run-xp">0</span> XP aus Läufen &middot;
+        <span id="exercise-xp">0</span> XP aus Übungen &middot;
         <span id="bonus-xp">0</span> XP aus Achievements &middot;
         nächster Titel <strong id="next-title">Läufer</strong> ab Level
         <span id="next-title-level">5</span>
@@ -226,6 +227,9 @@
 
       <h3 class="group-title">Herausforderungen</h3>
       <ul class="achievements" id="achievements-herausforderung"></ul>
+
+      <h3 class="group-title">Übungen</h3>
+      <ul class="achievements" id="achievements-uebung"></ul>
     </section>
 
     <!-- Statistik -->
@@ -342,6 +346,7 @@
         <div class="filter-row" id="exercise-filter" role="group" aria-label="Nach Kategorie filtern"></div>
 
         <p class="muted category-note" id="exercise-note" hidden></p>
+        <p class="exercise-feedback" id="exercise-feedback" role="status" hidden></p>
         <ul class="exercises" id="exercise-list"></ul>
       </section>
     </div>
@@ -376,6 +381,9 @@
 
         <h3 class="group-title">Herausforderungen</h3>
         <ul class="trophies" id="trophies-herausforderung"></ul>
+
+        <h3 class="group-title">Übungen</h3>
+        <ul class="trophies" id="trophies-uebung"></ul>
       </section>
     </div>
 

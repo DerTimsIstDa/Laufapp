@@ -13,7 +13,7 @@
  */
 const CACHE_PREFIX = 'laufapp-';
 
-const CACHE_VERSION = `${CACHE_PREFIX}v22`;
+const CACHE_VERSION = `${CACHE_PREFIX}v23`;
 
 const APP_SHELL = [
   './',
@@ -33,6 +33,7 @@ const APP_SHELL = [
   './js/lock.js',
   './js/history.js',
   './js/exercises.js',
+  './js/exercise-log.js',
   './js/storage.js',
   './manifest.json',
   './icons/icon.svg',

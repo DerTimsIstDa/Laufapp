@@ -14,6 +14,7 @@
 import { evaluateAchievements, achievementXp } from './achievements.js';
 import { totalXpFromRuns, levelForXp } from './xp.js';
 import { titleForLevel } from './titles.js';
+import { exerciseXp, normalizeEntries } from './exercise-log.js';
 
 /**
  * Spielt die Läufe chronologisch durch und liefert nach jedem Lauf den Stand.
@@ -26,22 +27,33 @@ import { titleForLevel } from './titles.js';
  * @param {import('./storage.js').Run[]} runs
  * @returns {{ date: string, unlocked: string[], level: number, totalXp: number }[]}
  */
-export function replayHistory(runs) {
-  if (!Array.isArray(runs) || runs.length === 0) return [];
+export function replayHistory(runs, exerciseLog = []) {
+  const laeufe = Array.isArray(runs) ? runs : [];
+  const uebungen = normalizeEntries(exerciseLog);
+  if (laeufe.length === 0 && uebungen.length === 0) return [];
 
-  const chronological = [...runs].sort((a, b) =>
-    a.date < b.date ? -1 : a.date > b.date ? 1 : 0
-  );
+  // Beide Ereignisarten in eine Zeitachse. Am selben Tag kommen Läufe zuerst –
+  // die Reihenfolge innerhalb eines Tages ändert nur, welcher Eintrag als
+  // Auslöser gilt, nicht ob etwas freigeschaltet wird.
+  const ereignisse = [
+    ...laeufe.map((run) => ({ date: run.date, kind: 'run', item: run })),
+    ...uebungen.map((entry) => ({ date: entry.date, kind: 'exercise', item: entry })),
+  ].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.kind === b.kind ? 0 : a.kind === 'run' ? -1 : 1));
 
+  const laufeBisher = [];
+  const uebungenBisher = [];
   const steps = [];
 
-  for (let index = 0; index < chronological.length; index++) {
-    const bisher = chronological.slice(0, index + 1);
-    const achievements = evaluateAchievements(bisher);
-    const totalXp = totalXpFromRuns(bisher) + achievementXp(achievements);
+  for (const ereignis of ereignisse) {
+    if (ereignis.kind === 'run') laufeBisher.push(ereignis.item);
+    else uebungenBisher.push(ereignis.item);
+
+    const achievements = evaluateAchievements(laufeBisher, uebungenBisher);
+    const totalXp =
+      totalXpFromRuns(laufeBisher) + exerciseXp(uebungenBisher) + achievementXp(achievements);
 
     steps.push({
-      date: chronological[index].date,
+      date: ereignis.date,
       unlocked: achievements.filter((a) => a.unlocked).map((a) => a.id),
       level: levelForXp(totalXp),
       totalXp,
@@ -55,10 +67,10 @@ export function replayHistory(runs) {
  * Freischaltdatum je Achievement.
  * @returns {Map<string, string>} id -> ISO-Datum des Laufs, der es auslöste
  */
-export function achievementUnlockDates(runs) {
+export function achievementUnlockDates(runs, exerciseLog = []) {
   const daten = new Map();
 
-  for (const step of replayHistory(runs)) {
+  for (const step of replayHistory(runs, exerciseLog)) {
     for (const id of step.unlocked) {
       if (!daten.has(id)) daten.set(id, step.date);
     }
@@ -75,11 +87,11 @@ export function achievementUnlockDates(runs) {
  *
  * @returns {{ title: string, level: number, date: ?string }[]}
  */
-export function titleHistory(runs) {
+export function titleHistory(runs, exerciseLog = []) {
   const erreicht = [{ title: titleForLevel(1), level: 1, date: null }];
   let hoechstesLevel = 1;
 
-  for (const step of replayHistory(runs)) {
+  for (const step of replayHistory(runs, exerciseLog)) {
     if (step.level <= hoechstesLevel) continue;
 
     // Ein einzelner Lauf kann mehrere Stufen auf einmal überspringen.

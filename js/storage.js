@@ -8,6 +8,7 @@
  */
 
 const STORAGE_KEY = 'laufapp.runs.v1';
+const EXERCISE_KEY = 'laufapp.exercises.v1';
 
 /**
  * `timeOfDay` ("HH:MM") und `durationMinutes` sind optional. Sie werden nur
@@ -123,6 +124,72 @@ export function replaceRuns(nextRuns) {
   const next = [...nextRuns].sort(byDateDesc);
   saveRuns(next);
   return next;
+}
+
+/* ------------------------------------------------- Erledigte Übungen ---- */
+
+/**
+ * Eigene Datenstruktur neben den Läufen – sie hat nichts mit Distanzen zu tun
+ * und soll die Lauf-Liste nicht aufblähen.
+ *
+ * @typedef {import('./exercise-log.js').ExerciseEntry} ExerciseEntry
+ * @returns {ExerciseEntry[]} älteste zuerst
+ */
+export function loadExerciseLog() {
+  let raw;
+  try {
+    raw = localStorage.getItem(EXERCISE_KEY);
+  } catch {
+    return [];
+  }
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(isValidEntry) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** @param {ExerciseEntry[]} entries */
+export function saveExerciseLog(entries) {
+  try {
+    localStorage.setItem(EXERCISE_KEY, JSON.stringify(entries));
+  } catch (err) {
+    console.error('Übungen konnten nicht gespeichert werden:', err);
+  }
+}
+
+/**
+ * Hängt eine erledigte Übung an. Mehrfach am selben Tag ist erlaubt – der
+ * Zähler läuft weiter, die XP-Grenze zieht exercise-log.js.
+ *
+ * @returns {ExerciseEntry[]}
+ */
+export function addExerciseEntry(entries, { exerciseId, date, at }) {
+  const entry = { id: createId(), exerciseId, date, at: at ?? new Date().toISOString() };
+  const next = [...entries, entry];
+
+  saveExerciseLog(next);
+  return next;
+}
+
+/** Ersetzt den ganzen Bestand – für den Import. */
+export function replaceExerciseLog(entries) {
+  const next = [...entries];
+  saveExerciseLog(next);
+  return next;
+}
+
+function isValidEntry(entry) {
+  return (
+    entry !== null &&
+    typeof entry === 'object' &&
+    typeof entry.exerciseId === 'string' &&
+    entry.exerciseId !== '' &&
+    typeof entry.date === 'string'
+  );
 }
 
 function isValidRun(run) {

@@ -49,10 +49,23 @@ import {
   filterExercises,
   countByCategory,
 } from './exercises.js';
-import { loadRuns, addRun, updateRun, removeRun, replaceRuns } from './storage.js';
+import {
+  loadRuns, addRun, updateRun, removeRun, replaceRuns,
+  loadExerciseLog, addExerciseEntry, replaceExerciseLog,
+} from './storage.js';
+import {
+  exerciseXp,
+  countsByExercise,
+  awardsXp,
+  doneOnDay,
+  XP_PER_EXERCISE,
+} from './exercise-log.js';
 
 /** @type {import('./storage.js').Run[]} */
 let runs = [];
+
+/** @type {import('./exercise-log.js').ExerciseEntry[]} */
+let exerciseLog = [];
 
 /** IDs der zuletzt gerenderten Achievements – für die Freischalt-Meldung. */
 let unlockedIds = new Set();
@@ -161,6 +174,7 @@ const el = {
   achievementLists: {
     meilenstein: document.getElementById('achievements-meilenstein'),
     herausforderung: document.getElementById('achievements-herausforderung'),
+    uebung: document.getElementById('achievements-uebung'),
   },
 
   tabbar: document.getElementById('tabbar'),
@@ -176,6 +190,8 @@ const el = {
   exerciseFilter: document.getElementById('exercise-filter'),
   exerciseList: document.getElementById('exercise-list'),
   exerciseNote: document.getElementById('exercise-note'),
+  exerciseFeedback: document.getElementById('exercise-feedback'),
+  exerciseXp: document.getElementById('exercise-xp'),
 
   trophyCount: document.getElementById('trophy-count'),
   trophyTotal: document.getElementById('trophy-total'),
@@ -183,6 +199,7 @@ const el = {
   trophyLists: {
     meilenstein: document.getElementById('trophies-meilenstein'),
     herausforderung: document.getElementById('trophies-herausforderung'),
+    uebung: document.getElementById('trophies-uebung'),
   },
 
   profileTitleName: document.getElementById('profile-title-name'),
@@ -232,6 +249,7 @@ init();
 
 function init() {
   runs = loadRuns();
+  exerciseLog = loadExerciseLog();
   el.date.value = todayIso();
 
   el.form.addEventListener('submit', handleSubmit);
@@ -338,11 +356,45 @@ function renderExercises() {
 
   const uebungen = filterExercises(exerciseCategory);
   const nummeriert = Boolean(kategorie?.ordered);
+  const zaehler = countsByExercise(exerciseLog);
+  const heute = todayIso();
 
   el.exerciseList.classList.toggle('ordered', nummeriert);
   el.exerciseList.replaceChildren(
-    ...uebungen.map((uebung, index) => createExerciseCard(uebung, nummeriert ? index + 1 : null))
+    ...uebungen.map((uebung, index) =>
+      createExerciseCard(uebung, nummeriert ? index + 1 : null, {
+        anzahl: zaehler.get(uebung.id) ?? 0,
+        heuteErledigt: doneOnDay(exerciseLog, uebung.id, heute),
+      })
+    )
   );
+}
+
+/**
+ * Übung abhaken. Der Zähler läuft immer weiter, XP gibt es nur einmal je
+ * Übung und Kalendertag – sonst liesse sich das Level durch Dauerklicken
+ * hochtreiben.
+ */
+function handleExerciseDone(exercise) {
+  const heute = todayIso();
+  const bringtXp = awardsXp(exerciseLog, exercise.id, heute);
+
+  exerciseLog = addExerciseEntry(exerciseLog, { exerciseId: exercise.id, date: heute });
+
+  showExerciseFeedback(
+    bringtXp
+      ? `${exercise.name} erledigt · +${XP_PER_EXERCISE} XP`
+      : `${exercise.name} erledigt · heute schon gezählt, XP gibt es morgen wieder`,
+    bringtXp
+  );
+
+  render({ announceUnlocks: true });
+}
+
+function showExerciseFeedback(text, positiv) {
+  el.exerciseFeedback.textContent = text;
+  el.exerciseFeedback.className = positiv ? 'exercise-feedback earned' : 'exercise-feedback';
+  el.exerciseFeedback.hidden = false;
 }
 
 function renderExerciseFilter() {
@@ -377,9 +429,9 @@ function renderExerciseFilter() {
   );
 }
 
-function createExerciseCard(exercise, position) {
+function createExerciseCard(exercise, position, { anzahl, heuteErledigt }) {
   const karte = document.createElement('li');
-  karte.className = 'exercise';
+  karte.className = heuteErledigt ? 'exercise done-today' : 'exercise';
 
   const kopf = document.createElement('div');
   kopf.className = 'exercise-head';
@@ -401,13 +453,41 @@ function createExerciseCard(exercise, position) {
 
   karte.append(kopf, anleitung);
 
+  const fuss = document.createElement('div');
+  fuss.className = 'exercise-foot';
+
+  const links = document.createElement('div');
+  links.className = 'exercise-meta';
+
   // Ohne Filter ist nicht ersichtlich, wohin eine Übung gehört.
   if (exerciseCategory === ALL_CATEGORIES) {
     const marke = document.createElement('span');
     marke.className = 'exercise-tag';
     marke.textContent = findCategory(exercise.category)?.label ?? exercise.category;
-    karte.append(marke);
+    links.append(marke);
   }
+
+  const zaehler = document.createElement('span');
+  zaehler.className = 'exercise-count';
+  zaehler.textContent = anzahl === 0 ? 'noch nie gemacht' : `${anzahl}× gemacht`;
+  links.append(zaehler);
+
+  if (heuteErledigt) {
+    const heute = document.createElement('span');
+    heute.className = 'exercise-today';
+    heute.textContent = 'heute erledigt';
+    links.append(heute);
+  }
+
+  const knopf = document.createElement('button');
+  knopf.type = 'button';
+  knopf.className = heuteErledigt ? 'secondary small' : 'small';
+  knopf.textContent = 'Erledigt';
+  knopf.setAttribute('aria-label', `${exercise.name} als erledigt eintragen`);
+  knopf.addEventListener('click', () => handleExerciseDone(exercise));
+
+  fuss.append(links, knopf);
+  karte.append(fuss);
 
   return karte;
 }
@@ -415,8 +495,8 @@ function createExerciseCard(exercise, position) {
 /* -------------------------------------------------------------- Trophäen */
 
 function renderTrophies() {
-  const achievements = evaluateAchievements(runs);
-  const daten = achievementUnlockDates(runs);
+  const achievements = evaluateAchievements(runs, exerciseLog);
+  const daten = achievementUnlockDates(runs, exerciseLog);
   const freigeschaltet = achievements.filter((a) => a.unlocked);
 
   el.trophyCount.textContent = freigeschaltet.length;
@@ -498,8 +578,8 @@ function createTrophyProgress(progress) {
 /* ---------------------------------------------------------------- Profil */
 
 function renderProfile() {
-  const achievements = evaluateAchievements(runs);
-  const gesamtXp = totalXpFromRuns(runs) + achievementXp(achievements);
+  const achievements = evaluateAchievements(runs, exerciseLog);
+  const gesamtXp = totalXpFromRuns(runs) + exerciseXp(exerciseLog) + achievementXp(achievements);
   const progress = getProgress(gesamtXp);
   const upcoming = nextTitle(progress.level);
 
@@ -515,7 +595,7 @@ function renderProfile() {
 }
 
 function renderTitleHistory(currentLevel) {
-  const verlauf = titleHistory(runs);
+  const verlauf = titleHistory(runs, exerciseLog);
   const aktueller = titleForLevel(currentLevel);
 
   el.titleHistory.replaceChildren(
@@ -891,7 +971,7 @@ function handleExport() {
     return showDataError('Es gibt noch keine Läufe zum Exportieren.');
   }
 
-  const blob = new Blob([serializeExport(runs)], { type: 'application/json' });
+  const blob = new Blob([serializeExport(runs, { exerciseLog })], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
 
   const link = document.createElement('a');
@@ -927,7 +1007,9 @@ async function handleImportFile(event) {
 }
 
 function buildImportSummary(result) {
-  const found = `${result.runs.length} ${result.runs.length === 1 ? 'Lauf' : 'Läufe'} gefunden`;
+  const uebungen = result.exerciseLog?.length ?? 0;
+  const mitUebungen = uebungen > 0 ? ` und ${uebungen} erledigte Übungen` : '';
+  const found = `${result.runs.length} ${result.runs.length === 1 ? 'Lauf' : 'Läufe'}${mitUebungen} gefunden`;
   const skipped =
     result.skipped.length > 0
       ? `, ${result.skipped.length} unlesbare übersprungen`
@@ -944,10 +1026,12 @@ function handleImportApply() {
   if (!pendingImport) return;
 
   const imported = pendingImport.runs;
+  const importierteUebungen = pendingImport.exerciseLog ?? [];
   cancelImport();
   stopEditing();
 
   runs = replaceRuns(imported);
+  exerciseLog = replaceExerciseLog(importierteUebungen);
 
   // Ohne Freischalt-Meldung: nach einem Import wäre sie eine Aufzählung
   // sämtlicher Achievements statt einer Neuigkeit.
@@ -1143,12 +1227,13 @@ function setRestInert(inert) {
 /* --------------------------------------------------------------- Anzeige */
 
 function render({ announceUnlocks }) {
-  const achievements = evaluateAchievements(runs);
+  const achievements = evaluateAchievements(runs, exerciseLog);
   const runXp = totalXpFromRuns(runs);
+  const uebungsXp = exerciseXp(exerciseLog);
   const bonusXp = achievementXp(achievements);
-  const progress = getProgress(runXp + bonusXp);
+  const progress = getProgress(runXp + uebungsXp + bonusXp);
 
-  renderProgress(progress, runXp, bonusXp);
+  renderProgress(progress, runXp, uebungsXp, bonusXp);
   renderStats();
   renderAchievements(achievements, announceUnlocks);
   renderDetail();
@@ -1158,6 +1243,7 @@ function render({ announceUnlocks }) {
   // Umschalten ohnehin neu gebaut.
   if (activeView === 'trophies') renderTrophies();
   if (activeView === 'profile') renderProfile();
+  if (activeView === 'exercises') renderExercises();
 }
 
 /* ------------------------------------------------------------- Statistik */
@@ -1345,7 +1431,7 @@ function clearTrackError() {
   el.trackError.hidden = true;
 }
 
-function renderProgress(progress, runXp, bonusXp) {
+function renderProgress(progress, runXp, uebungsXp, bonusXp) {
   const percent = Math.min(100, Math.max(0, progress.progressPercent));
   const upcoming = nextTitle(progress.level);
 
@@ -1362,6 +1448,7 @@ function renderProgress(progress, runXp, bonusXp) {
   el.nextLevel.textContent = progress.level + 1;
 
   el.runXp.textContent = numberFormat.format(runXp);
+  el.exerciseXp.textContent = numberFormat.format(uebungsXp);
   el.bonusXp.textContent = numberFormat.format(bonusXp);
   el.nextTitle.textContent = upcoming.title;
   el.nextTitleLevel.textContent = upcoming.level;

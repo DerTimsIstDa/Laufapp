@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 
 import { ACHIEVEMENTS, buildRunStats, evaluateAchievements, achievementXp } from '../js/achievements.js';
 import { getProgress, totalXpFromRuns } from '../js/xp.js';
-import { makeRun } from './helpers.mjs';
+import { CATEGORIES, EXERCISES } from '../js/exercises.js';
+import { makeRun, day } from './helpers.mjs';
 
 /** IDs aller freigeschalteten Achievements, alphabetisch. */
 const unlockedIds = (runs) =>
@@ -34,7 +35,7 @@ describe('Definitionen', () => {
       assert.equal(typeof achievement.check, 'function', `${achievement.id}: keine Prüfung`);
       assert.ok(achievement.xp > 0, `${achievement.id}: keine XP`);
       assert.ok(
-        ['meilenstein', 'herausforderung'].includes(achievement.category),
+        ['meilenstein', 'herausforderung', 'uebung'].includes(achievement.category),
         `${achievement.id}: unbekannte Kategorie`
       );
     }
@@ -209,20 +210,100 @@ describe('Zusammenspiel mit dem XP-System', () => {
   });
 });
 
-describe('Vollständigkeit', () => {
-  test('ein ausreichend langes Laufjahr schaltet alle 13 frei', () => {
-    const runs = [
-      makeRun(0, 5, { timeOfDay: '06:00', durationMinutes: 30 }),
-      ...Array.from({ length: 40 }, (_, i) => makeRun(i + 1, 13, { timeOfDay: '22:00' })),
-      makeRun(41, 5, { durationMinutes: 25 }),
-      makeRun(60, 30),
-      ...Array.from({ length: 60 }, (_, i) => makeRun(200 + i * 100, 20)),
-    ];
+describe('Übungs-Achievements', () => {
+  const eintrag = (exerciseId, date, n = 0) => ({ id: `e${n}`, exerciseId, date });
+  const nUebungen = (count) =>
+    Array.from({ length: count }, (_, i) => eintrag('kraft-plank', day(i), i));
 
-    assert.ok(runs.length >= 100, 'Szenario muss Alter Hase erreichen');
-    assert.deepEqual(unlockedIds(runs), ACHIEVEMENTS.map((a) => a.id).sort());
+  /** Freigeschaltete Ids bei gegebenem Übungsprotokoll, ohne Läufe. */
+  const mitUebungen = (log) =>
+    evaluateAchievements([], log).filter((a) => a.unlocked).map((a) => a.id).sort();
+
+  test('ohne Übungen ist keines davon frei', () => {
+    assert.deepEqual(mitUebungen([]), []);
+  });
+
+  test('greifen an ihren Schwellen', () => {
+    for (const [id, schwelle] of [['erste-uebung', 1], ['dranbleiber', 10], ['uebungsroutine', 50]]) {
+      assert.equal(mitUebungen(nUebungen(schwelle - 1)).includes(id), false, `${id} zu früh`);
+      assert.equal(mitUebungen(nUebungen(schwelle)).includes(id), true, `${id} greift nicht`);
+    }
+  });
+
+  test('der Zähler zählt Mehrfachnennungen am selben Tag mit', () => {
+    // Zehnmal dieselbe Übung am selben Tag: ein XP-Tag, aber zehn Erledigungen.
+    const log = Array.from({ length: 10 }, (_, i) => eintrag('kraft-plank', day(0), i));
+    assert.equal(mitUebungen(log).includes('dranbleiber'), true);
+  });
+
+  test('Vielseitig braucht alle fünf Kategorien', () => {
+    const ids = CATEGORIES.map((k) => EXERCISES.find((e) => e.category === k.id).id);
+
+    const vier = ids.slice(0, 4).map((id, i) => eintrag(id, day(i), i));
+    assert.equal(mitUebungen(vier).includes('vielseitig'), false, 'vier reichen nicht');
+
+    const fuenf = ids.map((id, i) => eintrag(id, day(i), i));
+    assert.equal(mitUebungen(fuenf).includes('vielseitig'), true);
+  });
+
+  test('Fortschritt wird für alle vier gemeldet', () => {
+    const bewertet = evaluateAchievements([], nUebungen(3));
+
+    for (const id of ['erste-uebung', 'dranbleiber', 'uebungsroutine', 'vielseitig']) {
+      const a = bewertet.find((x) => x.id === id);
+      assert.ok(a.progress, `${id} ohne Fortschritt`);
+      assert.ok(a.progress.target > 0);
+    }
+  });
+
+  test('Läufe schalten keine Übungs-Achievements frei', () => {
+    const nurLaeufe = evaluateAchievements(spacedRuns(60), []).filter((a) => a.unlocked).map((a) => a.id);
+    assert.equal(nurLaeufe.some((id) => id.includes('uebung')), false);
+    assert.equal(nurLaeufe.includes('dranbleiber'), false);
+    assert.equal(nurLaeufe.includes('vielseitig'), false);
+  });
+
+  test('Übungen schalten keine Lauf-Achievements frei', () => {
+    assert.deepEqual(mitUebungen(nUebungen(60)).filter((id) => id === 'erste-meile'), []);
+  });
+
+  test('das Protokoll ist wahlfrei – alter Aufruf bleibt gültig', () => {
+    assert.doesNotThrow(() => evaluateAchievements([makeRun(0, 5)]));
+  });
+});
+
+describe('Vollständigkeit', () => {
+  const langesLaufjahr = [
+    makeRun(0, 5, { timeOfDay: '06:00', durationMinutes: 30 }),
+    ...Array.from({ length: 40 }, (_, i) => makeRun(i + 1, 13, { timeOfDay: '22:00' })),
+    makeRun(41, 5, { durationMinutes: 25 }),
+    makeRun(60, 30),
+    ...Array.from({ length: 60 }, (_, i) => makeRun(200 + i * 100, 20)),
+  ];
+
+  /** 50 Erledigungen, verteilt über alle fünf Kategorien. */
+  const vieleUebungen = Array.from({ length: 50 }, (_, i) => {
+    const kategorie = CATEGORIES[i % CATEGORIES.length];
+    const uebung = EXERCISES.find((e) => e.category === kategorie.id);
+    return { id: `u${i}`, exerciseId: uebung.id, date: day(i) };
+  });
+
+  test('Läufe allein schalten alle Lauf-Achievements frei', () => {
+    const laufIds = ACHIEVEMENTS.filter((a) => a.category !== 'uebung').map((a) => a.id).sort();
+
+    assert.ok(langesLaufjahr.length >= 100, 'Szenario muss Alter Hase erreichen');
+    assert.deepEqual(unlockedIds(langesLaufjahr), laufIds);
+  });
+
+  test('Läufe und Übungen zusammen schalten alles frei', () => {
+    const alle = evaluateAchievements(langesLaufjahr, vieleUebungen);
+
+    assert.deepEqual(
+      alle.filter((a) => a.unlocked).map((a) => a.id).sort(),
+      ACHIEVEMENTS.map((a) => a.id).sort()
+    );
     assert.equal(
-      achievementXp(evaluateAchievements(runs)),
+      achievementXp(alle),
       ACHIEVEMENTS.reduce((sum, a) => sum + a.xp, 0)
     );
   });

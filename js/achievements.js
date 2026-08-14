@@ -10,6 +10,8 @@
  * ergänzen. Sonst muss nichts angefasst werden.
  */
 
+import { buildExerciseStats } from './exercise-log.js';
+
 /** Distanzen, auf denen persönliche Rekorde gezählt werden (km). */
 const PR_DISTANCES_KM = [5, 10];
 
@@ -22,7 +24,7 @@ const PR_TOLERANCE_KM = 0.5;
  * @property {string} name
  * @property {string} description  Bedingung in einem Satz
  * @property {number} xp           Bonus-XP beim Freischalten
- * @property {'meilenstein'|'herausforderung'} category
+ * @property {'meilenstein'|'herausforderung'|'uebung'} category
  * @property {(stats: RunStats) => boolean} check
  * @property {(stats: RunStats) => {current: number, target: number, unit: string}} [progress]
  */
@@ -148,6 +150,48 @@ export const ACHIEVEMENTS = [
     category: 'herausforderung',
     check: (s) => s.hasLongRunBreakthrough,
   },
+
+  // --- Übungen ------------------------------------------------------------
+  {
+    id: 'erste-uebung',
+    name: 'Erste Übung',
+    description: 'Eine Übung als erledigt abgehakt.',
+    xp: 10,
+    category: 'uebung',
+    check: (s) => s.exerciseCompletions >= 1,
+    progress: (s) => ({ current: s.exerciseCompletions, target: 1, unit: 'Übungen' }),
+  },
+  {
+    id: 'dranbleiber',
+    name: 'Dranbleiber',
+    description: '10 Übungen insgesamt erledigt.',
+    xp: 30,
+    category: 'uebung',
+    check: (s) => s.exerciseCompletions >= 10,
+    progress: (s) => ({ current: s.exerciseCompletions, target: 10, unit: 'Übungen' }),
+  },
+  {
+    id: 'uebungsroutine',
+    name: 'Übungsroutine',
+    description: '50 Übungen insgesamt erledigt.',
+    xp: 100,
+    category: 'uebung',
+    check: (s) => s.exerciseCompletions >= 50,
+    progress: (s) => ({ current: s.exerciseCompletions, target: 50, unit: 'Übungen' }),
+  },
+  {
+    id: 'vielseitig',
+    name: 'Vielseitig',
+    description: 'Aus jeder der fünf Kategorien mindestens eine Übung gemacht.',
+    xp: 50,
+    category: 'uebung',
+    check: (s) => s.exerciseCategoriesDone >= s.exerciseCategoryTotal,
+    progress: (s) => ({
+      current: s.exerciseCategoriesDone,
+      target: s.exerciseCategoryTotal,
+      unit: 'Kategorien',
+    }),
+  },
 ];
 
 /**
@@ -243,13 +287,14 @@ export function buildRunStats(runs) {
 }
 
 /**
- * Wertet alle Achievements gegen die Lauf-Liste aus.
+ * Wertet alle Achievements gegen Läufe und erledigte Übungen aus.
  *
  * @param {import('./storage.js').Run[]} runs
+ * @param {import('./exercise-log.js').ExerciseEntry[]} [exerciseLog]
  * @returns {(Achievement & { unlocked: boolean, progress: ?{current: number, target: number, unit: string} })[]}
  */
-export function evaluateAchievements(runs) {
-  const stats = buildRunStats(runs);
+export function evaluateAchievements(runs, exerciseLog = []) {
+  const stats = { ...buildRunStats(runs), ...buildExerciseStats(exerciseLog) };
 
   return ACHIEVEMENTS.map((achievement) => ({
     ...achievement,

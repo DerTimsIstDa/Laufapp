@@ -134,6 +134,34 @@ Zwei Eigenheiten:
 Die Angaben sind allgemeine Richtwerte aus dem Lauftraining, keine
 medizinische Beratung – das steht auch in der App.
 
+### Übungen abhaken
+
+Jede Übung hat einen **Erledigt**-Knopf. Ein Tipp legt einen Eintrag an
+(Übungs-Id, Kalendertag, Zeitstempel) – eigene Datenstruktur unter
+`laufapp.exercises.v1`, getrennt von den Läufen.
+
+Dabei laufen **zwei Zahlen unabhängig voneinander**, und die darf man nicht
+verwechseln:
+
+- Der **Zähler** („12× gemacht") wächst bei jedem Tipp, auch mehrfach am
+  selben Tag.
+- **XP gibt es nur einmal je Übung und Kalendertag**, 3 XP pro Paar. Sonst
+  liesse sich das Level durch Dauerklicken hochtreiben. Der zweite Tipp am
+  selben Tag sagt das auch offen: „heute schon gezählt, XP gibt es morgen
+  wieder".
+
+Die Übungs-XP fliessen wie Lauf- und Achievement-XP ins Level ein. Die
+Aufteilung steht im Fortschrittsbereich.
+
+Vier Achievements in der Kategorie **Übungen**: Erste Übung (1), Dranbleiber
+(10), Übungsroutine (50) und Vielseitig – letzteres verlangt mindestens eine
+Übung aus **jeder** der fünf Kategorien, vier reichen nicht.
+
+Gerechnet wird in `js/exercise-log.js`, pur und ohne DOM. Einträge zu
+Übungen, die es in der Bibliothek nicht mehr gibt, zählen weiter mit, tragen
+aber zu keiner Kategorie bei – sonst ginge der Zähler nach einer Änderung an
+der Bibliothek verloren.
+
 Die beiden neuen Bereiche werden erst beim Ansehen berechnet, nicht bei jeder
 Änderung. Grund ist `js/history.js`.
 
@@ -239,7 +267,7 @@ Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 node --test
 ```
 
-324 Tests im Ordner `tests/`, ausgeführt vom eingebauten Testrunner von Node —
+367 Tests im Ordner `tests/`, ausgeführt vom eingebauten Testrunner von Node —
 keine Abhängigkeiten, kein Framework, nichts zu installieren.
 
 | Datei | prüft |
@@ -258,6 +286,7 @@ keine Abhängigkeiten, kein Framework, nichts zu installieren.
 | `tests/lock.test.mjs` | Halte-Fortschritt, Sperrregeln, Freigabe im Notfall |
 | `tests/history.test.mjs` | Freischaltdaten, Titel-Historie, Monotonie-Annahme |
 | `tests/exercises.test.mjs` | Vollständigkeit der Übungsdaten, Filter, Zählung |
+| `tests/exercise-log.test.mjs` | Tageslimit, Zähler, Kategorien für Vielseitig |
 | `tests/styles.test.mjs` | CSS- und Markup-Regeln, die Node nicht ausführen kann |
 
 Getestet wird das Verhalten an den **Grenzen**: 4 gegen 5 Läufe, 49,9 gegen
@@ -404,6 +433,7 @@ js/pwa.js           Installationshinweis, eigene Caches erkennen – ebenfalls p
 js/lock.js          Tastensperre: Halte-Fortschritt und Sperrregeln – ebenfalls pur
 js/history.js       Freischaltdaten und Titel-Historie – ebenfalls pur
 js/exercises.js     Übungsbibliothek und Filter – feste Daten, ebenfalls pur
+js/exercise-log.js  Erledigte Übungen: Zähler, Tageslimit, XP – ebenfalls pur
 js/tracker.js       Live-Aufzeichnung: watchPosition, Pausen, Wake Lock
 js/storage.js       Laden/Speichern/Ändern der Läufe im localStorage
 js/app.js           Formular, Rendering, Verdrahtung
