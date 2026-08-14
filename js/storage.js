@@ -76,6 +76,31 @@ export function addRun(runs, { distanceKm, date, timeOfDay, durationMinutes, sou
 }
 
 /**
+ * Überschreibt einen Lauf mit geprüften Feldern und gibt die neue Liste zurück.
+ *
+ * Der Lauf wird komplett neu aufgebaut, damit geleerte Felder auch wirklich
+ * verschwinden. `id` und `source` bleiben erhalten: ein aufgezeichneter Lauf
+ * bleibt als GPS-Lauf erkennbar, auch wenn die Distanz nachträglich korrigiert
+ * wurde.
+ *
+ * @param {Run[]} runs
+ * @returns {Run[]} unverändert, falls es die id nicht gibt
+ */
+export function updateRun(runs, id, { distanceKm, date, timeOfDay, durationMinutes }) {
+  const existing = runs.find((run) => run.id === id);
+  if (!existing) return runs;
+
+  const updated = { id, distanceKm, date };
+  if (timeOfDay) updated.timeOfDay = timeOfDay;
+  if (durationMinutes) updated.durationMinutes = durationMinutes;
+  if (existing.source) updated.source = existing.source;
+
+  const next = runs.map((run) => (run.id === id ? updated : run)).sort(byDateDesc);
+  saveRuns(next);
+  return next;
+}
+
+/**
  * Entfernt einen Lauf und gibt die neue Liste zurück.
  * @param {Run[]} runs
  * @returns {Run[]}

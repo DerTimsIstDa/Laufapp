@@ -7,6 +7,7 @@
  *   titles.js       Titel zum Level
  *   geo.js          Streckenberechnung und Formatierung
  *   tracker.js      Live-Aufzeichnung über die Geolocation-API
+ *   validation.js   Prüfung der Eingaben
  *   storage.js      Persistenz
  */
 
@@ -15,13 +16,17 @@ import { evaluateAchievements, achievementXp } from './achievements.js';
 import { titleForLevel, nextTitle } from './titles.js';
 import { paceMinPerKm, formatDuration, formatPace } from './geo.js';
 import { createTracker } from './tracker.js';
-import { loadRuns, addRun, removeRun } from './storage.js';
+import { validateRun, firstErrorMessage } from './validation.js';
+import { loadRuns, addRun, updateRun, removeRun } from './storage.js';
 
 /** @type {import('./storage.js').Run[]} */
 let runs = [];
 
 /** IDs der zuletzt gerenderten Achievements – für die Freischalt-Meldung. */
 let unlockedIds = new Set();
+
+/** id des Laufs, der gerade im Formular bearbeitet wird; null = neuer Lauf. */
+let editingId = null;
 
 /** id des Laufs, für den die Löschrückfrage offen ist. */
 let pendingDeleteId = null;
@@ -51,7 +56,11 @@ const el = {
   trackStop: document.getElementById('track-stop'),
   trackDiscard: document.getElementById('track-discard'),
 
+  formCard: document.getElementById('form-card'),
+  formTitle: document.getElementById('form-title'),
   form: document.getElementById('run-form'),
+  formSubmit: document.getElementById('form-submit'),
+  formCancel: document.getElementById('form-cancel'),
   distance: document.getElementById('distance'),
   date: document.getElementById('date'),
   time: document.getElementById('time'),
@@ -93,6 +102,7 @@ function init() {
   el.date.value = todayIso();
 
   el.form.addEventListener('submit', handleSubmit);
+  el.formCancel.addEventListener('click', stopEditing);
   el.runsList.addEventListener('click', handleListClick);
 
   el.trackStart.addEventListener('click', handleTrackStart);
@@ -119,41 +129,35 @@ function init() {
 function handleSubmit(event) {
   event.preventDefault();
 
-  const distanceKm = Number.parseFloat(el.distance.value.replace(',', '.'));
-  const date = el.date.value;
-  const timeOfDay = el.time.value;
-  const durationRaw = el.duration.value.trim();
-  const durationMinutes = durationRaw === '' ? null : Number.parseFloat(durationRaw);
-
-  if (!Number.isFinite(distanceKm) || distanceKm <= 0) {
-    return showError('Bitte eine Distanz größer als 0 km eintragen.');
-  }
-  if (distanceKm > 1000) {
-    return showError('Das sind mehr als 1000 km – bitte prüfen.');
-  }
-  if (!date) {
-    return showError('Bitte ein Datum wählen.');
-  }
-  if (durationMinutes !== null && (!Number.isFinite(durationMinutes) || durationMinutes <= 0)) {
-    return showError('Die Dauer muss größer als 0 Minuten sein.');
-  }
-
-  clearError();
-  runs = addRun(runs, {
-    distanceKm,
-    date,
-    timeOfDay: timeOfDay || undefined,
-    durationMinutes: durationMinutes ?? undefined,
+  const result = validateRun({
+    distanceKm: el.distance.value,
+    date: el.date.value,
+    timeOfDay: el.time.value,
+    durationMinutes: el.duration.value,
   });
 
-  el.form.reset();
-  el.date.value = date; // Datum für den nächsten Eintrag beibehalten
-  el.distance.focus();
+  if (!result.ok) return showError(firstErrorMessage(result));
+
+  clearError();
+  const date = result.run.date;
+
+  if (editingId !== null) {
+    runs = updateRun(runs, editingId, result.run);
+    stopEditing();
+  } else {
+    runs = addRun(runs, result.run);
+    el.form.reset();
+    el.date.value = date; // Datum für den nächsten Eintrag beibehalten
+    el.distance.focus();
+  }
 
   render({ announceUnlocks: true });
 }
 
 function handleListClick(event) {
+  const editButton = event.target.closest('[data-edit-id]');
+  if (editButton) return startEditing(editButton.dataset.editId);
+
   const askButton = event.target.closest('[data-ask-delete-id]');
   if (askButton) {
     pendingDeleteId = askButton.dataset.askDeleteId;
@@ -171,9 +175,52 @@ function handleListClick(event) {
 
   const id = confirmButton.dataset.confirmDeleteId;
   pendingDeleteId = null;
+  if (editingId === id) stopEditing();
 
   runs = removeRun(runs, id);
   render({ announceUnlocks: false });
+}
+
+/* ------------------------------------------------------------ Bearbeiten */
+
+function startEditing(id) {
+  const run = runs.find((entry) => entry.id === id);
+  if (!run) return;
+
+  editingId = id;
+  pendingDeleteId = null;
+
+  el.distance.value = run.distanceKm;
+  el.date.value = run.date;
+  el.time.value = run.timeOfDay ?? '';
+  el.duration.value = run.durationMinutes ?? '';
+
+  clearError();
+  renderFormMode();
+  renderRuns();
+
+  el.formCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  el.distance.focus();
+}
+
+function stopEditing() {
+  editingId = null;
+
+  el.form.reset();
+  el.date.value = todayIso();
+
+  clearError();
+  renderFormMode();
+  renderRuns();
+}
+
+function renderFormMode() {
+  const editing = editingId !== null;
+
+  el.formTitle.textContent = editing ? 'Lauf bearbeiten' : 'Lauf von Hand eintragen';
+  el.formSubmit.textContent = editing ? 'Änderungen speichern' : 'Lauf speichern';
+  el.formCancel.hidden = !editing;
+  el.formCard.classList.toggle('editing', editing);
 }
 
 /* -------------------------------------------------------------- Tracking */
@@ -404,6 +451,7 @@ function renderRuns() {
 function createRunItem(run) {
   const item = document.createElement('li');
   item.className = 'run';
+  if (run.id === editingId) item.classList.add('editing');
 
   if (run.id === pendingDeleteId) return fillDeleteConfirm(item, run);
 
@@ -423,6 +471,13 @@ function createRunItem(run) {
   xp.className = 'run-xp';
   xp.textContent = `+${numberFormat.format(xpForDistance(run.distanceKm))} XP`;
 
+  const edit = document.createElement('button');
+  edit.type = 'button';
+  edit.className = 'icon-button';
+  edit.dataset.editId = run.id;
+  edit.textContent = '✎';
+  edit.setAttribute('aria-label', `Lauf vom ${formatDate(run.date)} bearbeiten`);
+
   const remove = document.createElement('button');
   remove.type = 'button';
   remove.className = 'icon-button';
@@ -430,7 +485,7 @@ function createRunItem(run) {
   remove.textContent = '×';
   remove.setAttribute('aria-label', `Lauf vom ${formatDate(run.date)} löschen`);
 
-  item.append(info, xp, remove);
+  item.append(info, xp, edit, remove);
   return item;
 }
 

@@ -41,6 +41,40 @@ export function pointNorth(meters, { accuracy = 10, seconds = 0 } = {}) {
 }
 
 /**
+ * localStorage im Arbeitsspeicher – Node hat von Haus aus keins.
+ * Muss am Ende jedes Tests mit restore() zurückgesetzt werden.
+ */
+export function installFakeLocalStorage(initial = null) {
+  const store = new Map();
+  if (initial !== null) store.set('laufapp.runs.v1', JSON.stringify(initial));
+
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    writable: true,
+    value: {
+      getItem: (key) => (store.has(key) ? store.get(key) : null),
+      setItem: (key, value) => store.set(key, String(value)),
+      removeItem: (key) => store.delete(key),
+      clear: () => store.clear(),
+    },
+  });
+
+  return {
+    /** Was tatsächlich im Speicher gelandet ist. */
+    read: (key = 'laufapp.runs.v1') => {
+      const raw = store.get(key);
+      return raw === undefined ? null : JSON.parse(raw);
+    },
+    restore() {
+      if (previous) Object.defineProperty(globalThis, 'localStorage', previous);
+      else delete globalThis.localStorage;
+    },
+  };
+}
+
+/**
  * Ersetzt navigator.geolocation durch eine steuerbare Attrappe.
  * Muss am Ende jedes Tests mit restore() zurückgesetzt werden.
  */

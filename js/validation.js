@@ -1,0 +1,130 @@
+/**
+ * Prüfung und Normalisierung von Lauf-Eingaben.
+ *
+ * Pur und ohne DOM: dieselbe Prüfung gilt für das Formular (neu und
+ * bearbeiten) und für jeden Eintrag aus einer Importdatei. Dadurch kann kein
+ * Weg in den Speicher an der Validierung vorbeiführen.
+ */
+
+export const MAX_DISTANCE_KM = 1000;
+export const MAX_DURATION_MINUTES = 1440;
+
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const TIME_OF_DAY = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+/**
+ * Zahl aus Eingabe lesen. Akzeptiert auch "5,4" aus deutschen Tastaturen.
+ * @returns {?number} null, wenn keine brauchbare Zahl drinsteht
+ */
+export function parseNumber(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value !== 'string') return null;
+
+  const normalized = value.trim().replace(',', '.');
+  if (normalized === '') return null;
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+/** "JJJJ-MM-TT" und ein real existierender Tag (der 30. Februar zählt nicht). */
+export function isValidIsoDate(value) {
+  if (typeof value !== 'string') return false;
+
+  const match = ISO_DATE.exec(value);
+  if (!match) return false;
+
+  const [, year, month, day] = match.map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+/** "HH:MM" von 00:00 bis 23:59. */
+export function isValidTimeOfDay(value) {
+  return typeof value === 'string' && TIME_OF_DAY.test(value);
+}
+
+/**
+ * Prüft eine Lauf-Eingabe und gibt sie normalisiert zurück.
+ *
+ * Die `id` bleibt bewusst außen vor – beim Anlegen vergibt sie der Speicher,
+ * beim Bearbeiten bleibt die alte, beim Import kommt sie aus der Datei.
+ *
+ * @param {unknown} input
+ * @returns {{ ok: true, run: object } | { ok: false, errors: {field: string, message: string}[] }}
+ */
+export function validateRun(input) {
+  if (input === null || typeof input !== 'object') {
+    return {
+      ok: false,
+      errors: [{ field: 'run', message: 'Das ist kein Lauf-Eintrag.' }],
+    };
+  }
+
+  const errors = [];
+
+  const distanceKm = parseNumber(input.distanceKm);
+  if (distanceKm === null) {
+    errors.push({ field: 'distanceKm', message: 'Bitte eine Distanz eintragen.' });
+  } else if (!(distanceKm > 0)) {
+    errors.push({ field: 'distanceKm', message: 'Die Distanz muss größer als 0 km sein.' });
+  } else if (distanceKm > MAX_DISTANCE_KM) {
+    errors.push({
+      field: 'distanceKm',
+      message: `Das sind mehr als ${MAX_DISTANCE_KM} km – bitte prüfen.`,
+    });
+  }
+
+  const date = typeof input.date === 'string' ? input.date.trim() : '';
+  if (date === '') {
+    errors.push({ field: 'date', message: 'Bitte ein Datum wählen.' });
+  } else if (!isValidIsoDate(date)) {
+    errors.push({ field: 'date', message: 'Das Datum muss im Format JJJJ-MM-TT vorliegen.' });
+  }
+
+  let timeOfDay;
+  if (isFilled(input.timeOfDay)) {
+    const candidate = String(input.timeOfDay).trim();
+    if (isValidTimeOfDay(candidate)) timeOfDay = candidate;
+    else errors.push({ field: 'timeOfDay', message: 'Die Uhrzeit muss im Format HH:MM vorliegen.' });
+  }
+
+  let durationMinutes;
+  if (isFilled(input.durationMinutes)) {
+    const candidate = parseNumber(input.durationMinutes);
+    if (candidate === null || !(candidate > 0)) {
+      errors.push({ field: 'durationMinutes', message: 'Die Dauer muss größer als 0 Minuten sein.' });
+    } else if (candidate > MAX_DURATION_MINUTES) {
+      errors.push({
+        field: 'durationMinutes',
+        message: `Das sind mehr als ${MAX_DURATION_MINUTES} Minuten – bitte prüfen.`,
+      });
+    } else {
+      durationMinutes = candidate;
+    }
+  }
+
+  if (errors.length > 0) return { ok: false, errors };
+
+  // Unbekannte Felder fallen hier absichtlich weg.
+  const run = { distanceKm, date };
+  if (timeOfDay) run.timeOfDay = timeOfDay;
+  if (durationMinutes) run.durationMinutes = durationMinutes;
+  if (input.source === 'gps' || input.source === 'manual') run.source = input.source;
+
+  return { ok: true, run };
+}
+
+/** Erste Fehlermeldung eines Ergebnisses – für die einzeilige Anzeige. */
+export function firstErrorMessage(result) {
+  return result.ok ? null : result.errors[0].message;
+}
+
+function isFilled(value) {
+  return value !== undefined && value !== null && String(value).trim() !== '';
+}

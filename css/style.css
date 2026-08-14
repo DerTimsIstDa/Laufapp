@@ -286,6 +286,18 @@ button.small {
   font-size: 0.85rem;
 }
 
+/* Formular im Bearbeiten-Modus */
+
+.form-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.card.editing {
+  border-color: var(--accent);
+}
+
 .unlock-notice {
   margin: 0.75rem 0 0;
   padding: 0.5rem 0.7rem;
@@ -422,6 +434,12 @@ button.small {
   color: var(--danger);
   border-color: var(--danger);
   filter: none;
+}
+
+.run.editing {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 0.35rem;
 }
 
 .run.confirming {
