@@ -93,7 +93,7 @@
     </section>
 
     <!-- Live-Tracking -->
-    <section class="card" aria-labelledby="tracking-title">
+    <section class="card" id="tracking-card" aria-labelledby="tracking-title">
       <h2 id="tracking-title">Lauf aufzeichnen</h2>
 
       <div class="tracking-readout" id="tracking-readout" aria-live="off">
@@ -115,11 +115,31 @@
         Bereit. Der Browser fragt beim Start nach der Standortfreigabe.
       </p>
 
-      <div class="tracking-buttons">
+      <div class="tracking-buttons" id="tracking-buttons">
         <button type="button" id="track-start">Start</button>
         <button type="button" id="track-pause" class="secondary" hidden>Pause</button>
         <button type="button" id="track-stop" class="secondary" hidden>Beenden</button>
         <button type="button" id="track-discard" class="ghost" hidden>Verwerfen</button>
+        <button type="button" id="track-lock" class="secondary" hidden>Sperren</button>
+      </div>
+
+      <!-- Tastensperre gegen Berührungen in der Hosentasche. -->
+      <div class="lock-panel" id="lock-panel" role="status" hidden>
+        <div class="lock-headline">
+          <svg class="lock-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="5" y="10.5" width="14" height="10" rx="2.5"/>
+            <path d="M8.5 10.5V7a3.5 3.5 0 0 1 7 0v3.5"/>
+          </svg>
+          <div class="lock-text">
+            <strong>Bedienung gesperrt</strong>
+            <span>Die Aufzeichnung läuft normal weiter.</span>
+          </div>
+        </div>
+
+        <button type="button" id="track-unlock" class="unlock-button">
+          <span class="unlock-fill" id="unlock-fill"></span>
+          <span class="unlock-label">2 Sekunden halten zum Entsperren</span>
+        </button>
       </div>
 
       <p class="error" id="track-error" role="alert" hidden></p>

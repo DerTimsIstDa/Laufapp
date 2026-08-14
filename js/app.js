@@ -12,6 +12,7 @@
  *   stats.js        Summen, Durchschnitte, Serien, Zeitreihen
  *   route.js        GPS-Strecke auf Zeichenflächen-Koordinaten
  *   pwa.js          Installationshinweis und Aktualisierung
+ *   lock.js         Tastensperre während der Aufzeichnung
  *   storage.js      Persistenz
  */
 
@@ -32,6 +33,13 @@ import {
   ownCacheNames,
   ownRegistrations,
 } from './pwa.js';
+import {
+  holdProgress,
+  isHoldComplete,
+  canLock,
+  controlsEnabled,
+  shouldReleaseLock,
+} from './lock.js';
 import { loadRuns, addRun, updateRun, removeRun, replaceRuns } from './storage.js';
 
 /** @type {import('./storage.js').Run[]} */
@@ -54,6 +62,15 @@ let chartRange = 'weeks';
 
 /** id des Laufs, dessen Detailansicht offen ist; null = zu. */
 let detailId = null;
+
+/** Tastensperre während der Aufzeichnung. */
+let locked = false;
+
+/** Zeitpunkt, seit dem der Entsperr-Knopf gehalten wird; null = nicht gehalten. */
+let unlockStartedAt = null;
+
+/** Laufender Takt der Entsperr-Anzeige. */
+let unlockFrame = null;
 
 const el = {
   level: document.getElementById('level'),
@@ -79,6 +96,11 @@ const el = {
   trackPause: document.getElementById('track-pause'),
   trackStop: document.getElementById('track-stop'),
   trackDiscard: document.getElementById('track-discard'),
+  trackingCard: document.getElementById('tracking-card'),
+  trackLock: document.getElementById('track-lock'),
+  trackUnlock: document.getElementById('track-unlock'),
+  lockPanel: document.getElementById('lock-panel'),
+  unlockFill: document.getElementById('unlock-fill'),
 
   formCard: document.getElementById('form-card'),
   formTitle: document.getElementById('form-title'),
@@ -182,6 +204,8 @@ function init() {
   el.trackPause.addEventListener('click', handleTrackPause);
   el.trackStop.addEventListener('click', handleTrackStop);
   el.trackDiscard.addEventListener('click', handleTrackDiscard);
+  bindUnlockHold();
+  el.trackLock.addEventListener('click', () => setLocked(true));
 
   if (!tracker.isSupported()) {
     el.trackStart.disabled = true;
@@ -651,6 +675,110 @@ function handleTrackDiscard() {
   el.trackStatus.textContent = 'Aufzeichnung verworfen.';
 }
 
+/* --------------------------------------------------------- Tastensperre */
+
+function setLocked(value) {
+  locked = value;
+  cancelUnlockHold();
+  renderTracking(tracker.getState());
+}
+
+/**
+ * Entsperren durch Halten. Eine Berührung in der Hosentasche wandert und
+ * dauert Millisekunden – zwei Sekunden am selben Punkt schafft sie nicht.
+ */
+function bindUnlockHold() {
+  el.trackUnlock.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+
+    // Der Zeiger soll am Knopf kleben, auch wenn der Finger leicht verrutscht.
+    // Schlägt das fehl, darf das Entsperren trotzdem nicht blockiert sein.
+    try {
+      el.trackUnlock.setPointerCapture?.(event.pointerId);
+    } catch {
+      /* ohne Fang geht es auch */
+    }
+
+    startUnlockHold();
+  });
+
+  el.trackUnlock.addEventListener('pointerup', releaseUnlockHold);
+  el.trackUnlock.addEventListener('pointercancel', cancelUnlockHold);
+  el.trackUnlock.addEventListener('pointerleave', cancelUnlockHold);
+
+  // Mit der Tastatur: Leertaste oder Enter gedrückt halten.
+  el.trackUnlock.addEventListener('keydown', (event) => {
+    if (event.repeat || (event.key !== ' ' && event.key !== 'Enter')) return;
+    event.preventDefault();
+    startUnlockHold();
+  });
+  el.trackUnlock.addEventListener('keyup', releaseUnlockHold);
+  el.trackUnlock.addEventListener('blur', cancelUnlockHold);
+}
+
+/**
+ * Getaktet statt über requestAnimationFrame: rAF steht still, sobald die
+ * Seite nicht gezeichnet wird. Beim Entsperren wäre das fatal – der Knopf
+ * würde sich nicht mehr füllen und die Sperre bliebe zu.
+ */
+const UNLOCK_TICK_MS = 40;
+
+function startUnlockHold() {
+  if (!locked || unlockStartedAt !== null) return;
+
+  unlockStartedAt = performance.now();
+  unlockFrame = setInterval(pollUnlockHold, UNLOCK_TICK_MS);
+  pollUnlockHold();
+}
+
+function pollUnlockHold() {
+  if (unlockStartedAt === null) return;
+
+  const now = performance.now();
+  el.unlockFill.style.width = `${holdProgress(unlockStartedAt, now) * 100}%`;
+
+  if (isHoldComplete(unlockStartedAt, now)) finishUnlock();
+}
+
+/**
+ * Loslassen. Falls der Takt zwischenzeitlich gedrosselt wurde, zählt hier
+ * noch die tatsächlich verstrichene Zeit – sonst hätte jemand lange genug
+ * gehalten und bliebe trotzdem gesperrt.
+ */
+function releaseUnlockHold() {
+  if (unlockStartedAt === null) return;
+
+  if (isHoldComplete(unlockStartedAt, performance.now())) finishUnlock();
+  else cancelUnlockHold();
+}
+
+function finishUnlock() {
+  setLocked(false);
+  el.trackStatus.textContent = 'Entsperrt.';
+}
+
+function cancelUnlockHold() {
+  unlockStartedAt = null;
+
+  if (unlockFrame !== null) {
+    clearInterval(unlockFrame);
+    unlockFrame = null;
+  }
+
+  el.unlockFill.style.width = '0%';
+}
+
+/**
+ * Sperrt den Rest der Seite mit weg. Eine Tastensperre, unter der man noch
+ * Läufe löschen kann, wäre keine.
+ */
+function setRestInert(inert) {
+  for (const bereich of document.querySelectorAll('.app > *')) {
+    if (bereich === el.trackingCard) continue;
+    bereich.inert = inert;
+  }
+}
+
 /* --------------------------------------------------------------- Anzeige */
 
 function render({ announceUnlocks }) {
@@ -779,6 +907,12 @@ function round(value) {
 function renderTracking(state) {
   const running = state.status !== 'idle';
 
+  // Endet die Aufzeichnung von aussen, muss die Sperre mit fallen.
+  if (shouldReleaseLock({ status: state.status, locked })) {
+    locked = false;
+    cancelUnlockHold();
+  }
+
   el.trackDistance.textContent = distanceFormat.format(state.distanceKm);
   el.trackDuration.textContent = formatDuration(state.elapsedMs);
   el.trackPace.textContent = formatPace(
@@ -791,8 +925,22 @@ function renderTracking(state) {
   el.trackDiscard.hidden = !running;
   el.trackPause.textContent = state.status === 'paused' ? 'Fortsetzen' : 'Pause';
 
+  // Gesperrt bleiben die Knöpfe sichtbar, reagieren aber nicht. Ausblenden
+  // würde den Zustand verschleiern.
+  const bedienbar = controlsEnabled({ status: state.status, locked });
+  el.trackPause.disabled = !bedienbar;
+  el.trackStop.disabled = !bedienbar;
+  el.trackDiscard.disabled = !bedienbar;
+
+  el.trackLock.hidden = !canLock({ status: state.status, locked });
+  el.lockPanel.hidden = !locked;
+  el.trackingCard.classList.toggle('locked', locked);
+  setRestInert(locked);
+
   document.getElementById('tracking-readout').classList.toggle('active', running);
 
+  // Die Statuszeile läuft auch gesperrt weiter – eine eingefrorene Anzeige
+  // sähe aus, als hinge die App.
   if (state.status === 'paused') {
     el.trackStatus.textContent = 'Pausiert – die Strecke zählt erst ab dem Fortsetzen weiter.';
     return;

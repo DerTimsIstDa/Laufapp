@@ -176,7 +176,7 @@ Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 node --test
 ```
 
-255 Tests im Ordner `tests/`, ausgeführt vom eingebauten Testrunner von Node —
+278 Tests im Ordner `tests/`, ausgeführt vom eingebauten Testrunner von Node —
 keine Abhängigkeiten, kein Framework, nichts zu installieren.
 
 | Datei | prüft |
@@ -192,6 +192,7 @@ keine Abhängigkeiten, kein Framework, nichts zu installieren.
 | `tests/stats.test.mjs` | Summen, Serien mit Lücken, Wochen-/Monatsraster |
 | `tests/route.test.mjs` | Projektion, Seitenverhältnis, Geraden, Ausdünnen |
 | `tests/pwa.test.mjs` | Installationshinweis, Trennung eigener und fremder Caches |
+| `tests/lock.test.mjs` | Halte-Fortschritt, Sperrregeln, Freigabe im Notfall |
 
 Getestet wird das Verhalten an den **Grenzen**: 4 gegen 5 Läufe, 49,9 gegen
 50 km, 13 gegen 14 Tage Pause, 06:59 gegen 07:00 Uhr, +19 % gegen +20 %. Ein
@@ -225,6 +226,31 @@ Rohe GPS-Punkte sind unbrauchbar, ohne sie zu filtern (`DEFAULT_FILTER` in
 
 Während einer Pause wird `watchPosition` abgemeldet und der letzte Bezugspunkt
 verworfen; eine Fahrt in der Pause landet also nicht in der Strecke.
+
+### Tastensperre
+
+Während der Aufzeichnung gibt es einen **Sperren**-Knopf gegen Berührungen in
+der Hosentasche. Gesperrt reagieren Pause, Beenden und Verwerfen nicht mehr,
+und der Rest der Seite wird auf `inert` gesetzt – eine Sperre, unter der man
+noch Läufe löschen kann, wäre keine. **Die Aufzeichnung läuft normal weiter**,
+Statuszeile und Zähler ebenfalls.
+
+Entsperrt wird durch **zwei Sekunden Halten**. Eine Taschenberührung wandert
+und dauert Millisekunden; ein Druck, der zwei Sekunden am selben Punkt bleibt,
+kommt dabei praktisch nicht vor. Der Knopf füllt sich sichtbar mit, Loslassen
+setzt zurück.
+
+Zwei Details, die nicht offensichtlich sind:
+
+- Getaktet über `setInterval`, nicht über `requestAnimationFrame`. rAF steht
+  still, sobald die Seite nicht gezeichnet wird – dann liesse sich die Sperre
+  nicht mehr öffnen.
+- Beim Loslassen wird die tatsächlich verstrichene Zeit noch einmal geprüft.
+  Wurde der Takt zwischendurch gedrosselt, hätte man sonst lange genug
+  gehalten und bliebe trotzdem gesperrt.
+
+Endet die Aufzeichnung von aussen – etwa weil die Standortfreigabe entzogen
+wurde – fällt die Sperre mit, sonst bliebe die Bedienung tot.
 
 Grenzen, die im Browser nicht zu umgehen sind:
 
@@ -309,6 +335,7 @@ js/transfer.js      Export-/Importformat – ebenfalls pur
 js/stats.js         Summen, Durchschnitte, Serien, Zeitreihen – ebenfalls pur
 js/route.js         GPS-Strecke auf Zeichenflächen-Koordinaten – ebenfalls pur
 js/pwa.js           Installationshinweis, eigene Caches erkennen – ebenfalls pur
+js/lock.js          Tastensperre: Halte-Fortschritt und Sperrregeln – ebenfalls pur
 js/tracker.js       Live-Aufzeichnung: watchPosition, Pausen, Wake Lock
 js/storage.js       Laden/Speichern/Ändern der Läufe im localStorage
 js/app.js           Formular, Rendering, Verdrahtung

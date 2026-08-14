@@ -560,6 +560,104 @@ input:focus {
   font-size: 0.8125rem;
 }
 
+/* Tastensperre */
+
+.card.locked {
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 1px var(--accent-soft);
+}
+
+.lock-panel {
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-md);
+}
+
+.lock-headline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.lock-icon {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.lock-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.lock-text strong {
+  font-size: 0.9375rem;
+  color: var(--accent);
+}
+
+.lock-text span {
+  font-size: 0.8125rem;
+  color: var(--body);
+}
+
+/* Der Entsperr-Knopf füllt sich beim Halten von links nach rechts. */
+.unlock-button {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  margin-top: var(--space-3);
+  padding: 0.85rem 1rem;
+  background: var(--sunken);
+  color: var(--text);
+  border: 1px solid var(--accent-line);
+  /* Ohne das scrollt die Seite beim Halten statt zu entsperren. */
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.unlock-button:hover {
+  background: var(--sunken);
+  box-shadow: none;
+}
+
+.unlock-button:active {
+  transform: none;
+}
+
+/* Durchscheinend statt deckend, damit die Beschriftung darüber weiss bleibt.
+   Die Vorderkante und der Streifen unten zeigen den Stand genau an.
+   Kein Übergang: der Balken folgt dem Finger, nicht einer Animation. */
+.unlock-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: rgba(196, 240, 0, 0.22);
+  border-right: 2px solid var(--accent);
+}
+
+.unlock-fill::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 3px;
+  background: var(--accent);
+}
+
+.unlock-label {
+  position: relative;
+  color: var(--text);
+  font-weight: 600;
+}
+
 .unlock-notice {
   margin: var(--space-3) 0 0;
   padding: 0.6rem 0.8rem;
