@@ -49,8 +49,17 @@ offline.
 Nach einer Aktualisierung liefert der Service Worker zunächst noch den alten
 Stand aus – erst der zweite Aufruf zeigt die neue Version. Das ist gewollt
 (so funktioniert sie offline) und der Grund, warum `CACHE_VERSION` in `sw.js`
-bei jeder Änderung hochgezählt werden muss. Wer nicht warten will, drückt oben
+bei jeder Änderung hochgezählt werden muss. Sobald die neue Fassung bereitliegt,
+erscheint oben ein Hinweis mit **Neu laden**; wer nicht warten will, drückt
 **Aktualisieren**.
+
+Der Hinweis hält sich zurück, solange aufgezeichnet wird – ein Neuladen mitten
+im Lauf wäre der teuerste Moment. Er kommt nach, sobald die Aufzeichnung endet.
+
+**Beim Befüllen des Caches wird der HTTP-Cache umgangen** (`cache: 'reload'`).
+GitHub Pages liefert alles mit `max-age=600`; ohne das landen bis zu zehn
+Minuten alte Dateien neben frischen im selben Cache. Das Ergebnis war einmal
+neues HTML mit altem JavaScript – die Oberfläche zeigte Tabs, die nichts taten.
 
 **Installationshinweis:** Läuft die App in einem Browser-Tab statt vom
 Startbildschirm, erscheint einmalig ein Banner mit dem Hinweis, sie zu

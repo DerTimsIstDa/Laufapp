@@ -13,7 +13,7 @@
  */
 const CACHE_PREFIX = 'laufapp-';
 
-const CACHE_VERSION = `${CACHE_PREFIX}v19`;
+const CACHE_VERSION = `${CACHE_PREFIX}v20`;
 
 const APP_SHELL = [
   './',
@@ -44,7 +44,13 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
       .open(CACHE_VERSION)
-      .then((cache) => cache.addAll(APP_SHELL))
+      .then((cache) =>
+        // `cache: 'reload'` geht am HTTP-Cache des Browsers vorbei. Ohne das
+        // liefert GitHub Pages mit seinem max-age=600 bis zu zehn Minuten alte
+        // Dateien, und im selben Cache landen frisches HTML neben altem
+        // JavaScript – die Oberfläche ist dann neu, der Code dahinter nicht.
+        cache.addAll(APP_SHELL.map((url) => new Request(url, { cache: 'reload' })))
+      )
       .then(() => self.skipWaiting())
   );
 });

@@ -214,6 +214,15 @@ h1 {
   color: var(--muted);
 }
 
+/* Gleiche Form wie der Installationshinweis, nur mit Handlungsknopf. */
+.update-hint {
+  align-items: center;
+}
+
+.update-hint strong {
+  color: var(--accent);
+}
+
 h2 {
   margin: 0 0 var(--space-3);
   font-size: 0.6875rem;

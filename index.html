@@ -40,6 +40,15 @@
       >Aktualisieren</button>
     </header>
 
+    <!-- Erscheint, sobald der Service Worker eine neue Fassung geholt hat. -->
+    <aside class="install-hint update-hint" id="update-hint" role="status" hidden>
+      <div class="install-hint-text">
+        <strong>Neue Version bereit</strong>
+        <span>Einmal neu laden, dann ist sie aktiv.</span>
+      </div>
+      <button type="button" id="update-reload" class="small">Neu laden</button>
+    </aside>
+
     <!-- Erscheint nur im Browser-Tab, nicht in der installierten App. -->
     <aside class="install-hint" id="install-hint" role="note" hidden>
       <div class="install-hint-text">

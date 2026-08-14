@@ -68,6 +68,9 @@ let detailId = null;
 /** Sichtbarer Bereich: 'start', 'trophies' oder 'profile'. */
 let activeView = 'start';
 
+/** Eine neuere Fassung liegt bereit und wartet auf ein Neuladen. */
+let updateReady = false;
+
 /** Tastensperre während der Aufzeichnung. */
 let locked = false;
 
@@ -177,6 +180,8 @@ const el = {
   refreshButton: document.getElementById('refresh-button'),
   installHint: document.getElementById('install-hint'),
   installHintClose: document.getElementById('install-hint-close'),
+  updateHint: document.getElementById('update-hint'),
+  updateReload: document.getElementById('update-reload'),
 
   detailCard: document.getElementById('detail-card'),
   detailFacts: document.getElementById('detail-facts'),
@@ -220,6 +225,7 @@ function init() {
   bindTabs();
   el.refreshButton.addEventListener('click', handleRefresh);
   el.installHintClose.addEventListener('click', dismissInstallHint);
+  el.updateReload.addEventListener('click', () => location.reload());
   el.detailClose.addEventListener('click', closeDetail);
   el.chartWeeks.addEventListener('click', () => setChartRange('weeks'));
   el.chartMonths.addEventListener('click', () => setChartRange('months'));
@@ -1193,6 +1199,9 @@ function renderTracking(state) {
 
   document.getElementById('tracking-readout').classList.toggle('active', running);
 
+  // Ein zurückgestellter Aktualisierungshinweis darf nach dem Lauf erscheinen.
+  maybeShowUpdateHint();
+
   // Die Statuszeile läuft auch gesperrt weiter – eine eingefrorene Anzeige
   // sähe aus, als hinge die App.
   if (state.status === 'paused') {
@@ -1462,9 +1471,37 @@ function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   if (location.protocol === 'file:') return;
 
+  // Übernimmt ein neuer Service Worker die Seite, läuft hier noch der alte
+  // Code. Genau dann darf die Seite nicht heimlich veraltet weiterlaufen.
+  navigator.serviceWorker.addEventListener('controllerchange', markUpdateReady);
+
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('sw.js')
+      .then((registration) => {
+        registration.addEventListener('updatefound', () => {
+          const neuer = registration.installing;
+          if (!neuer || !navigator.serviceWorker.controller) return;
+
+          neuer.addEventListener('statechange', () => {
+            if (neuer.state === 'installed') markUpdateReady();
+          });
+        });
+      })
       .catch((err) => console.warn('Service Worker nicht registriert:', err));
   });
+}
+
+function markUpdateReady() {
+  updateReady = true;
+  maybeShowUpdateHint();
+}
+
+/**
+ * Der Hinweis wartet, solange aufgezeichnet wird. Ein Neuladen mitten im Lauf
+ * wäre der teuerste Moment – lieber eine veraltete Oberfläche als eine
+ * verlorene Strecke.
+ */
+function maybeShowUpdateHint() {
+  el.updateHint.hidden = !(updateReady && tracker.getState().status === 'idle');
 }
