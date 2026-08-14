@@ -1,0 +1,20 @@
+{
+  "name": "Laufapp",
+  "short_name": "Laufapp",
+  "description": "Läufe eintragen, XP sammeln, Level aufsteigen.",
+  "lang": "de",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#16181d",
+  "theme_color": "#16181d",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
