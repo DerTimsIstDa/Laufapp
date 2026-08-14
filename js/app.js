@@ -13,6 +13,7 @@
  *   route.js        GPS-Strecke auf Zeichenflächen-Koordinaten
  *   pwa.js          Installationshinweis und Aktualisierung
  *   lock.js         Tastensperre während der Aufzeichnung
+ *   history.js      Freischaltdaten und Titel-Historie
  *   storage.js      Persistenz
  */
 
@@ -40,6 +41,7 @@ import {
   controlsEnabled,
   shouldReleaseLock,
 } from './lock.js';
+import { achievementUnlockDates, titleHistory } from './history.js';
 import { loadRuns, addRun, updateRun, removeRun, replaceRuns } from './storage.js';
 
 /** @type {import('./storage.js').Run[]} */
@@ -62,6 +64,9 @@ let chartRange = 'weeks';
 
 /** id des Laufs, dessen Detailansicht offen ist; null = zu. */
 let detailId = null;
+
+/** Sichtbarer Bereich: 'start', 'trophies' oder 'profile'. */
+let activeView = 'start';
 
 /** Tastensperre während der Aufzeichnung. */
 let locked = false;
@@ -145,6 +150,30 @@ const el = {
     herausforderung: document.getElementById('achievements-herausforderung'),
   },
 
+  tabbar: document.getElementById('tabbar'),
+  tabs: [...document.querySelectorAll('.tab')],
+  views: {
+    start: document.getElementById('view-start'),
+    trophies: document.getElementById('view-trophies'),
+    profile: document.getElementById('view-profile'),
+  },
+
+  trophyCount: document.getElementById('trophy-count'),
+  trophyTotal: document.getElementById('trophy-total'),
+  trophyXp: document.getElementById('trophy-xp'),
+  trophyLists: {
+    meilenstein: document.getElementById('trophies-meilenstein'),
+    herausforderung: document.getElementById('trophies-herausforderung'),
+  },
+
+  profileTitleName: document.getElementById('profile-title-name'),
+  profileLevel: document.getElementById('profile-level'),
+  profileXp: document.getElementById('profile-xp'),
+  profileNext: document.getElementById('profile-next'),
+  titleHistory: document.getElementById('title-history'),
+  profileStats: document.getElementById('profile-stats'),
+  profileStatsEmpty: document.getElementById('profile-stats-empty'),
+
   refreshButton: document.getElementById('refresh-button'),
   installHint: document.getElementById('install-hint'),
   installHintClose: document.getElementById('install-hint-close'),
@@ -188,6 +217,7 @@ function init() {
   el.formCancel.addEventListener('click', stopEditing);
   el.runsList.addEventListener('click', handleListClick);
 
+  bindTabs();
   el.refreshButton.addEventListener('click', handleRefresh);
   el.installHintClose.addEventListener('click', dismissInstallHint);
   el.detailClose.addEventListener('click', closeDetail);
@@ -220,6 +250,216 @@ function init() {
   maybeShowInstallHint();
   render({ announceUnlocks: false });
   registerServiceWorker();
+}
+
+/* ------------------------------------------------------------- Bereiche */
+
+function bindTabs() {
+  for (const tab of el.tabs) {
+    tab.addEventListener('click', () => setView(tab.dataset.view));
+  }
+
+  // Pfeiltasten wandern durch die Leiste, wie bei Tabs üblich.
+  el.tabbar.addEventListener('keydown', (event) => {
+    const richtung = { ArrowRight: 1, ArrowLeft: -1, Home: 'erste', End: 'letzte' }[event.key];
+    if (richtung === undefined) return;
+
+    event.preventDefault();
+    const aktuell = el.tabs.findIndex((tab) => tab.dataset.view === activeView);
+    const ziel =
+      richtung === 'erste' ? 0
+      : richtung === 'letzte' ? el.tabs.length - 1
+      : (aktuell + richtung + el.tabs.length) % el.tabs.length;
+
+    setView(el.tabs[ziel].dataset.view);
+    el.tabs[ziel].focus();
+  });
+}
+
+function setView(view) {
+  if (!el.views[view]) return;
+
+  activeView = view;
+
+  for (const [name, panel] of Object.entries(el.views)) {
+    panel.hidden = name !== view;
+  }
+
+  for (const tab of el.tabs) {
+    const aktiv = tab.dataset.view === view;
+    tab.setAttribute('aria-selected', String(aktiv));
+    // Nur der aktive Tab liegt im Tabulator-Pfad.
+    tab.tabIndex = aktiv ? 0 : -1;
+  }
+
+  // Die neuen Bereiche werden erst beim Ansehen berechnet – das Durchspielen
+  // der Historie kostet mehr als eine simple Anzeige.
+  if (view === 'trophies') renderTrophies();
+  if (view === 'profile') renderProfile();
+
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+/* -------------------------------------------------------------- Trophäen */
+
+function renderTrophies() {
+  const achievements = evaluateAchievements(runs);
+  const daten = achievementUnlockDates(runs);
+  const freigeschaltet = achievements.filter((a) => a.unlocked);
+
+  el.trophyCount.textContent = freigeschaltet.length;
+  el.trophyTotal.textContent = achievements.length;
+  el.trophyXp.textContent = numberFormat.format(achievementXp(achievements));
+
+  for (const [category, liste] of Object.entries(el.trophyLists)) {
+    liste.replaceChildren(
+      ...achievements
+        .filter((a) => a.category === category)
+        .map((a) => createTrophyTile(a, daten.get(a.id)))
+    );
+  }
+}
+
+function createTrophyTile(achievement, unlockDate) {
+  const kachel = document.createElement('li');
+  kachel.className = achievement.unlocked ? 'trophy unlocked' : 'trophy';
+
+  const marke = document.createElement('span');
+  marke.className = 'trophy-mark';
+  marke.textContent = achievement.unlocked ? '✓' : '○';
+  marke.setAttribute('aria-hidden', 'true');
+
+  const name = document.createElement('span');
+  name.className = 'trophy-name';
+  name.textContent = achievement.name;
+
+  const beschreibung = document.createElement('span');
+  beschreibung.className = 'trophy-description';
+  beschreibung.textContent = achievement.description;
+
+  const xp = document.createElement('span');
+  xp.className = 'trophy-xp';
+  xp.textContent = `${achievement.unlocked ? '+' : ''}${achievement.xp} XP`;
+
+  kachel.append(marke, name, beschreibung, xp);
+
+  if (achievement.unlocked) {
+    const datum = document.createElement('span');
+    datum.className = 'trophy-date';
+    datum.textContent = unlockDate ? `Freigeschaltet am ${formatDate(unlockDate)}` : 'Freigeschaltet';
+    kachel.append(datum);
+    kachel.setAttribute('aria-label', `${achievement.name}: freigeschaltet`);
+    return kachel;
+  }
+
+  // Nur Bedingungen mit klarem Zähler bekommen einen Balken.
+  if (achievement.progress) kachel.append(createTrophyProgress(achievement.progress));
+  kachel.setAttribute('aria-label', `${achievement.name}: offen`);
+
+  return kachel;
+}
+
+function createTrophyProgress(progress) {
+  const erreicht = Math.min(progress.current, progress.target);
+  const anteil = progress.target > 0 ? (erreicht / progress.target) * 100 : 0;
+
+  const huelle = document.createElement('div');
+  huelle.className = 'trophy-progress';
+
+  const spur = document.createElement('span');
+  spur.className = 'trophy-track';
+
+  const balken = document.createElement('span');
+  balken.className = 'trophy-bar';
+  balken.style.width = `${anteil}%`;
+  spur.append(balken);
+
+  const zahl = document.createElement('span');
+  zahl.className = 'trophy-progress-text';
+  zahl.textContent =
+    `${numberFormat.format(erreicht)} / ${numberFormat.format(progress.target)} ${progress.unit}`;
+
+  huelle.append(spur, zahl);
+  return huelle;
+}
+
+/* ---------------------------------------------------------------- Profil */
+
+function renderProfile() {
+  const achievements = evaluateAchievements(runs);
+  const gesamtXp = totalXpFromRuns(runs) + achievementXp(achievements);
+  const progress = getProgress(gesamtXp);
+  const upcoming = nextTitle(progress.level);
+
+  el.profileTitleName.textContent = titleForLevel(progress.level);
+  el.profileLevel.textContent = progress.level;
+  el.profileXp.textContent = numberFormat.format(progress.totalXp);
+  el.profileNext.textContent =
+    `Nächster Titel: ${upcoming.title} ab Level ${upcoming.level} – ` +
+    `noch ${numberFormat.format(progress.xpToNextLevel)} XP bis Level ${progress.level + 1}`;
+
+  renderTitleHistory(progress.level);
+  renderProfileStats();
+}
+
+function renderTitleHistory(currentLevel) {
+  const verlauf = titleHistory(runs);
+  const aktueller = titleForLevel(currentLevel);
+
+  el.titleHistory.replaceChildren(
+    ...verlauf.map((eintrag) => {
+      const zeile = document.createElement('li');
+      zeile.className = eintrag.title === aktueller ? 'title-step current' : 'title-step';
+
+      const name = document.createElement('span');
+      name.className = 'title-step-name';
+      name.textContent = eintrag.title;
+
+      const stufe = document.createElement('span');
+      stufe.className = 'title-step-level';
+      stufe.textContent = `Level ${eintrag.level}`;
+
+      const datum = document.createElement('span');
+      datum.className = 'title-step-date';
+      datum.textContent = eintrag.date ? formatDate(eintrag.date) : 'von Anfang an';
+
+      zeile.append(name, stufe, datum);
+      return zeile;
+    })
+  );
+}
+
+function renderProfileStats() {
+  const stats = buildStats(runs);
+
+  el.profileStatsEmpty.hidden = stats.runCount > 0;
+  el.profileStats.hidden = stats.runCount === 0;
+  if (stats.runCount === 0) return;
+
+  const werte = [
+    ['Gesamtdistanz', `${numberFormat.format(round(stats.totalDistanceKm))} km`],
+    ['Läufe', String(stats.runCount)],
+    ['Ø pro Lauf', `${numberFormat.format(round(stats.averageDistanceKm))} km`],
+    ['Längster Lauf', `${numberFormat.format(stats.longestRun.distanceKm)} km`],
+    ['Aktive Tage', String(stats.activeDays)],
+    ['Längste Serie', formatDays(stats.longestDayStreak)],
+  ];
+
+  el.profileStats.replaceChildren(
+    ...werte.map(([label, wert]) => {
+      const block = document.createElement('div');
+      block.className = 'stat';
+
+      const dt = document.createElement('dt');
+      dt.textContent = label;
+
+      const dd = document.createElement('dd');
+      dd.textContent = wert;
+
+      block.append(dt, dd);
+      return block;
+    })
+  );
 }
 
 /* ----------------------------------------------- Installationshinweis */
@@ -773,8 +1013,17 @@ function cancelUnlockHold() {
  * Läufe löschen kann, wäre keine.
  */
 function setRestInert(inert) {
-  for (const bereich of document.querySelectorAll('.app > *')) {
-    if (bereich === el.trackingCard) continue;
+  // Zwei Ebenen: die Bereiche selbst und die Karten im Start-Bereich. Die
+  // Tracking-Karte liegt inzwischen im Start-Bereich – würde man den pauschal
+  // sperren, wäre die Karte darin mitgesperrt und die Sperre nicht mehr zu
+  // öffnen.
+  const ziele = [
+    ...document.querySelectorAll('.app > *'),
+    ...document.querySelectorAll('#view-start > *'),
+  ];
+
+  for (const bereich of ziele) {
+    if (bereich === el.trackingCard || bereich.contains(el.trackingCard)) continue;
     bereich.inert = inert;
   }
 }
@@ -792,6 +1041,11 @@ function render({ announceUnlocks }) {
   renderAchievements(achievements, announceUnlocks);
   renderDetail();
   renderRuns();
+
+  // Der sichtbare Nebenbereich muss mitziehen; die verborgenen werden beim
+  // Umschalten ohnehin neu gebaut.
+  if (activeView === 'trophies') renderTrophies();
+  if (activeView === 'profile') renderProfile();
 }
 
 /* ------------------------------------------------------------- Statistik */

@@ -54,6 +54,8 @@
       >×</button>
     </aside>
 
+    <div class="view" id="view-start" role="tabpanel" aria-labelledby="tab-start">
+
     <!-- Fortschritt -->
     <section class="card" aria-labelledby="progress-title">
       <h2 id="progress-title">Fortschritt</h2>
@@ -315,6 +317,64 @@
       <p class="data-status muted" id="data-status" role="status" hidden></p>
       <p class="error" id="data-error" role="alert" hidden></p>
     </section>
+
+    </div><!-- /view-start -->
+
+    <!-- Trophäen -->
+    <div class="view" id="view-trophies" role="tabpanel" aria-labelledby="tab-trophies" hidden>
+      <section class="card" aria-labelledby="trophies-title">
+        <h2 id="trophies-title">Trophäen</h2>
+        <p class="trophy-score">
+          <strong id="trophy-count">0</strong> von <span id="trophy-total">13</span> freigeschaltet
+          &middot; <span id="trophy-xp">0</span> Bonus-XP
+        </p>
+
+        <h3 class="group-title">Meilensteine</h3>
+        <ul class="trophies" id="trophies-meilenstein"></ul>
+
+        <h3 class="group-title">Herausforderungen</h3>
+        <ul class="trophies" id="trophies-herausforderung"></ul>
+      </section>
+    </div>
+
+    <!-- Profil -->
+    <div class="view" id="view-profile" role="tabpanel" aria-labelledby="tab-profile" hidden>
+      <section class="card profile-hero" aria-labelledby="profile-title">
+        <h2 id="profile-title">Profil</h2>
+        <p class="profile-rank" id="profile-title-name">Neuling</p>
+        <p class="profile-level">
+          Level <strong id="profile-level">1</strong>
+          &middot; <span id="profile-xp">0</span> XP
+        </p>
+        <p class="muted" id="profile-next">Nächster Titel: Läufer ab Level 5</p>
+      </section>
+
+      <section class="card" aria-labelledby="titles-title">
+        <h2 id="titles-title">Titel-Historie</h2>
+        <ol class="title-history" id="title-history"></ol>
+      </section>
+
+      <section class="card" aria-labelledby="profile-stats-title">
+        <h2 id="profile-stats-title">Gesamtstatistik</h2>
+        <p class="muted" id="profile-stats-empty">Noch keine Läufe eingetragen.</p>
+        <dl class="stat-grid" id="profile-stats" hidden></dl>
+      </section>
+    </div>
+
+    <nav class="tabbar" id="tabbar" role="tablist" aria-label="Bereiche">
+      <button type="button" class="tab" id="tab-start" role="tab" aria-selected="true" aria-controls="view-start" data-view="start">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13.5 12 6l8 7.5"/><path d="M6.5 12v6h11v-6"/></svg>
+        <span>Start</span>
+      </button>
+      <button type="button" class="tab" id="tab-trophies" role="tab" aria-selected="false" aria-controls="view-trophies" data-view="trophies" tabindex="-1">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4.5v1.5A3.5 3.5 0 0 0 8 11"/><path d="M17 6h2.5v1.5A3.5 3.5 0 0 1 16 11"/><path d="M9.5 19.5h5"/><path d="M12 14v5.5"/></svg>
+        <span>Trophäen</span>
+      </button>
+      <button type="button" class="tab" id="tab-profile" role="tab" aria-selected="false" aria-controls="view-profile" data-view="profile" tabindex="-1">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.75"/><path d="M4.75 19.5a7.25 7.25 0 0 1 14.5 0"/></svg>
+        <span>Profil</span>
+      </button>
+    </nav>
   </main>
 
   <!-- Hinweis, falls ohne Server geöffnet: dann lädt das Modul unten nicht. -->

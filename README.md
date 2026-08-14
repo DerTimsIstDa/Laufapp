@@ -90,6 +90,36 @@ Weder XP-Stand noch Achievements werden **gespeichert** – beides wird immer au
 den Läufen berechnet. Dadurch bleibt alles konsistent, wenn ein Lauf gelöscht
 oder eine Regel angepasst wird.
 
+## Bereiche
+
+Eine Tab-Leiste am unteren Rand führt durch drei Bereiche:
+
+- **Start** – alles Bisherige: Fortschritt, Aufzeichnung, Eintragen,
+  Achievements als kompakte Liste, Statistik, Lauf-Liste, Sicherung
+- **Trophäen** – alle Achievements als grosse Kacheln, freigeschaltete mit
+  Datum, offene mit Fortschrittsbalken sofern die Bedingung einen Zähler hat
+- **Profil** – Titel und Level gross, darunter die Titel-Historie und eine
+  Zusammenfassung der Gesamtstatistik
+
+Die beiden neuen Bereiche werden erst beim Ansehen berechnet, nicht bei jeder
+Änderung. Grund ist `js/history.js`.
+
+### Zeitpunkte statt nur Zustände
+
+Die App leitet sonst immer nur den Jetzt-Zustand ab. Für „freigeschaltet am"
+und die Titel-Historie braucht es Zeitpunkte, und die spielt `js/history.js`
+durch: Lauf für Lauf wird die Vorgeschichte neu bewertet und festgehalten,
+wann eine Bedingung zum ersten Mal griff.
+
+Das funktioniert nur, weil **alle Bedingungen monoton** sind – was einmal
+erfüllt war, bleibt es beim Hinzufügen weiterer Läufe. Serien und Rekorde sind
+Maxima über die Historie, Zähler wachsen nur. Ein Test prüft diese Annahme
+ausdrücklich; fiele sie, wären Freischaltdaten nicht mehr eindeutig.
+
+Der Durchlauf kostet O(n²). Bei ein paar hundert Läufen ist das ein
+Wimpernschlag, und die Alternative wären dreizehn handgeschriebene
+Fortschreibungen, die mit jeder neuen Regel wieder auseinanderlaufen.
+
 ## Statistik
 
 Eigene Sektion mit Gesamtdistanz, Anzahl Läufe, Ø Distanz pro Lauf, längstem
@@ -176,7 +206,7 @@ Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 node --test
 ```
 
-278 Tests im Ordner `tests/`, ausgeführt vom eingebauten Testrunner von Node —
+297 Tests im Ordner `tests/`, ausgeführt vom eingebauten Testrunner von Node —
 keine Abhängigkeiten, kein Framework, nichts zu installieren.
 
 | Datei | prüft |
@@ -193,6 +223,7 @@ keine Abhängigkeiten, kein Framework, nichts zu installieren.
 | `tests/route.test.mjs` | Projektion, Seitenverhältnis, Geraden, Ausdünnen |
 | `tests/pwa.test.mjs` | Installationshinweis, Trennung eigener und fremder Caches |
 | `tests/lock.test.mjs` | Halte-Fortschritt, Sperrregeln, Freigabe im Notfall |
+| `tests/history.test.mjs` | Freischaltdaten, Titel-Historie, Monotonie-Annahme |
 
 Getestet wird das Verhalten an den **Grenzen**: 4 gegen 5 Läufe, 49,9 gegen
 50 km, 13 gegen 14 Tage Pause, 06:59 gegen 07:00 Uhr, +19 % gegen +20 %. Ein
@@ -336,6 +367,7 @@ js/stats.js         Summen, Durchschnitte, Serien, Zeitreihen – ebenfalls pur
 js/route.js         GPS-Strecke auf Zeichenflächen-Koordinaten – ebenfalls pur
 js/pwa.js           Installationshinweis, eigene Caches erkennen – ebenfalls pur
 js/lock.js          Tastensperre: Halte-Fortschritt und Sperrregeln – ebenfalls pur
+js/history.js       Freischaltdaten und Titel-Historie – ebenfalls pur
 js/tracker.js       Live-Aufzeichnung: watchPosition, Pausen, Wake Lock
 js/storage.js       Laden/Speichern/Ändern der Läufe im localStorage
 js/app.js           Formular, Rendering, Verdrahtung

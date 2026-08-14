@@ -73,7 +73,9 @@ html {
 
 body {
   margin: 0;
-  padding: var(--space-4) var(--space-3) var(--space-6);
+  /* Unten Platz für die feste Tab-Leiste, plus Geräteeinfassung. */
+  padding: var(--space-4) var(--space-3);
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
   background: var(--bg);
   color: var(--body);
   font-family: var(--font);
@@ -89,6 +91,77 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+}
+
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* ------------------------------------------------------------ Tab-Leiste */
+
+.tabbar {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  padding-bottom: calc(var(--space-1) + env(safe-area-inset-bottom, 0px));
+  background: rgba(13, 15, 18, 0.94);
+  border-top: 1px solid var(--line);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .tabbar {
+    background: rgba(13, 15, 18, 0.78);
+    backdrop-filter: blur(12px);
+  }
+}
+
+.tab {
+  flex: 1 1 0;
+  max-width: 11rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  margin: 0;
+  padding: var(--space-2) var(--space-1);
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.tab svg {
+  width: 1.375rem;
+  height: 1.375rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tab:hover {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: none;
+}
+
+.tab[aria-selected='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.tab:active {
+  transform: none;
 }
 
 /* ------------------------------------------------------------ Typografie */
@@ -973,6 +1046,258 @@ input:focus {
   color: var(--accent);
 }
 
+/* ------------------------------------------------------------- Trophäen */
+
+.trophy-score {
+  margin: 0 0 var(--space-4);
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.trophy-score strong {
+  font-size: 1.5rem;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.trophies {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-2);
+}
+
+/* Grosse Kacheln statt Zeilen: Name, Bedingung, XP und Stand haben Platz. */
+.trophy {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    'marke name xp'
+    'marke text text'
+    'marke fuss fuss';
+  align-items: start;
+  gap: 2px var(--space-3);
+  padding: var(--space-3);
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.trophy.unlocked {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+
+.trophy-mark {
+  grid-area: marke;
+  align-self: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--dim);
+  font-size: 1.1rem;
+}
+
+.trophy.unlocked .trophy-mark {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+
+.trophy-name {
+  grid-area: name;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.trophy.unlocked .trophy-name {
+  color: var(--text);
+}
+
+.trophy-description {
+  grid-area: text;
+  font-size: 0.8125rem;
+  color: var(--dim);
+}
+
+.trophy.unlocked .trophy-description {
+  color: var(--body);
+}
+
+.trophy-xp {
+  grid-area: xp;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+.trophy.unlocked .trophy-xp {
+  color: var(--accent);
+}
+
+.trophy-date {
+  grid-area: fuss;
+  margin-top: var(--space-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.trophy-progress {
+  grid-area: fuss;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.trophy-track {
+  flex: 1;
+  min-width: 0;
+  height: 0.4rem;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.trophy-bar {
+  display: block;
+  height: 100%;
+  background: var(--dim);
+  border-radius: var(--radius-pill);
+}
+
+.trophy-progress-text {
+  flex: none;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+/* ---------------------------------------------------------------- Profil */
+
+.profile-hero {
+  text-align: center;
+  background: linear-gradient(180deg, #191d24 0%, var(--surface) 65%);
+  border-color: var(--line-strong);
+  padding: var(--space-5) var(--space-4);
+}
+
+.profile-rank {
+  margin: var(--space-2) 0 0;
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+}
+
+.profile-level {
+  margin: var(--space-1) 0 0;
+  font-size: 0.9375rem;
+  color: var(--body);
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-level strong {
+  font-size: 1.125rem;
+}
+
+.profile-hero .muted {
+  margin: var(--space-3) 0 0;
+  font-size: 0.8125rem;
+}
+
+.title-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.title-step {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0 var(--space-3);
+  padding: var(--space-3) 0 var(--space-3) var(--space-4);
+  border-top: 1px solid var(--line);
+  position: relative;
+}
+
+.title-step:first-child {
+  border-top: none;
+}
+
+/* Punkt auf einer senkrechten Linie – die Historie liest sich als Weg. */
+.title-step::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin-top: -4.5px;
+  border-radius: 50%;
+  background: var(--line-strong);
+}
+
+.title-step::after {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
+}
+
+.title-step:first-child::after {
+  top: 50%;
+}
+
+.title-step:last-child::after {
+  bottom: 50%;
+}
+
+.title-step.current::before {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.title-step-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--body);
+}
+
+.title-step.current .title-step-name {
+  color: var(--accent);
+}
+
+.title-step-level {
+  grid-column: 1;
+  font-size: 0.75rem;
+  color: var(--dim);
+}
+
+.title-step-date {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
 /* ----------------------------------------------------------- Lauf-Liste */
 
 .runs {
@@ -1116,6 +1441,18 @@ input:focus {
 
   .stat-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .view {
+    gap: var(--space-4);
+  }
+
+  .trophies {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .profile-rank {
+    font-size: 2.75rem;
   }
 
   .metric-value {
