@@ -347,11 +347,15 @@ function isValidPlanned(entry) {
  * beides ist Einstellung, keine Aufzeichnung. Als Objekt gespeichert, damit
  * weitere Angaben dazukommen können, ohne das Format zu brechen.
  *
- * @typedef {{ name: string, weeklyGoal: number }} Profile
+ * `goalSince` ist der Tag, an dem das aktuelle Wochenziel gesetzt wurde. Er
+ * gehört zum Ziel und nicht zu den Läufen: ohne ihn liesse sich der Bonus
+ * rückwirkend ernten (siehe goal.js).
+ *
+ * @typedef {{ name: string, weeklyGoal: number, goalSince: string }} Profile
  * @returns {Profile} Leerwerte, wenn nichts hinterlegt ist
  */
 export function loadProfile() {
-  const leer = { name: '', weeklyGoal: 0 };
+  const leer = { name: '', weeklyGoal: 0, goalSince: '' };
 
   let raw;
   try {
@@ -366,6 +370,7 @@ export function loadProfile() {
     return {
       name: typeof parsed?.name === 'string' ? parsed.name : '',
       weeklyGoal: typeof parsed?.weeklyGoal === 'number' ? parsed.weeklyGoal : 0,
+      goalSince: typeof parsed?.goalSince === 'string' ? parsed.goalSince : '',
     };
   } catch {
     return leer;
@@ -376,8 +381,8 @@ export function loadProfile() {
  * @param {Profile} profile bereits geprüfte Werte
  * @returns {Profile} dieselben Werte, zum Weiterreichen
  */
-export function saveProfile({ name, weeklyGoal }) {
-  const profil = { name, weeklyGoal };
+export function saveProfile({ name, weeklyGoal, goalSince }) {
+  const profil = { name, weeklyGoal, goalSince };
 
   try {
     // Ohne Name und ohne Ziel gibt es nichts zu merken – dann weg damit,

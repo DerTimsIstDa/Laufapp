@@ -142,6 +142,22 @@ export function runsInPeriod(runs, { period, todayIso = localIsoDate(new Date())
   return runs.filter((run) => typeof run?.date === 'string' && inSelbem(run.date));
 }
 
+/**
+ * Montag der Woche, in der dieser Tag liegt.
+ *
+ * Dieselbe Wochengrenze wie überall sonst hier. Wer eine Woche als Schlüssel
+ * braucht, nimmt diesen Montag – zwei Tage derselben Woche ergeben denselben
+ * Wert.
+ *
+ * @returns {?string} null, wenn das Datum unbrauchbar ist
+ */
+export function weekStart(isoDate) {
+  if (typeof isoDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return null;
+
+  const woche = toWeekIndex(toDayNumber(isoDate));
+  return fromDayNumber(woche * 7 + MONDAY_OFFSET);
+}
+
 /** Date -> "JJJJ-MM-TT" in lokaler Zeit. */
 export function localIsoDate(date) {
   const year = date.getFullYear();

@@ -41,7 +41,7 @@ export function buildExport(
     exerciseLog = [],
     sessions = [],
     exercisePlan = [],
-    profile = { name: '', weeklyGoal: 0 },
+    profile = { name: '', weeklyGoal: 0, goalSince: '' },
   } = {}
 ) {
   return {
@@ -163,9 +163,17 @@ export function parseImport(text) {
 function readProfile(payload) {
   const roh = payload?.profile !== null && typeof payload?.profile === 'object' ? payload.profile : {};
 
+  const weeklyGoal = normalizeWeeklyGoal(roh.weeklyGoal);
+
+  // Ohne brauchbaren Stichtag zählt der Bonus ab dem Einlesen, nicht ab
+  // irgendwann: eine Datei soll keine Wochen mitbringen können, die niemand
+  // gelaufen ist.
+  const goalSince = isValidIsoDate(roh.goalSince) ? roh.goalSince : '';
+
   return {
     name: normalizeName(roh.name ?? payload?.profileName),
-    weeklyGoal: normalizeWeeklyGoal(roh.weeklyGoal),
+    weeklyGoal,
+    goalSince: weeklyGoal === 0 ? '' : goalSince,
   };
 }
 

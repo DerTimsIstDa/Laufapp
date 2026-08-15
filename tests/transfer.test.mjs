@@ -360,7 +360,8 @@ describe('Trainingsplan in der Sicherung', () => {
 describe('Übungsplan und Profil in der Sicherung', () => {
   const lauf = { id: 'a', distanceKm: 5, date: '2026-08-14' };
   const vorhaben = { id: 'p1', exerciseId: 'warm-traben', date: '2026-08-20' };
-  const profil = { name: 'Tim', weeklyGoal: 3 };
+  const profil = { name: 'Tim', weeklyGoal: 3, goalSince: '2026-08-10' };
+  const leeresProfil = { name: '', weeklyGoal: 0, goalSince: '' };
 
   test('beide landen im Export', () => {
     const payload = buildExport([lauf], { exercisePlan: [vorhaben], profile: profil });
@@ -382,13 +383,26 @@ describe('Übungsplan und Profil in der Sicherung', () => {
 
     assert.equal(ergebnis.ok, true);
     assert.deepEqual(ergebnis.exercisePlan, []);
-    assert.deepEqual(ergebnis.profile, { name: '', weeklyGoal: 0 });
+    assert.deepEqual(ergebnis.profile, leeresProfil);
   });
 
   test('die erste Schreibweise mit profileName wird weiter gelesen', () => {
     // Sicherungen aus der Fassung, in der es nur einen Namen gab.
     const text = JSON.stringify({ runs: [lauf], profileName: 'Tim' });
-    assert.deepEqual(parseImport(text).profile, { name: 'Tim', weeklyGoal: 0 });
+    assert.deepEqual(parseImport(text).profile, { ...leeresProfil, name: 'Tim' });
+  });
+
+  test('ein Stichtag ohne Ziel wird verworfen', () => {
+    // Sonst zaehlte ein spaeter gesetztes Ziel ab einem Datum aus der Datei.
+    const text = JSON.stringify({ runs: [lauf], profile: { goalSince: '2020-01-06' } });
+    assert.equal(parseImport(text).profile.goalSince, '');
+  });
+
+  test('unbrauchbare Stichtage fallen weg', () => {
+    for (const value of ['gestern', 42, null, '10.08.2026', '2026-02-30']) {
+      const text = JSON.stringify({ runs: [lauf], profile: { weeklyGoal: 3, goalSince: value } });
+      assert.equal(parseImport(text).profile.goalSince, '', `${JSON.stringify(value)}`);
+    }
   });
 
   test('der Name wird beim Einlesen aufgeräumt', () => {
@@ -416,7 +430,7 @@ describe('Übungsplan und Profil in der Sicherung', () => {
     for (const value of ['text', 42, null, []]) {
       const text = JSON.stringify({ runs: [lauf], profile: value });
       assert.doesNotThrow(() => parseImport(text));
-      assert.deepEqual(parseImport(text).profile, { name: '', weeklyGoal: 0 });
+      assert.deepEqual(parseImport(text).profile, leeresProfil);
     }
   });
 

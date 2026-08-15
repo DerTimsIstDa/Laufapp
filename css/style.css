@@ -1959,6 +1959,13 @@ textarea:focus {
   text-align: center;
 }
 
+.goal-tally {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--dim);
+  text-align: center;
+}
+
 /* ----------------------------------------------------------- Lauf-Liste */
 
 .runs {

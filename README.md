@@ -545,6 +545,7 @@ js/history.js       Freischaltdaten der Achievements – ebenfalls pur
 js/exercises.js     Übungsbibliothek und Filter – feste Daten, ebenfalls pur
 js/exercise-log.js  Erledigte Übungen: Zähler, Tageslimit, XP – ebenfalls pur
 js/exercise-plan.js Für einen Tag vorgenommene Übungen – ebenfalls pur
+js/goal.js          Wochenziel: erreichte Wochen und Bonus-XP – ebenfalls pur
 js/training.js      Geplante Einheiten, Abgleich mit den Läufen – ebenfalls pur
 js/tracker.js       Live-Aufzeichnung: watchPosition, Pausen, Wake Lock
 js/storage.js       Laden/Speichern/Ändern der Läufe im localStorage

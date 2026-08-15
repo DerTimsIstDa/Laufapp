@@ -16,6 +16,7 @@
  *   history.js      Freischaltdaten der Achievements
  *   training.js     Geplante Einheiten, Abgleich mit den Läufen
  *   exercise-plan.js Für einen Tag vorgenommene Übungen
+ *   goal.js         Wochenziel: erreichte Wochen und Bonus-XP
  *   storage.js      Persistenz
  */
 
@@ -35,6 +36,7 @@ import {
 } from './validation.js';
 import { serializeExport, exportFileName, parseImport } from './transfer.js';
 import { buildStats, distanceByWeek, distanceByMonth, runsInPeriod } from './stats.js';
+import { goalXp, reachedGoalWeeks, XP_PER_GOAL_WEEK } from './goal.js';
 import { projectTrack, hasDrawableRoute, toStorageTrack, DEFAULT_VIEWPORT } from './route.js';
 import {
   isStandalone,
@@ -121,7 +123,7 @@ let planningExerciseId = null;
  * Wochenziel (0 = kein Ziel, dann bleibt der Ring weg).
  * @type {import('./storage.js').Profile}
  */
-let profile = { name: '', weeklyGoal: 0 };
+let profile = { name: '', weeklyGoal: 0, goalSince: '' };
 
 /** id der Einheit, die gerade im Formular liegt – null heißt "neu anlegen". */
 let editingSessionId = null;
@@ -287,6 +289,7 @@ const el = {
   goalBar: document.getElementById('goal-bar'),
   goalCount: document.getElementById('goal-count'),
   goalCaption: document.getElementById('goal-caption'),
+  goalTally: document.getElementById('goal-tally'),
   profileTitleName: document.getElementById('profile-title-name'),
   profileBadge: document.getElementById('profile-badge'),
   profileLevel: document.getElementById('profile-level'),
@@ -311,6 +314,7 @@ const el = {
   routeContainer: document.getElementById('route-container'),
 
   planXpTotal: document.getElementById('plan-xp-total'),
+  goalXpTotal: document.getElementById('goal-xp-total'),
   sessionForm: document.getElementById('session-form'),
   sessionDate: document.getElementById('session-date'),
   sessionType: document.getElementById('session-type'),
@@ -387,6 +391,7 @@ function init() {
   profile = readProfile(loadProfile());
   el.date.value = todayIso();
   fillProfileForm();
+  document.getElementById('goal-xp-hint').textContent = XP_PER_GOAL_WEEK;
   el.profileNameForm.addEventListener('submit', handleProfileSubmit);
 
   el.form.addEventListener('submit', handleSubmit);
@@ -1519,7 +1524,8 @@ function renderProfile() {
     totalXpFromRuns(runs) +
     exerciseXp(exerciseLog) +
     achievementXp(achievements) +
-    planXp(sessions, runs, { today: todayIso() });
+    planXp(sessions, runs, { today: todayIso() }) +
+    currentGoalXp();
   const progress = getProgress(gesamtXp);
   const upcoming = nextTitle(progress.level);
 
@@ -1546,10 +1552,14 @@ function renderProfile() {
 
 /** Rohwerte aus Speicher oder Datei auf gültige Angaben bringen. */
 function readProfile(roh) {
-  return {
-    name: normalizeName(roh?.name),
-    weeklyGoal: normalizeWeeklyGoal(roh?.weeklyGoal),
-  };
+  const weeklyGoal = normalizeWeeklyGoal(roh?.weeklyGoal);
+
+  // Ein Ziel ohne Stichtag käme aus einer Fassung vor dem Bonus. Es zählt ab
+  // heute – rückwirkend Wochen zu vergeben, die niemand als Ziel hatte, wäre
+  // geschenktes Level.
+  const goalSince = isValidIsoDate(roh?.goalSince) ? roh.goalSince : todayIso();
+
+  return { name: normalizeName(roh?.name), weeklyGoal, goalSince: weeklyGoal === 0 ? '' : goalSince };
 }
 
 /** Zeigt im Formular, was tatsächlich gespeichert ist. */
@@ -1566,9 +1576,20 @@ function fillProfileForm() {
 function handleProfileSubmit(event) {
   event.preventDefault();
 
+  const weeklyGoal = normalizeWeeklyGoal(el.profileGoalInput.value);
+
+  // Der Stichtag bleibt stehen, solange das Ziel dasselbe ist – sonst setzte
+  // jedes Speichern des Namens die gesammelten Wochen zurück. Bei einem
+  // geänderten Ziel beginnt die Zählung neu (siehe goal.js).
+  const goalSince =
+    weeklyGoal === 0 ? ''
+    : weeklyGoal === profile.weeklyGoal && profile.goalSince !== '' ? profile.goalSince
+    : todayIso();
+
   profile = saveProfile({
     name: normalizeName(el.profileNameInput.value),
-    weeklyGoal: normalizeWeeklyGoal(el.profileGoalInput.value),
+    weeklyGoal,
+    goalSince,
   });
 
   // Zurückschreiben, damit sichtbar wird, was tatsächlich gespeichert wurde.
@@ -1619,9 +1640,19 @@ function renderGoal() {
   const fehlend = ziel - gelaufen;
   el.goalCaption.textContent = erreicht
     ? gelaufen === ziel
-      ? 'Wochenziel erreicht.'
-      : `Wochenziel erreicht, ${gelaufen - ziel} ${gelaufen - ziel === 1 ? 'Lauf' : 'Läufe'} darüber.`
-    : `Diese Woche – noch ${fehlend} ${fehlend === 1 ? 'Lauf' : 'Läufe'} bis zum Ziel.`;
+      ? `Wochenziel erreicht · +${XP_PER_GOAL_WEEK} XP`
+      : `Wochenziel erreicht · +${XP_PER_GOAL_WEEK} XP · ` +
+        `${gelaufen - ziel} ${gelaufen - ziel === 1 ? 'Lauf' : 'Läufe'} darüber`
+    : `Diese Woche – noch ${fehlend} ${fehlend === 1 ? 'Lauf' : 'Läufe'} für ${XP_PER_GOAL_WEEK} XP.`;
+
+  // Die Bilanz seit dem Stichtag. Sie erklärt, woher die XP kommen, und macht
+  // sichtbar, dass ein geändertes Ziel neu zu zählen beginnt.
+  const wochen = reachedGoalWeeks(runs, { ...profile, todayIso: todayIso() });
+  el.goalTally.textContent =
+    wochen === 0
+      ? `Seit ${formatDate(profile.goalSince)} noch keine Woche geschafft.`
+      : `${wochen} ${wochen === 1 ? 'Woche' : 'Wochen'} seit ${formatDate(profile.goalSince)} ` +
+        `geschafft · ${numberFormat.format(wochen * XP_PER_GOAL_WEEK)} XP`;
 
   el.goal.setAttribute(
     'aria-label',
@@ -2305,10 +2336,11 @@ function render({ announceUnlocks }) {
   const uebungsXp = exerciseXp(exerciseLog);
   const bonusXp = achievementXp(achievements);
   const planBonusXp = planXp(sessions, runs, { today: todayIso() });
-  const progress = getProgress(runXp + uebungsXp + bonusXp + planBonusXp);
+  const zielXp = currentGoalXp();
+  const progress = getProgress(runXp + uebungsXp + bonusXp + planBonusXp + zielXp);
 
   renderGreeting();
-  renderProgress(progress, runXp, uebungsXp, bonusXp, planBonusXp);
+  renderProgress(progress, runXp, uebungsXp, bonusXp, planBonusXp, zielXp);
   renderToday();
   renderAchievements(achievements, announceUnlocks);
   renderDetail();
@@ -2517,7 +2549,12 @@ function clearTrackError() {
   el.trackError.hidden = true;
 }
 
-function renderProgress(progress, runXp, uebungsXp, bonusXp, planBonusXp) {
+/** Bonus-XP aus den erreichten Wochen, gegen das aktuell gesetzte Ziel. */
+function currentGoalXp() {
+  return goalXp(runs, { ...profile, todayIso: todayIso() });
+}
+
+function renderProgress(progress, runXp, uebungsXp, bonusXp, planBonusXp, zielXp) {
   const percent = Math.min(100, Math.max(0, progress.progressPercent));
   const upcoming = nextTitle(progress.level);
 
@@ -2538,6 +2575,7 @@ function renderProgress(progress, runXp, uebungsXp, bonusXp, planBonusXp) {
   el.exerciseXp.textContent = numberFormat.format(uebungsXp);
   el.bonusXp.textContent = numberFormat.format(bonusXp);
   el.planXpTotal.textContent = numberFormat.format(planBonusXp);
+  el.goalXpTotal.textContent = numberFormat.format(zielXp);
   el.nextTitle.textContent = upcoming.title;
   el.nextTitleLevel.textContent = upcoming.level;
 }
