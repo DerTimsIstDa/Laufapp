@@ -303,6 +303,23 @@ strong {
   font-feature-settings: "tnum";
 }
 
+/* Begrüßung über der ersten Karte. Steht bewusst ausserhalb einer Karte –
+   sie redet die Person an, sie zeigt keine Daten. */
+.greeting {
+  margin: var(--space-2) 0 0;
+  padding-inline: var(--space-1);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.greeting-name {
+  color: var(--accent);
+}
+
 /* ----------------------------------------------------------------- Karte */
 
 .card {

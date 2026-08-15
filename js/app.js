@@ -255,6 +255,8 @@ const el = {
     profile: document.getElementById('view-profile'),
   },
 
+  greeting: document.getElementById('greeting'),
+
   todayEmpty: document.getElementById('today-empty'),
   todaySessionsTitle: document.getElementById('today-sessions-title'),
   todaySessions: document.getElementById('today-sessions'),
@@ -856,6 +858,27 @@ function fillSessionDeleteConfirm(item, session) {
 
   item.append(frage, loeschen, abbrechen);
   return item;
+}
+
+/* ------------------------------------------------------------ Begrüßung */
+
+/**
+ * "Willkommen" oder "Willkommen, Tim".
+ *
+ * Der Name kommt als eigenes Element und wird per textContent gesetzt – so
+ * kann in der Begrüßung nichts landen, was der Browser als Markup liest.
+ */
+function renderGreeting() {
+  if (profile.name === '') {
+    el.greeting.textContent = 'Willkommen';
+    return;
+  }
+
+  const name = document.createElement('span');
+  name.className = 'greeting-name';
+  name.textContent = profile.name;
+
+  el.greeting.replaceChildren('Willkommen, ', name);
 }
 
 /* --------------------------------------------------------- Heute geplant */
@@ -1554,7 +1577,9 @@ function handleProfileSubmit(event) {
   el.profileNameStatus.textContent = describeProfileSaved();
   el.profileNameStatus.hidden = false;
 
-  renderProfile();
+  // Nicht nur renderProfile(): der Name steht auch in der Begrüßung auf dem
+  // Start-Bereich, und die soll nicht bis zum nächsten Laden alt aussehen.
+  render({ announceUnlocks: false });
 }
 
 function describeProfileSaved() {
@@ -2282,6 +2307,7 @@ function render({ announceUnlocks }) {
   const planBonusXp = planXp(sessions, runs, { today: todayIso() });
   const progress = getProgress(runXp + uebungsXp + bonusXp + planBonusXp);
 
+  renderGreeting();
   renderProgress(progress, runXp, uebungsXp, bonusXp, planBonusXp);
   renderToday();
   renderAchievements(achievements, announceUnlocks);
