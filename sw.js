@@ -11,9 +11,14 @@
  * Der Service Worker kann die Konstante nicht importieren, ohne ein
  * Modul-Worker zu werden.
  */
-const CACHE_PREFIX = 'laufapp-';
+const CACHE_PREFIX = 'funrun-';
 
-const CACHE_VERSION = `${CACHE_PREFIX}v25`;
+/** Alter Name der App. Steht hier, damit die Altlast weggeräumt wird. */
+const LEGACY_CACHE_PREFIXES = ['laufapp-'];
+
+const OWN_PREFIXES = [CACHE_PREFIX, ...LEGACY_CACHE_PREFIXES];
+
+const CACHE_VERSION = `${CACHE_PREFIX}v26`;
 
 const APP_SHELL = [
   './',
@@ -68,7 +73,11 @@ self.addEventListener('activate', (event) => {
             // Nur eigene Altlasten wegräumen. Auf github.io teilen sich alle
             // Projekte eines Kontos denselben Origin – ohne die Präfixprüfung
             // löscht dieser Service Worker dem Nachbarprojekt den Cache.
-            .filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_VERSION)
+            .filter(
+              (key) =>
+                OWN_PREFIXES.some((prefix) => key.startsWith(prefix)) &&
+                key !== CACHE_VERSION
+            )
             .map((key) => caches.delete(key))
         )
       )

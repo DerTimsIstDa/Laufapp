@@ -1,5 +1,5 @@
 /**
- * Laufapp – dunkel, reduziert, sportlich.
+ * FunRun – dunkel, reduziert, sportlich.
  *
  * Mobile first: die Grundregeln gelten fürs Handy, die Medienabfrage weiter
  * unten erweitert für breitere Schirme.
@@ -48,6 +48,19 @@
   --space-4: 1rem;
   --space-5: 1.5rem;
   --space-6: 2rem;
+
+  /* Formularfelder – eine Grösse für alles, was Eingabe ist.
+     Datum, Uhrzeit und Auswahl bringen je eigene Innenteile mit und wären
+     sonst unterschiedlich hoch. Die Mindesthöhe zieht sie auf ein Mass und
+     ist zugleich das 44-px-Ziel für den Finger. */
+  --field-height: 2.75rem;
+  --field-height-sm: 2.25rem;
+  --field-pad-x: 0.75rem;
+  --field-pad-y: 0.55rem;
+
+  /* Abstand Beschriftung zu Feld und zwischen zwei Feldern nebeneinander */
+  --label-gap: var(--space-2);
+  --field-gap: var(--space-4);
 
   /* Rundungen, angelehnt an die Ecken des App-Icons */
   --radius-sm: 0.5rem;
@@ -547,14 +560,21 @@ button:disabled {
 .fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
+  gap: var(--field-gap);
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--label-gap);
   min-width: 0;
+}
+
+/* Ein Feld, das allein steht statt in einer Reihe – etwa die Notiz an der
+   Einheit. Ohne das klebt es am Block darüber, während die Felder in .fields
+   ihren Abstand aus dem Raster bekommen. */
+form > .field {
+  margin-top: var(--field-gap);
 }
 
 label {
@@ -574,40 +594,49 @@ label {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
-  padding: 0.65rem 0.75rem;
+  min-height: var(--field-height);
+  padding: var(--field-pad-y) var(--field-pad-x);
   background: var(--sunken);
   color: var(--text);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   font: inherit;
   font-size: 1rem;
+  /* Fest, nicht geerbt: die 1.55 des body machen ein Textfeld höher als ein
+     Datumsfeld, das seine eigene Innenhöhe mitbringt. */
+  line-height: 1.25;
   transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
 }
 
 /* Ohne das Zurücksetzen zeichnet der Browser sein eigenes helles Feld. */
 select {
   appearance: none;
-  padding-right: 2rem;
+  padding-right: calc(var(--field-pad-x) + 1.25rem);
   background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
     linear-gradient(135deg, var(--muted) 50%, transparent 50%);
-  background-position: right 1.1rem center, right 0.85rem center;
+  background-position: right calc(var(--field-pad-x) + 0.35rem) center,
+    right calc(var(--field-pad-x) + 0.1rem) center;
   background-size: 5px 5px, 5px 5px;
   background-repeat: no-repeat;
 }
 
-input::placeholder {
+input::placeholder,
+textarea::placeholder {
   color: var(--dim);
 }
 
 input:hover,
-select:hover {
+select:hover,
+textarea:hover {
   border-color: var(--line-strong);
 }
 
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   outline: none;
   background-color: var(--bg);
   border-color: var(--accent-line);
@@ -1235,7 +1264,7 @@ select:focus {
 
 .count-label {
   display: block;
-  margin-bottom: var(--space-1);
+  margin-bottom: var(--label-gap);
 }
 
 .count-editor input {
@@ -1400,15 +1429,15 @@ select:focus {
   grid-area: remove;
 }
 
+/* Ein Abschnitt ist eine Zeile in einer Liste, kein eigenes Formular – die
+   Felder treten eine Stufe zurück. Wieder eine Höhe für alle, nur eine
+   kleinere. */
 .segment select,
 .segment input {
-  padding: 0.45rem 0.5rem;
+  --field-pad-x: 0.5rem;
+  --field-pad-y: 0.3rem;
+  min-height: var(--field-height-sm);
   font-size: 0.875rem;
-}
-
-.segment select {
-  padding-right: 1.5rem;
-  background-position: right 0.75rem center, right 0.5rem center;
 }
 
 .segment-input {
@@ -1937,14 +1966,13 @@ select:focus {
     font-size: 4rem;
   }
 
+  /* Bleibt zweispaltig. Vier Spalten passen rechnerisch in die Karte, lassen
+     einem Feld aber nur rund 110 px – gerade zu wenig für ein Datum, das dann
+     als "15.08.202" abschneidet. Zwei Reihen zu zwei Feldern lesen sich
+     ohnehin ruhiger. */
   .fields {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  /* Die vier Spalten sind auf das Lauf-Formular zugeschnitten. Die Einheit hat
-     nur zwei Felder – in Viertelbreite wäre das Datum abgeschnitten. */
-  #session-form .fields {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-5);
   }
 
   .stat-grid {

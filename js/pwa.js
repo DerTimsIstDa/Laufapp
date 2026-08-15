@@ -6,8 +6,22 @@
  * Dadurch lässt sich hier alles mit Attrappen prüfen.
  */
 
+/**
+ * Bleibt beim alten Namen. Der Schlüssel steht schon im localStorage der
+ * installierten App – umbenannt käme der Installationshinweis noch einmal.
+ */
 export const INSTALL_HINT_KEY = 'laufapp.installHint.dismissed';
-export const CACHE_PREFIX = 'laufapp-';
+
+export const CACHE_PREFIX = 'funrun-';
+
+/**
+ * Die App hiess bis Version 25 "Laufapp". Ohne dieses Präfix bliebe der alte
+ * Cache nach der Umbenennung für immer liegen: das Aufräumen erkennt nur, was
+ * es als eigenes erkennt.
+ */
+export const LEGACY_CACHE_PREFIXES = ['laufapp-'];
+
+const OWN_PREFIXES = [CACHE_PREFIX, ...LEGACY_CACHE_PREFIXES];
 
 /** Anzeigemodi, die eine installierte App bedeuten. */
 const INSTALLED_MODES = ['standalone', 'fullscreen', 'minimal-ui'];
@@ -60,7 +74,8 @@ export function shouldShowInstallHint({ standalone, dismissed }) {
  */
 export function ownCacheNames(names) {
   return (names ?? []).filter(
-    (name) => typeof name === 'string' && name.startsWith(CACHE_PREFIX)
+    (name) =>
+      typeof name === 'string' && OWN_PREFIXES.some((prefix) => name.startsWith(prefix))
   );
 }
 

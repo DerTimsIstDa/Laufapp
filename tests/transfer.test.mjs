@@ -8,6 +8,7 @@ import {
   parseImport,
   EXPORT_FORMAT,
   EXPORT_VERSION,
+  LEGACY_EXPORT_FORMATS,
 } from '../js/transfer.js';
 
 const sampleRuns = [
@@ -34,8 +35,29 @@ describe('Export', () => {
   });
 
   test('Dateiname trägt das lokale Datum', () => {
-    assert.equal(exportFileName(new Date(2026, 7, 14)), 'laufapp-2026-08-14.json');
-    assert.equal(exportFileName(new Date(2026, 0, 5)), 'laufapp-2026-01-05.json');
+    assert.equal(exportFileName(new Date(2026, 7, 14)), 'funrun-2026-08-14.json');
+    assert.equal(exportFileName(new Date(2026, 0, 5)), 'funrun-2026-01-05.json');
+  });
+});
+
+describe('Sicherungen aus der Zeit als Laufapp', () => {
+  test('werden weiterhin angenommen', () => {
+    // Wer vor der Umbenennung exportiert hat, muss die Datei zurückspielen
+    // können – sonst wäre die einzige Sicherung wertlos.
+    const alt = JSON.stringify({
+      format: 'laufapp-export',
+      version: 1,
+      runs: sampleRuns,
+    });
+
+    const result = parseImport(alt);
+    assert.equal(result.ok, true);
+    assert.deepEqual(result.runs, sampleRuns);
+  });
+
+  test('das alte Format steht als Konstante da, nicht als Zufallstext', () => {
+    assert.ok(LEGACY_EXPORT_FORMATS.includes('laufapp-export'));
+    assert.equal(EXPORT_FORMAT, 'funrun-export');
   });
 });
 
@@ -149,8 +171,8 @@ describe('Import – kaputte Dateien', () => {
     ['abgeschnittenes JSON', '{"runs": [{"distanceKm": 5', /JSON/i],
     ['JSON-Text statt Objekt', '"nur ein String"', /Format/i],
     ['Zahl statt Objekt', '42', /Format/i],
-    ['fremdes Format', '{"format":"strava-export","runs":[]}', /nicht aus der Laufapp/i],
-    ['keine Lauf-Liste', '{"format":"laufapp-export"}', /keine Liste/i],
+    ['fremdes Format', '{"format":"strava-export","runs":[]}', /nicht aus FunRun/i],
+    ['keine Lauf-Liste', '{"format":"funrun-export"}', /keine Liste/i],
     ['runs ist kein Array', '{"runs": {"a": 1}}', /keine Liste/i],
     ['leere Liste', '{"runs": []}', /keine Läufe/i],
   ];

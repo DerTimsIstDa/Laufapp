@@ -11,6 +11,7 @@ import {
   ownRegistrations,
   INSTALL_HINT_KEY,
   CACHE_PREFIX,
+  LEGACY_CACHE_PREFIXES,
 } from '../js/pwa.js';
 
 /** window-Attrappe: `modes` sind die Anzeigemodi, die als zutreffend gelten. */
@@ -104,8 +105,16 @@ describe('shouldShowInstallHint', () => {
 
 describe('ownCacheNames', () => {
   test('nimmt nur die eigenen Caches', () => {
-    const alle = ['laufapp-v14', 'laufapp-v13', 'andere-app-v1', 'workbox-precache'];
-    assert.deepEqual(ownCacheNames(alle), ['laufapp-v14', 'laufapp-v13']);
+    const alle = ['funrun-v26', 'funrun-v25', 'andere-app-v1', 'workbox-precache'];
+    assert.deepEqual(ownCacheNames(alle), ['funrun-v26', 'funrun-v25']);
+  });
+
+  test('Caches aus der Zeit als Laufapp gelten weiter als eigene', () => {
+    // Sonst bliebe der alte Cache nach der Umbenennung für immer liegen.
+    assert.deepEqual(ownCacheNames(['funrun-v26', 'laufapp-v25']), [
+      'funrun-v26',
+      'laufapp-v25',
+    ]);
   });
 
   test('fremde Projekte auf demselben Origin bleiben unangetastet', () => {
@@ -114,13 +123,13 @@ describe('ownCacheNames', () => {
   });
 
   test('Präfix stimmt mit dem Service Worker überein', () => {
-    assert.equal(CACHE_PREFIX, 'laufapp-');
+    assert.equal(CACHE_PREFIX, 'funrun-');
   });
 
   test('leere und kaputte Eingaben', () => {
     assert.deepEqual(ownCacheNames([]), []);
     assert.deepEqual(ownCacheNames(null), []);
-    assert.deepEqual(ownCacheNames([null, 42, undefined, 'laufapp-v1']), ['laufapp-v1']);
+    assert.deepEqual(ownCacheNames([null, 42, undefined, 'funrun-v1']), ['funrun-v1']);
   });
 });
 
@@ -149,9 +158,18 @@ describe('Service Worker hält sich an dasselbe Präfix', () => {
     // fremden Projekten den Cache.
     assert.match(
       sw,
-      /key\.startsWith\(CACHE_PREFIX\)\s*&&\s*key !== CACHE_VERSION/,
+      /OWN_PREFIXES\.some\(\(prefix\) => key\.startsWith\(prefix\)\)\s*&&\s*key !== CACHE_VERSION/,
       'die Aufräumregel im activate-Handler filtert nicht nach Präfix'
     );
+  });
+
+  test('kennt dieselben Altpräfixe wie js/pwa.js', () => {
+    // Läuft das auseinander, bleibt der Laufapp-Cache auf dem Gerät liegen.
+    const treffer = /const LEGACY_CACHE_PREFIXES = \[([^\]]*)\]/.exec(sw);
+    assert.ok(treffer, 'LEGACY_CACHE_PREFIXES steht nicht in sw.js');
+
+    const imSw = [...treffer[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+    assert.deepEqual(imSw, LEGACY_CACHE_PREFIXES);
   });
 });
 

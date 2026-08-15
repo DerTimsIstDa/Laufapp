@@ -1,6 +1,6 @@
 {
-  "name": "Laufapp",
-  "short_name": "Laufapp",
+  "name": "FunRun",
+  "short_name": "FunRun",
   "description": "Läufe aufzeichnen, XP sammeln, Level aufsteigen.",
   "lang": "de",
   "start_url": ".",

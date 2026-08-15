@@ -12,7 +12,15 @@
 import { validateRun, isValidIsoDate } from './validation.js';
 import { validateSession } from './training.js';
 
-export const EXPORT_FORMAT = 'laufapp-export';
+export const EXPORT_FORMAT = 'funrun-export';
+
+/**
+ * Kennung aus der Zeit, als die App "Laufapp" hiess. Ältere Sicherungen
+ * müssen sich weiter einlesen lassen – eine Datei, die die App selbst
+ * geschrieben hat, darf sie nicht ablehnen.
+ */
+export const LEGACY_EXPORT_FORMATS = ['laufapp-export'];
+
 export const EXPORT_VERSION = 1;
 
 /**
@@ -38,12 +46,12 @@ export function serializeExport(runs, options) {
   return JSON.stringify(buildExport(runs, options), null, 2);
 }
 
-/** Dateiname mit lokalem Datum, z.B. "laufapp-2026-08-14.json". */
+/** Dateiname mit lokalem Datum, z.B. "funrun-2026-08-14.json". */
 export function exportFileName(date = new Date()) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
-  return `laufapp-${year}-${month}-${day}.json`;
+  return `funrun-${year}-${month}-${day}.json`;
 }
 
 /**
@@ -76,8 +84,12 @@ export function parseImport(text) {
   if (payload === null || typeof payload !== 'object') {
     return fail('Die Datei hat nicht das erwartete Format.');
   }
-  if (payload.format !== undefined && payload.format !== EXPORT_FORMAT) {
-    return fail('Die Datei stammt nicht aus der Laufapp.');
+  if (
+    payload.format !== undefined &&
+    payload.format !== EXPORT_FORMAT &&
+    !LEGACY_EXPORT_FORMATS.includes(payload.format)
+  ) {
+    return fail('Die Datei stammt nicht aus FunRun.');
   }
   if (typeof payload.version === 'number' && payload.version > EXPORT_VERSION) {
     return fail(

@@ -1,7 +1,12 @@
-# Laufapp
+# FunRun
 
 Prototyp einer Lauf-App mit Gamification. Reines HTML/CSS/JS, kein Build-Step,
 kein Backend. Läufe liegen im `localStorage` des Browsers.
+
+Die App hiess bis Version 25 „Laufapp". Umbenannt wurde alles Sichtbare und
+die Konfiguration; **Ordner, Git-Repo und die `localStorage`-Schlüssel behalten
+den alten Namen** – ein Umbenennen der Schlüssel wäre für jedes bestehende
+Gerät ein Datenverlust.
 
 **Live: https://dertimsistda.github.io/Laufapp/**
 
@@ -71,9 +76,12 @@ Service Worker ab und lädt neu. Eingetragene Läufe liegen im `localStorage`
 und bleiben unberührt.
 
 Dabei werden bewusst **nur die eigenen** Caches und Registrierungen angefasst
-(Präfix `laufapp-` bzw. Scope des eigenen Verzeichnisses). Auf `github.io`
+(Präfix `funrun-` bzw. Scope des eigenen Verzeichnisses). Auf `github.io`
 teilen sich alle Projekte eines Kontos denselben Origin – ein pauschales
 Leeren würde einem Nachbarprojekt den Cache wegräumen.
+
+Als eigen gilt auch das alte Präfix `laufapp-` (`LEGACY_CACHE_PREFIXES`).
+Sonst bliebe der Cache von vor der Umbenennung für immer auf dem Gerät liegen.
 
 ⚠️ **Die Daten hängen an der Adresse.** Der `localStorage` gehört zur Domain –
 ein Wechsel von Netlify zu GitHub Pages nimmt die Läufe nicht mit, und auf dem
@@ -238,8 +246,12 @@ wird erst nach dem zweiten Klick.
 Sicherung und der einzige Weg auf ein anderes Gerät. Format:
 
 ```json
-{ "format": "laufapp-export", "version": 1, "exportedAt": "…", "runCount": 2, "runs": [ … ] }
+{ "format": "funrun-export", "version": 1, "exportedAt": "…", "runCount": 2, "runs": [ … ] }
 ```
+
+Dateien mit der alten Kennung `laufapp-export` werden weiterhin angenommen
+(`LEGACY_EXPORT_FORMATS`) – eine Sicherung, die die App selbst geschrieben hat,
+darf sie nicht ablehnen.
 
 Der Import **ersetzt** den Bestand und fragt vorher nach, mit Angabe, wie
 viele Läufe gefunden wurden und wie viele ersetzt werden. `parseImport()` in

@@ -29,6 +29,37 @@ describe('[hidden] sticht jede eigene display-Regel', () => {
   });
 });
 
+describe('Eingabefelder sind zentral bemasst', () => {
+  test('die Masse stehen als Token, nicht in den Regeln', () => {
+    for (const token of ['--field-height', '--field-pad-x', '--field-pad-y', '--label-gap']) {
+      assert.match(css, new RegExp(`${token}:\\s*[^;]+;`), `${token} fehlt`);
+    }
+  });
+
+  test('Text, Auswahl und Datum teilen sich eine Grundregel', () => {
+    // Ohne gemeinsame Regel wird ein Datumsfeld anders hoch als ein Dropdown,
+    // weil beide eigene Innenteile mitbringen.
+    const regel = /input,\s*select,\s*textarea\s*\{([^}]*)\}/.exec(css);
+    assert.ok(regel, 'input/select/textarea haben keine gemeinsame Regel');
+    assert.match(regel[1], /min-height:\s*var\(--field-height\)/);
+    assert.match(regel[1], /padding:\s*var\(--field-pad-y\)\s+var\(--field-pad-x\)/);
+  });
+
+  test('kein Formular bemasst seine Felder selbst', () => {
+    // Erlaubt ist nur, die Token neu zu setzen (macht .segment). Eine eigene
+    // padding- oder height-Angabe an einem Feld läuft mit der Zeit auseinander.
+    const eigenmass = [...css.matchAll(/#[a-z-]+ (input|select)[^{]*\{([^}]*)\}/g)].filter(
+      ([, , block]) => /(^|;)\s*(padding|height|min-height):/.test(block)
+    );
+    assert.deepEqual(eigenmass.map((m) => m[0].split('{')[0].trim()), []);
+  });
+
+  test('Beschriftung und Feld hängen am selben Abstand', () => {
+    assert.match(css, /\.field\s*\{[^}]*gap:\s*var\(--label-gap\)/);
+    assert.match(css, /\.count-label\s*\{[^}]*margin-bottom:\s*var\(--label-gap\)/);
+  });
+});
+
 describe('Bereiche und Umschaltung', () => {
   /** Aus dem Markup gelesen statt fest verdrahtet – wächst mit. */
   const views = [...html.matchAll(/<div class="view" id="(view-[a-z]+)"/g)].map((m) => m[1]);

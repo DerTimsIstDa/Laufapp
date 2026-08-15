@@ -7,6 +7,11 @@
  * angepasst wird.
  */
 
+/**
+ * Die Schlüssel behalten den alten Namen, obwohl die App jetzt FunRun heisst.
+ * Ein Umbenennen wäre für jedes bestehende Gerät ein Datenverlust – die Läufe
+ * lägen unter dem alten Schlüssel und wären für die App verschwunden.
+ */
 const STORAGE_KEY = 'laufapp.runs.v1';
 const EXERCISE_KEY = 'laufapp.exercises.v1';
 const TRAINING_KEY = 'laufapp.training.v1';
