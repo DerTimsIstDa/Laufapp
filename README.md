@@ -101,11 +101,13 @@ alten Gerät exportieren, auf dem neuen importieren.
 | 3 → 4 |                     100 |               140 |
 | 4 → 5 |                     120 |               240 |
 
-Gesamt-XP = XP aus Läufen + Bonus-XP aus freigeschalteten Achievements.
+Gesamt-XP = XP aus Läufen + XP aus abgehakten Übungen + Bonus-XP aus
+freigeschalteten Achievements + Bonus-XP aus Plantreue. Die Aufteilung steht
+im Fortschrittsbereich.
 
 Weder XP-Stand noch Achievements werden **gespeichert** – beides wird immer aus
-den Läufen berechnet. Dadurch bleibt alles konsistent, wenn ein Lauf gelöscht
-oder eine Regel angepasst wird.
+den Läufen, den abgehakten Übungen und dem Plan berechnet. Dadurch bleibt alles
+konsistent, wenn ein Lauf gelöscht oder eine Regel angepasst wird.
 
 ## Bereiche
 
@@ -114,7 +116,8 @@ Eine Tab-Leiste am unteren Rand führt durch fünf Bereiche:
 - **Start** – alles Bisherige: Fortschritt, Aufzeichnung, Eintragen,
   Achievements als kompakte Liste, Statistik, Lauf-Liste, Sicherung
 - **Übungen** – kuratierte Übungsbibliothek mit Filter, siehe unten
-- **Training** – Platzhalter für die spätere Planung eigener Einheiten
+- **Training** – eigene Einheiten auf ein Datum planen und der Abgleich mit
+  den tatsächlichen Läufen, siehe unten
 - **Trophäen** – alle Achievements als grosse Kacheln, freigeschaltete mit
   Datum, offene mit Fortschrittsbalken sofern die Bedingung einen Zähler hat
 - **Profil** – Titel und Level gross mit XP-Balken bis zum nächsten Level,
@@ -129,8 +132,8 @@ erstellen" steht in der Überschrift.
 
 27 Übungen in fünf Kategorien, fest hinterlegt in `js/exercises.js`: Aufwärmen,
 Lauftechnik, Kraft, Dehnen, Regeneration. Jede mit Anleitung und Richtwert für
-Dauer oder Wiederholungen. Keine Nutzereingabe, keine Persistenz – reine
-Anzeige mit Filter.
+Dauer oder Wiederholungen. Die Bibliothek selbst ist unveränderlich; was der
+Nutzer beisteuert, sind die Häkchen darunter (siehe „Übungen abhaken").
 
 Zwei Eigenheiten:
 
@@ -191,8 +194,36 @@ Ein leeres Eingabefeld gilt **nicht** als Null. `Number('')` ist 0, und ohne
 diese Prüfung hätte ein versehentlich geleertes Feld beim Übernehmen den
 ganzen Zähler gelöscht. Eine ausdrücklich eingetragene 0 löscht sehr wohl.
 
-Die beiden neuen Bereiche werden erst beim Ansehen berechnet, nicht bei jeder
+Trophäen und Profil werden erst beim Ansehen berechnet, nicht bei jeder
 Änderung. Grund ist `js/history.js`.
+
+### Training erstellen
+
+Im Tab **Training** lassen sich einzelne Einheiten auf ein Datum anlegen: Art
+(Dauerlauf, Long Run, Tempolauf, Intervalle, Ruhetag), beliebig viele
+Abschnitte mit Wiederholungen, Distanz und Dauer, dazu eine Notiz. Gespeichert
+wird unter `laufapp.training.v1`, gerechnet wird in `js/training.js`, pur und
+ohne DOM.
+
+Der Abgleich mit den echten Läufen wird wie alles andere **bei jeder Anzeige
+neu gerechnet** und nicht gespeichert. Eine Einheit gilt als eingehalten, wenn
+ein Lauf desselben Tages mindestens 80 % des Ziels erreicht
+(`FULFILL_RATIO`); ohne Abschnitte reicht jeder Lauf an dem Tag.
+
+Drei Regeln, die nicht offensichtlich sind:
+
+- **Eine eingehaltene Einheit bringt 15 XP** (`XP_PER_SESSION`), aber nur, wenn
+  sie vor dem Lauftag im Plan stand (`createdAt` <= `date`). Sonst liessen sich
+  zu vorhandenen Läufen nachträglich beliebig viele Bonus-XP erfinden. Die
+  Liste sagt das auch offen: „nachträglich geplant, deshalb keine Bonus-XP".
+- **Ein Lauf erfüllt höchstens eine Einheit.** Stehen an einem Tag mehrere im
+  Plan, bekommt die anspruchsvollste den längsten Lauf.
+- Ein **Ruhetag** verbraucht keinen Lauf und bringt nie XP. Wer an einem
+  Ruhetag läuft, hat ihn verpasst.
+
+Beim Bearbeiten bleiben `id` und `createdAt` erhalten – sonst liesse sich eine
+nachträglich angelegte Einheit durch einmaliges Ändern in eine „vorher
+geplante" verwandeln.
 
 ### Zeitpunkte statt nur Zustände
 
@@ -246,15 +277,23 @@ wird erst nach dem zweiten Klick.
 Sicherung und der einzige Weg auf ein anderes Gerät. Format:
 
 ```json
-{ "format": "funrun-export", "version": 1, "exportedAt": "…", "runCount": 2, "runs": [ … ] }
+{
+  "format": "funrun-export", "version": 1, "exportedAt": "…", "runCount": 2,
+  "runs": [ … ], "exerciseLog": [ … ], "sessions": [ … ]
+}
 ```
+
+Erledigte Übungen und der Trainingsplan gehören mit hinein, sonst wäre der
+Export kein vollständiges Abbild. Sicherungen von vor diesen Bereichen haben
+die Felder nicht – dann kommen sie als leere Listen zurück.
 
 Dateien mit der alten Kennung `laufapp-export` werden weiterhin angenommen
 (`LEGACY_EXPORT_FORMATS`) – eine Sicherung, die die App selbst geschrieben hat,
 darf sie nicht ablehnen.
 
 Der Import **ersetzt** den Bestand und fragt vorher nach, mit Angabe, wie
-viele Läufe gefunden wurden und wie viele ersetzt werden. `parseImport()` in
+viele Läufe, Übungen und geplante Einheiten gefunden wurden und wie viele
+ersetzt werden. `parseImport()` in
 `js/transfer.js` prüft die Datei stufenweise und meldet jeden Fehlerfall im
 Klartext statt abzustürzen: kein JSON, fremdes Format, neuere Dateiversion,
 fehlende Lauf-Liste, leere Liste. Einzelne kaputte Einträge brechen den Import
@@ -266,6 +305,21 @@ funktionieren.
 Jeder Weg in den Speicher läuft über `validateRun()` in `js/validation.js` —
 Formular wie Import. Unbekannte Felder aus einer Importdatei werden dabei
 verworfen.
+
+### Zahlenfelder sind `type="text"`
+
+Alle Zahleneingaben – Distanz, Dauer, die Abschnitte einer Einheit und die
+Zähler-Korrektur – sind bewusst **kein** `type="number"`. Der Browser
+akzeptiert dort nur den Punkt als Dezimaltrennzeichen und verwirft „0,4"
+schon beim Tippen; auf einer deutschen Tastatur ist das aber die normale
+Schreibweise. Die Zifferntastatur auf dem Handy kommt stattdessen über
+`inputmode`.
+
+Gelesen wird überall mit `parseNumber()` aus `js/validation.js`, nie mit
+`Number()` oder `parseFloat()` — es nimmt Komma wie Punkt und liefert für
+Leerstring und Buchstabensalat `null`. Das ist der Unterschied, auf den es
+ankommt: `Number('')` ist 0, und eine 0 würde einen Zähler löschen statt eine
+Rückfrage auszulösen.
 
 ## Gestaltung
 
@@ -291,6 +345,14 @@ Mobile first: die Grundregeln gelten fürs Handy, eine Medienabfrage ab 40 rem
 erweitert für breitere Schirme. Bei grobem Zeiger wachsen Icon-Knöpfe auf
 44 px Kantenlänge.
 
+**Eingabefelder hängen an eigenen Tokens** (`--field-height`, `--field-pad-x`,
+`--field-pad-y`, `--label-gap`, `--field-gap`) und werden nirgends pro Formular
+nachjustiert. Datum, Uhrzeit und Auswahl bringen je eigene Innenteile mit und
+wären sonst unterschiedlich hoch; die Mindesthöhe von 44 px zieht sie auf ein
+Mass und ist zugleich das Fingerziel. `line-height` steht dort fest bei 1.25,
+sonst macht die 1.55 des `body` ein Textfeld höher als ein Datumsfeld. Ein Test
+in `tests/styles.test.mjs` wacht darüber.
+
 Keine Schriftart wird nachgeladen – der Systemfont-Stack landet auf Android bei
 Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 
@@ -300,7 +362,7 @@ Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 node --test
 ```
 
-392 Tests im Ordner `tests/`, ausgeführt vom eingebauten Testrunner von Node —
+464 Tests im Ordner `tests/`, ausgeführt vom eingebauten Testrunner von Node —
 keine Abhängigkeiten, kein Framework, nichts zu installieren.
 
 | Datei | prüft |
@@ -320,6 +382,7 @@ keine Abhängigkeiten, kein Framework, nichts zu installieren.
 | `tests/history.test.mjs` | Freischaltdaten, Titel-Historie, Monotonie-Annahme |
 | `tests/exercises.test.mjs` | Vollständigkeit der Übungsdaten, Filter, Zählung |
 | `tests/exercise-log.test.mjs` | Tageslimit, Zähler, Kategorien für Vielseitig |
+| `tests/training.test.mjs` | Abschnitte, Abgleich mit Läufen, Plantreue und XP |
 | `tests/styles.test.mjs` | CSS- und Markup-Regeln, die Node nicht ausführen kann |
 
 Getestet wird das Verhalten an den **Grenzen**: 4 gegen 5 Läufe, 49,9 gegen
@@ -429,10 +492,11 @@ Die Route überlebt Bearbeiten, Export und Import. Das Formular kann sie nicht
 
 ## Achievements
 
-13 Stück, definiert in `js/achievements.js`. Meilensteine (Anzahl Läufe,
-Gesamtdistanz, Serien) und Herausforderungen (Tageszeit, Bestzeit, Comeback,
-Distanz-Durchbruch). Sie werden bei jedem Render automatisch geprüft; die
-Bonus-XP fließen sofort in Level und Titel ein.
+17 Stück in drei Kategorien, definiert in `js/achievements.js`: acht
+Meilensteine (Anzahl Läufe, Gesamtdistanz, Serien), fünf Herausforderungen
+(Tageszeit, Bestzeit, Comeback, Distanz-Durchbruch) und vier für Übungen. Sie
+werden bei jedem Render automatisch geprüft; die Bonus-XP fließen sofort in
+Level und Titel ein.
 
 Auslegungen, die in der Spezifikation offen waren:
 
@@ -453,7 +517,7 @@ endlos.
 
 ```
 index.html          Markup
-css/style.css       Layout (bewusst schlicht)
+css/style.css       Gestaltung; alle Werte als Tokens ganz oben
 js/xp.js            XP-/Level-Logik – pur, kein DOM, kein Storage
 js/achievements.js  Achievement-Definitionen + Auswertung – ebenfalls pur
 js/titles.js        Titel zum Level – ebenfalls pur
@@ -467,6 +531,7 @@ js/lock.js          Tastensperre: Halte-Fortschritt und Sperrregeln – ebenfall
 js/history.js       Freischaltdaten und Titel-Historie – ebenfalls pur
 js/exercises.js     Übungsbibliothek und Filter – feste Daten, ebenfalls pur
 js/exercise-log.js  Erledigte Übungen: Zähler, Tageslimit, XP – ebenfalls pur
+js/training.js      Geplante Einheiten, Abgleich mit den Läufen – ebenfalls pur
 js/tracker.js       Live-Aufzeichnung: watchPosition, Pausen, Wake Lock
 js/storage.js       Laden/Speichern/Ändern der Läufe im localStorage
 js/app.js           Formular, Rendering, Verdrahtung

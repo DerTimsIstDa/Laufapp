@@ -23,7 +23,7 @@ import { evaluateAchievements, achievementXp, achievementsByCategory } from './a
 import { titleForLevel, nextTitle } from './titles.js';
 import { paceMinPerKm, formatDuration, formatPace } from './geo.js';
 import { createTracker } from './tracker.js';
-import { validateRun, firstErrorMessage } from './validation.js';
+import { validateRun, firstErrorMessage, parseNumber } from './validation.js';
 import { serializeExport, exportFileName, parseImport } from './transfer.js';
 import { buildStats, distanceByWeek, distanceByMonth } from './stats.js';
 import { projectTrack, hasDrawableRoute, toStorageTrack, DEFAULT_VIEWPORT } from './route.js';
@@ -516,8 +516,6 @@ function createSegmentRow(segment, index) {
     label: `Abschnitt ${index + 1}: Wiederholungen`,
     area: 'repeats',
     placeholder: '1',
-    step: '1',
-    min: '1',
     suffix: '×',
   });
 
@@ -525,8 +523,6 @@ function createSegmentRow(segment, index) {
     label: `Abschnitt ${index + 1}: Distanz in Kilometern`,
     area: 'distance',
     placeholder: '0,4',
-    step: '0.01',
-    min: '0.01',
     suffix: 'km',
   });
 
@@ -534,8 +530,6 @@ function createSegmentRow(segment, index) {
     label: `Abschnitt ${index + 1}: Dauer in Minuten`,
     area: 'duration',
     placeholder: '3',
-    step: '1',
-    min: '1',
     suffix: 'min',
   });
 
@@ -550,15 +544,15 @@ function createSegmentRow(segment, index) {
   return zeile;
 }
 
-function createSegmentInput(segment, field, { label, area, placeholder, step, min, suffix }) {
+function createSegmentInput(segment, field, { label, area, placeholder, suffix }) {
   const huelle = document.createElement('span');
   huelle.className = `segment-input segment-${area}`;
 
   const feld = document.createElement('input');
-  feld.type = 'number';
-  feld.step = step;
-  feld.min = min;
-  feld.inputMode = step === '1' ? 'numeric' : 'decimal';
+  // type="text" wie im Lauf-Formular: type="number" verwirft "0,4" beim Tippen.
+  // Die Prüfung macht validateSession(), nicht der Browser.
+  feld.type = 'text';
+  feld.inputMode = 'decimal';
   feld.placeholder = placeholder;
   feld.autocomplete = 'off';
   feld.value = segment[field] ?? '';
@@ -981,12 +975,15 @@ function createCountEditor(exercise, anzahl) {
   label.textContent = 'Wie oft insgesamt gemacht?';
 
   const feld = document.createElement('input');
-  feld.type = 'number';
+  // type="text" wie überall sonst – type="number" liefert bei einer Eingabe,
+  // die der Browser nicht mag, einen leeren Wert, und leer heisst hier "bitte
+  // eine Zahl eintragen" statt "auf 0 setzen".
+  feld.type = 'text';
   feld.id = 'count-input';
-  feld.min = '0';
-  feld.max = String(MAX_EXERCISE_COUNT);
-  feld.step = '1';
+  // Ein Zähler ist eine ganze Zahl. Deshalb "numeric" statt "decimal": das
+  // Komma auf der Tastatur brächte hier nichts zu tippen.
   feld.inputMode = 'numeric';
+  feld.autocomplete = 'off';
   feld.value = String(anzahl);
 
   const hinweis = document.createElement('p');
@@ -1031,9 +1028,10 @@ function handleCountCorrection(exercise, rohwert, vorher) {
     return;
   }
 
-  const ziel = Math.trunc(Number(rohwert));
+  const zahl = parseNumber(rohwert);
+  const ziel = zahl === null ? null : Math.trunc(zahl);
 
-  if (!Number.isFinite(ziel) || ziel < 0 || ziel > MAX_EXERCISE_COUNT) {
+  if (ziel === null || ziel < 0 || ziel > MAX_EXERCISE_COUNT) {
     showExerciseFeedback(`Bitte eine Zahl zwischen 0 und ${MAX_EXERCISE_COUNT} eintragen.`, false);
     return;
   }

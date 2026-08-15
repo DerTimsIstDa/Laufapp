@@ -260,6 +260,13 @@ describe('setExerciseCount – Handkorrektur', () => {
   test('Kommazahlen werden abgeschnitten', () => {
     assert.equal(setExerciseCount(dreiTage, 'kraft-plank', 1.9, { date: '2026-08-14' }).length, 1);
   });
+
+  test('mit deutschem Komma getippt kommt dasselbe heraus', () => {
+    // Das Feld ist type="text", damit das Komma nicht schon beim Tippen
+    // verworfen wird. Dann muss es hier ankommen.
+    assert.equal(setExerciseCount(dreiTage, 'kraft-plank', '1,9', { date: '2026-08-14' }).length, 1);
+    assert.deepEqual(setExerciseCount(dreiTage, 'kraft-plank', '0,0', {}), []);
+  });
 });
 
 describe('buildExerciseStats', () => {

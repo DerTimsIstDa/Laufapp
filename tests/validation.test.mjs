@@ -88,6 +88,21 @@ describe('validateRun – Pflichtfelder', () => {
     assert.deepEqual(errorFields(validateRun(input({ distanceKm: 'abc' }))), ['distanceKm']);
   });
 
+  test('leeres Feld und Buchstabensalat werden auseinandergehalten', () => {
+    // Seit die Felder type="text" sind, kommt hier auch Text an. "Bitte eine
+    // Distanz eintragen" wäre die falsche Auskunft, wenn etwas drinsteht.
+    assert.match(firstErrorMessage(validateRun(input({ distanceKm: '' }))), /Bitte eine Distanz/);
+    assert.match(firstErrorMessage(validateRun(input({ distanceKm: 'abc' }))), /muss eine Zahl sein/);
+    assert.match(
+      firstErrorMessage(validateRun(input({ durationMinutes: 'abc' }))),
+      /muss eine Zahl sein/
+    );
+    assert.match(
+      firstErrorMessage(validateRun(input({ durationMinutes: -5 }))),
+      /größer als 0 Minuten/
+    );
+  });
+
   test('Obergrenze für die Distanz', () => {
     assert.equal(validateRun(input({ distanceKm: MAX_DISTANCE_KM })).ok, true);
     assert.equal(validateRun(input({ distanceKm: MAX_DISTANCE_KM + 0.1 })).ok, false);

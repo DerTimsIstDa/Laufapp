@@ -14,6 +14,7 @@
  */
 
 import { EXERCISES, CATEGORIES } from './exercises.js';
+import { parseNumber } from './validation.js';
 
 /** XP je Übung und Kalendertag. */
 export const XP_PER_EXERCISE = 3;
@@ -109,11 +110,14 @@ export function setExerciseCount(entries, exerciseId, target, { date, createId }
 
   // Kein Number(target) auf Verdacht: Number(null) und Number('') sind beide 0,
   // ein leeres Eingabefeld würde sonst klaglos den ganzen Zähler löschen.
+  // parseNumber liefert für beides null – und nimmt nebenbei "12,0" an.
   if (typeof target !== 'number' && typeof target !== 'string') return sauber;
-  if (typeof target === 'string' && target.trim() === '') return sauber;
 
-  const ziel = Math.trunc(Number(target));
-  if (!Number.isFinite(ziel) || ziel < 0 || ziel > MAX_EXERCISE_COUNT) return sauber;
+  const zahl = parseNumber(target);
+  if (zahl === null) return sauber;
+
+  const ziel = Math.trunc(zahl);
+  if (ziel < 0 || ziel > MAX_EXERCISE_COUNT) return sauber;
 
   const eigene = sauber.filter((entry) => entry.exerciseId === exerciseId);
   const differenz = ziel - eigene.length;

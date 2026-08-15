@@ -60,6 +60,33 @@ describe('Eingabefelder sind zentral bemasst', () => {
   });
 });
 
+describe('Zahlenfelder nehmen ein Komma an', () => {
+  const app = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
+
+  /** Ohne das stolpert die Prüfung über den Kommentar, der die Regel erklärt. */
+  const ohneKommentare = html.replace(/<!--[\s\S]*?-->/g, '');
+
+  test('kein Feld ist type="number"', () => {
+    // type="number" verwirft "0,4" schon beim Tippen – auf einer deutschen
+    // Tastatur ist das die normale Schreibweise. Geprüft wird in
+    // validation.js bzw. training.js, nicht vom Browser.
+    assert.doesNotMatch(ohneKommentare, /type="number"/);
+    assert.doesNotMatch(app, /\.type = 'number'/);
+  });
+
+  test('die Zifferntastatur kommt trotzdem', () => {
+    // Ohne inputmode bekäme man auf dem Handy die Buchstabentastatur.
+    const felder = [...ohneKommentare.matchAll(/<input\b[^>]*type="text"[^>]*>/gs)];
+    assert.ok(felder.length > 0, 'kein Textfeld im Markup gefunden');
+
+    for (const [tag] of felder) {
+      if (/id="(distance|duration)"/.test(tag)) {
+        assert.match(tag, /inputmode="decimal"/, `inputmode fehlt: ${tag}`);
+      }
+    }
+  });
+});
+
 describe('Bereiche und Umschaltung', () => {
   /** Aus dem Markup gelesen statt fest verdrahtet – wächst mit. */
   const views = [...html.matchAll(/<div class="view" id="(view-[a-z]+)"/g)].map((m) => m[1]);

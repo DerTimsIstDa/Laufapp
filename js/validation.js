@@ -72,7 +72,14 @@ export function validateRun(input) {
 
   const distanceKm = parseNumber(input.distanceKm);
   if (distanceKm === null) {
-    errors.push({ field: 'distanceKm', message: 'Bitte eine Distanz eintragen.' });
+    // Seit die Felder type="text" sind, kommt hier auch Text an. "Bitte eine
+    // Distanz eintragen" wäre die falsche Auskunft, wenn etwas drinsteht.
+    errors.push({
+      field: 'distanceKm',
+      message: isFilled(input.distanceKm)
+        ? 'Die Distanz muss eine Zahl sein, zum Beispiel 5,4.'
+        : 'Bitte eine Distanz eintragen.',
+    });
   } else if (!(distanceKm > 0)) {
     errors.push({ field: 'distanceKm', message: 'Die Distanz muss größer als 0 km sein.' });
   } else if (distanceKm > MAX_DISTANCE_KM) {
@@ -99,7 +106,12 @@ export function validateRun(input) {
   let durationMinutes;
   if (isFilled(input.durationMinutes)) {
     const candidate = parseNumber(input.durationMinutes);
-    if (candidate === null || !(candidate > 0)) {
+    if (candidate === null) {
+      errors.push({
+        field: 'durationMinutes',
+        message: 'Die Dauer muss eine Zahl sein, zum Beispiel 28.',
+      });
+    } else if (!(candidate > 0)) {
       errors.push({ field: 'durationMinutes', message: 'Die Dauer muss größer als 0 Minuten sein.' });
     } else if (candidate > MAX_DURATION_MINUTES) {
       errors.push({
