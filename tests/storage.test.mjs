@@ -197,9 +197,15 @@ describe('Neuberechnung nach dem Bearbeiten', () => {
     const nachher = derive(next);
 
     assert.equal(vorher.totalXp, 65, '50 aus dem Lauf plus 15 für Erste Meile');
-    assert.equal(nachher.totalXp, 3065, '3000 plus Erste Meile plus 50-km-Club');
+    assert.equal(
+      nachher.totalXp,
+      3335,
+      '3000 plus Erste Meile (15) plus die Clubs 50/100/250 km (50+90+180)'
+    );
     assert.ok(nachher.level > vorher.level);
     assert.ok(nachher.unlocked.includes('club-50-km'));
+    assert.ok(nachher.unlocked.includes('club-250-km'));
+    assert.equal(nachher.unlocked.includes('club-500-km'), false, '300 km reichen dafür nicht');
   });
 
   test('weniger Distanz sperrt ein Achievement wieder und senkt das Level', () => {

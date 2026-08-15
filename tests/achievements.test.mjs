@@ -61,8 +61,11 @@ describe('Meilensteine nach Anzahl', () => {
     const schwellen = [
       ['erste-meile', 1],
       ['aufgewaermt', 5],
+      ['eingelaufen', 10],
       ['auf-kurs', 25],
+      ['stammlaeufer', 50],
       ['alter-hase', 100],
+      ['unermuedlich', 250],
     ];
 
     for (const [id, threshold] of schwellen) {
@@ -81,6 +84,27 @@ describe('Meilensteine nach Distanz', () => {
   test('500-km-Club zählt über mehrere Läufe', () => {
     assert.equal(has([makeRun(0, 499)], 'club-500-km'), false);
     assert.equal(has([makeRun(0, 250), makeRun(100, 250)], 'club-500-km'), true);
+  });
+
+  test('jede Club-Stufe greift genau an ihrer Schwelle', () => {
+    for (const [id, schwelle] of [
+      ['club-50-km', 50],
+      ['club-100-km', 100],
+      ['club-250-km', 250],
+      ['club-500-km', 500],
+      ['club-1000-km', 1000],
+    ]) {
+      assert.equal(has([makeRun(0, schwelle - 0.1)], id), false, `${id} knapp darunter`);
+      assert.equal(has([makeRun(0, schwelle)], id), true, `${id} genau auf der Schwelle`);
+    }
+  });
+
+  test('die Stufen bauen aufeinander auf', () => {
+    // 300 km schalten alles bis 250 frei und nichts darüber.
+    const frei = unlockedIds([makeRun(0, 300)]);
+
+    assert.ok(frei.includes('club-250-km'));
+    assert.equal(frei.includes('club-500-km'), false);
   });
 });
 
@@ -135,6 +159,50 @@ describe('Frühaufsteher und Nachteule', () => {
   test('unbrauchbare Uhrzeit wird ignoriert statt zu stören', () => {
     assert.equal(has([makeRun(0, 5, { timeOfDay: 'abc' })], 'fruehaufsteher'), false);
     assert.equal(has([makeRun(0, 5, { timeOfDay: '99:99' })], 'nachteule'), false);
+  });
+
+  /** n Läufe zur gegebenen Uhrzeit, weit genug auseinander für keine Serie. */
+  const zurZeit = (count, timeOfDay) =>
+    Array.from({ length: count }, (_, i) => makeRun(i * 100, 3, { timeOfDay }));
+
+  test('die frühen Stufen greifen an ihrer Schwelle', () => {
+    for (const [id, schwelle] of [
+      ['fruehaufsteher', 1],
+      ['morgenroutine', 5],
+      ['morgenmensch', 15],
+    ]) {
+      assert.equal(has(zurZeit(schwelle - 1, '05:30'), id), false, `${id} knapp darunter`);
+      assert.equal(has(zurZeit(schwelle, '05:30'), id), true, `${id} auf der Schwelle`);
+    }
+  });
+
+  test('die späten Stufen greifen an ihrer Schwelle', () => {
+    for (const [id, schwelle] of [
+      ['nachteule', 1],
+      ['abendrunde', 5],
+      ['nachtschicht', 15],
+    ]) {
+      assert.equal(has(zurZeit(schwelle - 1, '22:30'), id), false, `${id} knapp darunter`);
+      assert.equal(has(zurZeit(schwelle, '22:30'), id), true, `${id} auf der Schwelle`);
+    }
+  });
+
+  test('früh und spät zählen getrennt', () => {
+    const gemischt = [...zurZeit(5, '05:30'), ...Array.from({ length: 5 }, (_, i) => makeRun(1000 + i * 100, 3, { timeOfDay: '22:30' }))];
+    const stats = buildRunStats(gemischt);
+
+    assert.equal(stats.earlyRunCount, 5);
+    assert.equal(stats.lateRunCount, 5);
+    assert.ok(has(gemischt, 'morgenroutine'));
+    assert.ok(has(gemischt, 'abendrunde'));
+    assert.equal(has(gemischt, 'morgenmensch'), false, '10 Läufe sind keine 15 frühen');
+  });
+
+  test('Läufe ohne Uhrzeit zählen für keine Seite', () => {
+    const stats = buildRunStats([...zurZeit(3, '05:30'), makeRun(9000, 5), makeRun(9100, 5)]);
+
+    assert.equal(stats.earlyRunCount, 3);
+    assert.equal(stats.lateRunCount, 0);
   });
 });
 
@@ -371,7 +439,10 @@ describe('Vollständigkeit', () => {
     ...Array.from({ length: 40 }, (_, i) => makeRun(i + 1, 13, { timeOfDay: '22:00' })),
     makeRun(41, 5, { durationMinutes: 25 }),
     makeRun(60, 30),
-    ...Array.from({ length: 60 }, (_, i) => makeRun(200 + i * 100, 20)),
+    ...Array.from({ length: 200 }, (_, i) => makeRun(200 + i * 100, 20)),
+    // Weit auseinander und ohne Uhrzeit-Nachbarn: die frühen Läufe sollen die
+    // Zähler füllen, aber keine Serie und keine Pause verfälschen.
+    ...Array.from({ length: 14 }, (_, i) => makeRun(30_000 + i * 100, 6, { timeOfDay: '06:00' })),
   ];
 
   /** 50 Erledigungen, verteilt über alle fünf Kategorien. */
@@ -384,7 +455,7 @@ describe('Vollständigkeit', () => {
   test('Läufe allein schalten alle Lauf-Achievements frei', () => {
     const laufIds = ACHIEVEMENTS.filter((a) => a.category !== 'uebung').map((a) => a.id).sort();
 
-    assert.ok(langesLaufjahr.length >= 100, 'Szenario muss Alter Hase erreichen');
+    assert.ok(langesLaufjahr.length >= 250, 'Szenario muss auch Unermüdlich erreichen');
     assert.deepEqual(unlockedIds(langesLaufjahr), laufIds);
   });
 

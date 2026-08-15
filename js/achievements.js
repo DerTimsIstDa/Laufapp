@@ -51,6 +51,15 @@ export const ACHIEVEMENTS = [
     progress: (s) => ({ current: s.runCount, target: 5, unit: 'Läufe' }),
   },
   {
+    id: 'eingelaufen',
+    name: 'Eingelaufen',
+    description: '10 Läufe eingetragen.',
+    xp: 50,
+    category: 'meilenstein',
+    check: (s) => s.runCount >= 10,
+    progress: (s) => ({ current: s.runCount, target: 10, unit: 'Läufe' }),
+  },
+  {
     id: 'auf-kurs',
     name: 'Auf Kurs',
     description: '25 Läufe eingetragen.',
@@ -58,6 +67,15 @@ export const ACHIEVEMENTS = [
     category: 'meilenstein',
     check: (s) => s.runCount >= 25,
     progress: (s) => ({ current: s.runCount, target: 25, unit: 'Läufe' }),
+  },
+  {
+    id: 'stammlaeufer',
+    name: 'Stammläufer',
+    description: '50 Läufe eingetragen.',
+    xp: 150,
+    category: 'meilenstein',
+    check: (s) => s.runCount >= 50,
+    progress: (s) => ({ current: s.runCount, target: 50, unit: 'Läufe' }),
   },
   {
     id: 'alter-hase',
@@ -69,6 +87,15 @@ export const ACHIEVEMENTS = [
     progress: (s) => ({ current: s.runCount, target: 100, unit: 'Läufe' }),
   },
   {
+    id: 'unermuedlich',
+    name: 'Unermüdlich',
+    description: '250 Läufe eingetragen.',
+    xp: 500,
+    category: 'meilenstein',
+    check: (s) => s.runCount >= 250,
+    progress: (s) => ({ current: s.runCount, target: 250, unit: 'Läufe' }),
+  },
+  {
     id: 'club-50-km',
     name: '50-km-Club',
     description: '50 km Gesamtdistanz erreicht.',
@@ -78,6 +105,24 @@ export const ACHIEVEMENTS = [
     progress: (s) => ({ current: s.totalDistanceKm, target: 50, unit: 'km' }),
   },
   {
+    id: 'club-100-km',
+    name: '100-km-Club',
+    description: '100 km Gesamtdistanz erreicht.',
+    xp: 90,
+    category: 'meilenstein',
+    check: (s) => s.totalDistanceKm >= 100,
+    progress: (s) => ({ current: s.totalDistanceKm, target: 100, unit: 'km' }),
+  },
+  {
+    id: 'club-250-km',
+    name: '250-km-Club',
+    description: '250 km Gesamtdistanz erreicht.',
+    xp: 180,
+    category: 'meilenstein',
+    check: (s) => s.totalDistanceKm >= 250,
+    progress: (s) => ({ current: s.totalDistanceKm, target: 250, unit: 'km' }),
+  },
+  {
     id: 'club-500-km',
     name: '500-km-Club',
     description: '500 km Gesamtdistanz erreicht.',
@@ -85,6 +130,15 @@ export const ACHIEVEMENTS = [
     category: 'meilenstein',
     check: (s) => s.totalDistanceKm >= 500,
     progress: (s) => ({ current: s.totalDistanceKm, target: 500, unit: 'km' }),
+  },
+  {
+    id: 'club-1000-km',
+    name: '1000-km-Club',
+    description: '1000 km Gesamtdistanz erreicht.',
+    xp: 600,
+    category: 'meilenstein',
+    check: (s) => s.totalDistanceKm >= 1000,
+    progress: (s) => ({ current: s.totalDistanceKm, target: 1000, unit: 'km' }),
   },
   {
     id: 'serientaeter',
@@ -116,7 +170,26 @@ export const ACHIEVEMENTS = [
     description: 'Ein Lauf vor 7:00 Uhr (Uhrzeit eintragen).',
     xp: 15,
     category: 'herausforderung',
-    check: (s) => s.hasEarlyRun,
+    check: (s) => s.earlyRunCount >= 1,
+    progress: (s) => ({ current: s.earlyRunCount, target: 1, unit: 'Läufe' }),
+  },
+  {
+    id: 'morgenroutine',
+    name: 'Morgenroutine',
+    description: '5 Läufe vor 7:00 Uhr.',
+    xp: 40,
+    category: 'herausforderung',
+    check: (s) => s.earlyRunCount >= 5,
+    progress: (s) => ({ current: s.earlyRunCount, target: 5, unit: 'Läufe' }),
+  },
+  {
+    id: 'morgenmensch',
+    name: 'Morgenmensch',
+    description: '15 Läufe vor 7:00 Uhr.',
+    xp: 90,
+    category: 'herausforderung',
+    check: (s) => s.earlyRunCount >= 15,
+    progress: (s) => ({ current: s.earlyRunCount, target: 15, unit: 'Läufe' }),
   },
   {
     id: 'nachteule',
@@ -124,7 +197,26 @@ export const ACHIEVEMENTS = [
     description: 'Ein Lauf ab 21:00 Uhr (Uhrzeit eintragen).',
     xp: 15,
     category: 'herausforderung',
-    check: (s) => s.hasLateRun,
+    check: (s) => s.lateRunCount >= 1,
+    progress: (s) => ({ current: s.lateRunCount, target: 1, unit: 'Läufe' }),
+  },
+  {
+    id: 'abendrunde',
+    name: 'Abendrunde',
+    description: '5 Läufe ab 21:00 Uhr.',
+    xp: 40,
+    category: 'herausforderung',
+    check: (s) => s.lateRunCount >= 5,
+    progress: (s) => ({ current: s.lateRunCount, target: 5, unit: 'Läufe' }),
+  },
+  {
+    id: 'nachtschicht',
+    name: 'Nachtschicht',
+    description: '15 Läufe ab 21:00 Uhr.',
+    xp: 90,
+    category: 'herausforderung',
+    check: (s) => s.lateRunCount >= 15,
+    progress: (s) => ({ current: s.lateRunCount, target: 15, unit: 'Läufe' }),
   },
   {
     id: 'neue-bestzeit',
@@ -202,8 +294,8 @@ export const ACHIEVEMENTS = [
  * @property {number} totalDistanceKm
  * @property {number} longestDailyStreak        Tage in Folge mit Lauf
  * @property {number} longestWeeklyStreakDays   längste Spanne ohne Pause > 7 Tage
- * @property {boolean} hasEarlyRun
- * @property {boolean} hasLateRun
+ * @property {number} earlyRunCount             Läufe vor 7:00 Uhr
+ * @property {number} lateRunCount              Läufe ab 21:00 Uhr
  * @property {boolean} hasPersonalBest
  * @property {boolean} hasComeback
  * @property {boolean} hasLongRunBreakthrough
@@ -219,8 +311,8 @@ export function buildRunStats(runs) {
     totalDistanceKm: 0,
     longestDailyStreak: 0,
     longestWeeklyStreakDays: 0,
-    hasEarlyRun: false,
-    hasLateRun: false,
+    earlyRunCount: 0,
+    lateRunCount: 0,
     hasPersonalBest: false,
     hasComeback: false,
     hasLongRunBreakthrough: false,
@@ -233,11 +325,13 @@ export function buildRunStats(runs) {
   for (const run of chronological) {
     stats.totalDistanceKm += run.distanceKm;
 
-    // Tageszeit
+    // Tageszeit. Gezählt statt nur vermerkt: darauf bauen mehrere Stufen auf.
+    // Läufe ohne Uhrzeit zählen für keine Seite – ohne Angabe ist nicht
+    // entscheidbar, wann gelaufen wurde.
     const minutes = minutesOfDay(run.timeOfDay);
     if (minutes !== null) {
-      if (minutes < 7 * 60) stats.hasEarlyRun = true;
-      if (minutes >= 21 * 60) stats.hasLateRun = true;
+      if (minutes < 7 * 60) stats.earlyRunCount++;
+      if (minutes >= 21 * 60) stats.lateRunCount++;
     }
 
     // Längster Lauf um 20 % übertroffen
