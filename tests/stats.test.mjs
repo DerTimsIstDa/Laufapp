@@ -1,7 +1,13 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildStats, distanceByWeek, distanceByMonth, localIsoDate } from '../js/stats.js';
+import {
+  buildStats,
+  distanceByWeek,
+  distanceByMonth,
+  runsInPeriod,
+  localIsoDate,
+} from '../js/stats.js';
 import { makeRun, day } from './helpers.mjs';
 
 /** Bezugstag für "aktuelle Serie" – makeRun(0) ist der 01.01.2026. */
@@ -245,6 +251,60 @@ describe('Distanz pro Monat', () => {
 
   test('ohne Läufe bleibt die Liste leer', () => {
     assert.deepEqual(distanceByMonth([], { todayIso: '2026-01-01' }), []);
+  });
+});
+
+describe('runsInPeriod', () => {
+  /** Der 08.01.2026 ist ein Donnerstag; die Woche läuft vom 05. bis 11.01. */
+  const DONNERSTAG = '2026-01-08';
+
+  const runs = [
+    { id: 'so', date: '2026-01-04', distanceKm: 1 }, // Sonntag davor
+    { id: 'mo', date: '2026-01-05', distanceKm: 2 }, // Wochenanfang
+    { id: 'do', date: '2026-01-08', distanceKm: 3 },
+    { id: 'so2', date: '2026-01-11', distanceKm: 4 }, // Wochenende
+    { id: 'mo2', date: '2026-01-12', distanceKm: 5 }, // nächste Woche
+    { id: 'dez', date: '2025-12-30', distanceKm: 6 }, // Vormonat
+  ];
+
+  test('die Woche läuft von Montag bis Sonntag', () => {
+    const ids = runsInPeriod(runs, { period: 'week', todayIso: DONNERSTAG }).map((r) => r.id);
+    assert.deepEqual(ids, ['mo', 'do', 'so2']);
+  });
+
+  test('die Woche reicht über den Jahreswechsel', () => {
+    // Sonntag, 04.01.2026 – die Woche begann am Montag, dem 29.12.2025.
+    const ids = runsInPeriod(runs, { period: 'week', todayIso: '2026-01-04' }).map((r) => r.id);
+    assert.deepEqual(ids, ['so', 'dez']);
+  });
+
+  test('der Monat nimmt alles aus demselben Kalendermonat', () => {
+    const ids = runsInPeriod(runs, { period: 'month', todayIso: DONNERSTAG }).map((r) => r.id);
+    assert.deepEqual(ids, ['so', 'mo', 'do', 'so2', 'mo2']);
+  });
+
+  test('gleicher Monat in einem anderen Jahr zählt nicht mit', () => {
+    const jahre = [
+      { id: 'alt', date: '2025-01-08', distanceKm: 1 },
+      { id: 'neu', date: '2026-01-08', distanceKm: 1 },
+    ];
+    const ids = runsInPeriod(jahre, { period: 'month', todayIso: DONNERSTAG }).map((r) => r.id);
+    assert.deepEqual(ids, ['neu']);
+  });
+
+  test('kaputte Eingaben werfen nicht', () => {
+    for (const value of [null, undefined, 'text', 42, {}]) {
+      assert.doesNotThrow(() => runsInPeriod(value, { period: 'week', todayIso: DONNERSTAG }));
+      assert.deepEqual(runsInPeriod(value, { period: 'week', todayIso: DONNERSTAG }), []);
+    }
+
+    assert.deepEqual(
+      runsInPeriod([null, { id: 'x' }, { id: 'y', date: 5 }], {
+        period: 'week',
+        todayIso: DONNERSTAG,
+      }),
+      []
+    );
   });
 });
 

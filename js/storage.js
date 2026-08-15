@@ -15,6 +15,7 @@
 const STORAGE_KEY = 'laufapp.runs.v1';
 const EXERCISE_KEY = 'laufapp.exercises.v1';
 const TRAINING_KEY = 'laufapp.training.v1';
+const PROFILE_KEY = 'laufapp.profile.v1';
 
 /**
  * `timeOfDay` ("HH:MM") und `durationMinutes` sind optional. Sie werden nur
@@ -289,6 +290,43 @@ export function replaceSessions(nextSessions) {
   const next = [...nextSessions].sort(bySessionDate);
   saveSessions(next);
   return next;
+}
+
+/* -------------------------------------------------------------- Profil ---- */
+
+/**
+ * Der Name liegt in einem eigenen Schlüssel, nicht bei den Läufen: er ist
+ * Einstellung, keine Aufzeichnung. Als Objekt gespeichert, damit später noch
+ * etwas dazukommen kann, ohne das Format zu brechen.
+ *
+ * @returns {string} leer, wenn nichts hinterlegt ist
+ */
+export function loadProfileName() {
+  let raw;
+  try {
+    raw = localStorage.getItem(PROFILE_KEY);
+  } catch {
+    return '';
+  }
+  if (!raw) return '';
+
+  try {
+    const parsed = JSON.parse(raw);
+    return typeof parsed?.name === 'string' ? parsed.name : '';
+  } catch {
+    return '';
+  }
+}
+
+/** @param {string} name bereits normalisiert; leer löscht den Eintrag */
+export function saveProfileName(name) {
+  try {
+    if (name === '') localStorage.removeItem(PROFILE_KEY);
+    else localStorage.setItem(PROFILE_KEY, JSON.stringify({ name }));
+  } catch (err) {
+    console.error('Name konnte nicht gespeichert werden:', err);
+  }
+  return name;
 }
 
 function isValidSession(session) {

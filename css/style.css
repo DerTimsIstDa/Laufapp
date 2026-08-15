@@ -298,7 +298,6 @@ strong {
 .chart-label,
 .chart-value,
 .run-xp,
-.achievement-xp,
 #total-xp {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
@@ -883,17 +882,26 @@ textarea:focus {
   color: var(--muted);
 }
 
-.chart-header {
+/* Zeitraum-Kopf: Beschriftung links, Umschalter rechts. Auf schmalen
+   Schirmen bricht der Umschalter unter die Beschriftung. */
+.period-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-top: var(--space-5);
+  margin-bottom: var(--space-4);
 }
 
-.chart-header .group-title {
+.period-caption {
   margin: 0;
+  font-size: 0.8125rem;
+}
+
+/* Sticht .group-title:first-of-type – die Balken brauchen Luft nach den
+   Kacheln, auch wenn die Überschrift die erste ihrer Art ist. */
+.group-title.chart-title {
+  margin-top: var(--space-5);
 }
 
 .chart-toggle {
@@ -1058,93 +1066,6 @@ textarea:focus {
   color: var(--dim);
   border: 1px dashed var(--line-strong);
   border-radius: var(--radius-md);
-}
-
-/* -------------------------------------------------------- Achievements */
-
-.achievements {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.achievement {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  background: var(--sunken);
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-}
-
-/* Freigeschaltet: Neon und volle Helligkeit. Offen: grau und zurückgenommen,
-   aber lesbar – gedimmt heisst nicht unleserlich. */
-.achievement.unlocked {
-  background: var(--accent-soft);
-  border-color: var(--accent-line);
-}
-
-.achievement-mark {
-  flex: none;
-  width: 1.375rem;
-  height: 1.375rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--dim);
-  font-size: 0.75rem;
-  line-height: 1;
-}
-
-.achievement.unlocked .achievement-mark {
-  background: var(--accent);
-  color: var(--accent-ink);
-  font-weight: 700;
-}
-
-.achievement-info {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-}
-
-.achievement-name {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.achievement.unlocked .achievement-name {
-  color: var(--text);
-}
-
-.achievement-description {
-  font-size: 0.75rem;
-  color: var(--dim);
-}
-
-.achievement.unlocked .achievement-description {
-  color: var(--body);
-}
-
-.achievement-xp {
-  flex: none;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--dim);
-  white-space: nowrap;
-  line-height: 1.6;
-}
-
-.achievement.unlocked .achievement-xp {
-  color: var(--accent);
 }
 
 /* -------------------------------------------------------------- Übungen */
@@ -1741,6 +1662,18 @@ textarea:focus {
   padding: var(--space-5) var(--space-4);
 }
 
+/* Der Name steht über dem Abzeichen und ist ruhiger gesetzt als der Titel –
+   er benennt, der Titel feiert. */
+.profile-name {
+  margin: var(--space-3) 0 0;
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
 .profile-rank {
   margin: var(--space-2) 0 0;
   font-size: 2.25rem;
@@ -1764,88 +1697,6 @@ textarea:focus {
 .profile-hero .muted {
   margin: var(--space-3) 0 0;
   font-size: 0.8125rem;
-}
-
-.title-history {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.title-step {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0 var(--space-3);
-  padding: var(--space-3) 0 var(--space-3) var(--space-4);
-  border-top: 1px solid var(--line);
-  position: relative;
-}
-
-.title-step:first-child {
-  border-top: none;
-}
-
-/* Punkt auf einer senkrechten Linie – die Historie liest sich als Weg. */
-.title-step::before {
-  content: "";
-  position: absolute;
-  left: 3px;
-  top: 50%;
-  width: 9px;
-  height: 9px;
-  margin-top: -4.5px;
-  border-radius: 50%;
-  background: var(--line-strong);
-}
-
-.title-step::after {
-  content: "";
-  position: absolute;
-  left: 7px;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: var(--line);
-}
-
-.title-step:first-child::after {
-  top: 50%;
-}
-
-.title-step:last-child::after {
-  bottom: 50%;
-}
-
-.title-step.current::before {
-  background: var(--accent);
-  box-shadow: 0 0 8px var(--accent-glow);
-}
-
-.title-step-name {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--body);
-}
-
-.title-step.current .title-step-name {
-  color: var(--accent);
-}
-
-.title-step-level {
-  grid-column: 1;
-  font-size: 0.75rem;
-  color: var(--dim);
-}
-
-.title-step-date {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  align-self: center;
-  font-size: 0.75rem;
-  color: var(--muted);
-  white-space: nowrap;
 }
 
 /* ----------------------------------------------------------- Lauf-Liste */

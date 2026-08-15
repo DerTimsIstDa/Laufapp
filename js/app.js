@@ -13,7 +13,7 @@
  *   route.js        GPS-Strecke auf Zeichenflächen-Koordinaten
  *   pwa.js          Installationshinweis und Aktualisierung
  *   lock.js         Tastensperre während der Aufzeichnung
- *   history.js      Freischaltdaten und Titel-Historie
+ *   history.js      Freischaltdaten der Achievements
  *   training.js     Geplante Einheiten, Abgleich mit den Läufen
  *   storage.js      Persistenz
  */
@@ -23,9 +23,9 @@ import { evaluateAchievements, achievementXp, achievementsByCategory } from './a
 import { titleForLevel, nextTitle, badgeForLevel, badgeSrc } from './titles.js';
 import { paceMinPerKm, formatDuration, formatPace } from './geo.js';
 import { createTracker } from './tracker.js';
-import { validateRun, firstErrorMessage, parseNumber } from './validation.js';
+import { validateRun, firstErrorMessage, parseNumber, normalizeName } from './validation.js';
 import { serializeExport, exportFileName, parseImport } from './transfer.js';
-import { buildStats, distanceByWeek, distanceByMonth } from './stats.js';
+import { buildStats, distanceByWeek, distanceByMonth, runsInPeriod } from './stats.js';
 import { projectTrack, hasDrawableRoute, toStorageTrack, DEFAULT_VIEWPORT } from './route.js';
 import {
   isStandalone,
@@ -42,7 +42,7 @@ import {
   controlsEnabled,
   shouldReleaseLock,
 } from './lock.js';
-import { achievementUnlockDates, titleHistory } from './history.js';
+import { achievementUnlockDates } from './history.js';
 import {
   CATEGORIES,
   ALL_CATEGORIES,
@@ -68,6 +68,7 @@ import {
   loadRuns, addRun, updateRun, removeRun, replaceRuns,
   loadExerciseLog, addExerciseEntry, replaceExerciseLog,
   loadSessions, addSession, updateSession, removeSession, replaceSessions,
+  loadProfileName, saveProfileName,
 } from './storage.js';
 import {
   exerciseXp,
@@ -87,6 +88,9 @@ let exerciseLog = [];
 
 /** @type {import('./training.js').Session[]} */
 let sessions = [];
+
+/** Selbst eingetragener Name; leer heißt "nur den Titel zeigen". */
+let profileName = '';
 
 /** id der Einheit, die gerade im Formular liegt – null heißt "neu anlegen". */
 let editingSessionId = null;
@@ -112,8 +116,11 @@ let pendingDeleteId = null;
 /** Geprüftes Importergebnis, das auf die Bestätigung wartet. */
 let pendingImport = null;
 
-/** Zeitraum des Balkendiagramms: 'weeks' oder 'months'. */
-let chartRange = 'weeks';
+/**
+ * Zeitraum der Profil-Statistik: 'week' oder 'month'. Steuert beides – welche
+ * Läufe in die Kennzahlen zählen und wie fein das Balkendiagramm aufteilt.
+ */
+let statsPeriod = 'week';
 
 /** id des Laufs, dessen Detailansicht offen ist; null = zu. */
 let detailId = null;
@@ -192,27 +199,13 @@ const el = {
   dataStatus: document.getElementById('data-status'),
   dataError: document.getElementById('data-error'),
 
-  statsEmpty: document.getElementById('stats-empty'),
-  statsBody: document.getElementById('stats-body'),
-  statTotal: document.getElementById('stat-total'),
-  statCount: document.getElementById('stat-count'),
-  statAverage: document.getElementById('stat-average'),
-  statLongest: document.getElementById('stat-longest'),
-  statLongestDate: document.getElementById('stat-longest-date'),
-  statStreakCurrent: document.getElementById('stat-streak-current'),
-  statStreakCurrentWeeks: document.getElementById('stat-streak-current-weeks'),
-  statStreakLongest: document.getElementById('stat-streak-longest'),
-  statStreakLongestWeeks: document.getElementById('stat-streak-longest-weeks'),
+  periodWeek: document.getElementById('period-week'),
+  periodMonth: document.getElementById('period-month'),
+  periodCaption: document.getElementById('period-caption'),
+  periodEmpty: document.getElementById('period-empty'),
+  periodStats: document.getElementById('period-stats'),
+  chartTitle: document.getElementById('chart-title'),
   chartList: document.getElementById('chart-list'),
-  chartWeeks: document.getElementById('chart-weeks'),
-  chartMonths: document.getElementById('chart-months'),
-
-  achievementCount: document.getElementById('achievement-count'),
-  achievementLists: {
-    meilenstein: document.getElementById('achievements-meilenstein'),
-    herausforderung: document.getElementById('achievements-herausforderung'),
-    uebung: document.getElementById('achievements-uebung'),
-  },
 
   tabbar: document.getElementById('tabbar'),
   tabs: [...document.querySelectorAll('.tab')],
@@ -239,6 +232,10 @@ const el = {
     uebung: document.getElementById('trophies-uebung'),
   },
 
+  profileName: document.getElementById('profile-name'),
+  profileNameForm: document.getElementById('profile-name-form'),
+  profileNameInput: document.getElementById('profile-name-input'),
+  profileNameStatus: document.getElementById('profile-name-status'),
   profileTitleName: document.getElementById('profile-title-name'),
   profileBadge: document.getElementById('profile-badge'),
   profileLevel: document.getElementById('profile-level'),
@@ -248,7 +245,6 @@ const el = {
   profileProgressFill: document.getElementById('profile-progress-fill'),
   profileProgressCaption: document.getElementById('profile-progress-caption'),
   profileTrophySummary: document.getElementById('profile-trophy-summary'),
-  titleHistory: document.getElementById('title-history'),
   profileStats: document.getElementById('profile-stats'),
   profileStatsEmpty: document.getElementById('profile-stats-empty'),
 
@@ -316,7 +312,10 @@ function init() {
   runs = loadRuns();
   exerciseLog = loadExerciseLog();
   sessions = loadSessions();
+  profileName = normalizeName(loadProfileName());
   el.date.value = todayIso();
+  el.profileNameInput.value = profileName;
+  el.profileNameForm.addEventListener('submit', handleProfileNameSubmit);
 
   el.form.addEventListener('submit', handleSubmit);
   el.formCancel.addEventListener('click', stopEditing);
@@ -329,8 +328,8 @@ function init() {
   el.installHintClose.addEventListener('click', dismissInstallHint);
   el.updateReload.addEventListener('click', () => location.reload());
   el.detailClose.addEventListener('click', closeDetail);
-  el.chartWeeks.addEventListener('click', () => setChartRange('weeks'));
-  el.chartMonths.addEventListener('click', () => setChartRange('months'));
+  el.periodWeek.addEventListener('click', () => setStatsPeriod('week'));
+  el.periodMonth.addEventListener('click', () => setStatsPeriod('month'));
 
   el.exportButton.addEventListener('click', handleExport);
   el.importButton.addEventListener('click', () => el.importInput.click());
@@ -1148,6 +1147,8 @@ function renderProfile() {
   const progress = getProgress(gesamtXp);
   const upcoming = nextTitle(progress.level);
 
+  el.profileName.hidden = profileName === '';
+  el.profileName.textContent = profileName;
   el.profileTitleName.textContent = titleForLevel(progress.level);
   el.profileBadge.src = badgeSrc(badgeForLevel(progress.level));
   el.profileLevel.textContent = progress.level;
@@ -1162,8 +1163,28 @@ function renderProfile() {
     `noch ${numberFormat.format(progress.xpToNextLevel)} XP bis Level ${progress.level + 1}`;
 
   renderTrophySummary(achievements);
-  renderTitleHistory(progress.level);
+  renderPeriodStats();
   renderProfileStats();
+}
+
+/**
+ * Namen übernehmen. Es gibt nichts, was hier fehlschlagen könnte – der Name
+ * wird aufgeräumt, nicht abgelehnt (siehe normalizeName). Ein leeres Feld ist
+ * eine gültige Angabe: dann steht wieder nur der Titel im Kopf.
+ */
+function handleProfileNameSubmit(event) {
+  event.preventDefault();
+
+  profileName = saveProfileName(normalizeName(el.profileNameInput.value));
+
+  // Zurückschreiben, damit sichtbar wird, was tatsächlich gespeichert wurde.
+  el.profileNameInput.value = profileName;
+
+  el.profileNameStatus.textContent =
+    profileName === '' ? 'Name entfernt.' : `Gespeichert: ${profileName}`;
+  el.profileNameStatus.hidden = false;
+
+  renderProfile();
 }
 
 /** Kompakte Übersicht: wie viele Achievements je Gruppe. */
@@ -1196,33 +1217,6 @@ function renderTrophySummary(achievements) {
   );
 }
 
-function renderTitleHistory(currentLevel) {
-  const verlauf = titleHistory(runs, exerciseLog);
-  const aktueller = titleForLevel(currentLevel);
-
-  el.titleHistory.replaceChildren(
-    ...verlauf.map((eintrag) => {
-      const zeile = document.createElement('li');
-      zeile.className = eintrag.title === aktueller ? 'title-step current' : 'title-step';
-
-      const name = document.createElement('span');
-      name.className = 'title-step-name';
-      name.textContent = eintrag.title;
-
-      const stufe = document.createElement('span');
-      stufe.className = 'title-step-level';
-      stufe.textContent = `Level ${eintrag.level}`;
-
-      const datum = document.createElement('span');
-      datum.className = 'title-step-date';
-      datum.textContent = eintrag.date ? formatDate(eintrag.date) : 'von Anfang an';
-
-      zeile.append(name, stufe, datum);
-      return zeile;
-    })
-  );
-}
-
 function renderProfileStats() {
   const stats = buildStats(runs);
 
@@ -1230,30 +1224,34 @@ function renderProfileStats() {
   el.profileStats.hidden = stats.runCount === 0;
   if (stats.runCount === 0) return;
 
-  const werte = [
-    ['Gesamtdistanz', `${numberFormat.format(round(stats.totalDistanceKm))} km`],
-    ['Läufe', String(stats.runCount)],
-    ['Ø pro Lauf', `${numberFormat.format(round(stats.averageDistanceKm))} km`],
-    ['Längster Lauf', `${numberFormat.format(stats.longestRun.distanceKm)} km`],
-    ['Aktive Tage', String(stats.activeDays)],
-    ['Längste Serie', formatDays(stats.longestDayStreak)],
-  ];
-
   el.profileStats.replaceChildren(
-    ...werte.map(([label, wert]) => {
-      const block = document.createElement('div');
-      block.className = 'stat';
-
-      const dt = document.createElement('dt');
-      dt.textContent = label;
-
-      const dd = document.createElement('dd');
-      dd.textContent = wert;
-
-      block.append(dt, dd);
-      return block;
-    })
+    ...buildStatBlocks([
+      ['Gesamtdistanz', `${numberFormat.format(round(stats.totalDistanceKm))} km`],
+      ['Läufe', String(stats.runCount)],
+      ['Ø pro Lauf', `${numberFormat.format(round(stats.averageDistanceKm))} km`],
+      ['Längster Lauf', `${numberFormat.format(stats.longestRun.distanceKm)} km`],
+      ['Aktive Tage', String(stats.activeDays)],
+      ['Aktuelle Serie', formatDays(stats.currentDayStreak)],
+      ['Längste Serie', formatDays(stats.longestDayStreak)],
+    ])
   );
+}
+
+/** Kacheln fürs .stat-grid – dieselbe Form für Zeitraum und Gesamtstand. */
+function buildStatBlocks(werte) {
+  return werte.map(([label, wert]) => {
+    const block = document.createElement('div');
+    block.className = 'stat';
+
+    const dt = document.createElement('dt');
+    dt.textContent = label;
+
+    const dd = document.createElement('dd');
+    dd.textContent = wert;
+
+    block.append(dt, dd);
+    return block;
+  });
 }
 
 /* ----------------------------------------------- Installationshinweis */
@@ -1849,7 +1847,6 @@ function render({ announceUnlocks }) {
   const progress = getProgress(runXp + uebungsXp + bonusXp + planBonusXp);
 
   renderProgress(progress, runXp, uebungsXp, bonusXp, planBonusXp);
-  renderStats();
   renderAchievements(achievements, announceUnlocks);
   renderDetail();
   renderRuns();
@@ -1864,40 +1861,54 @@ function render({ announceUnlocks }) {
 
 /* ------------------------------------------------------------- Statistik */
 
-function setChartRange(range) {
-  chartRange = range;
-  renderStats();
+function setStatsPeriod(period) {
+  statsPeriod = period;
+  renderPeriodStats();
 }
 
-function renderStats() {
-  const stats = buildStats(runs);
+/**
+ * Kennzahlen des laufenden Zeitraums plus das Balkendiagramm. Beide hängen am
+ * selben Umschalter: eine Wochenzahl neben Monatsbalken hätte niemand
+ * zusammengebracht.
+ */
+function renderPeriodStats() {
+  const weekly = statsPeriod === 'week';
 
-  el.statsEmpty.hidden = stats.runCount > 0;
-  el.statsBody.hidden = stats.runCount === 0;
-  if (stats.runCount === 0) return;
+  el.periodWeek.className = weekly ? 'small' : 'small secondary';
+  el.periodMonth.className = weekly ? 'small secondary' : 'small';
+  el.periodWeek.setAttribute('aria-pressed', String(weekly));
+  el.periodMonth.setAttribute('aria-pressed', String(!weekly));
+  el.periodCaption.textContent = weekly ? 'Diese Woche (Mo–So)' : 'Dieser Monat';
 
-  el.statTotal.textContent = `${numberFormat.format(round(stats.totalDistanceKm))} km`;
-  el.statCount.textContent = stats.runCount;
-  el.statAverage.textContent = `${numberFormat.format(round(stats.averageDistanceKm))} km`;
+  const imZeitraum = runsInPeriod(runs, { period: statsPeriod, todayIso: todayIso() });
+  const stats = buildStats(imZeitraum, { todayIso: todayIso() });
 
-  el.statLongest.textContent = `${numberFormat.format(stats.longestRun.distanceKm)} km`;
-  el.statLongestDate.textContent = formatDate(stats.longestRun.date);
+  el.periodEmpty.hidden = stats.runCount > 0;
+  el.periodEmpty.textContent = weekly
+    ? 'In dieser Woche noch kein Lauf.'
+    : 'In diesem Monat noch kein Lauf.';
+  el.periodStats.hidden = stats.runCount === 0;
 
-  el.statStreakCurrent.textContent = formatDays(stats.currentDayStreak);
-  el.statStreakCurrentWeeks.textContent = formatWeeks(stats.currentWeekStreak);
-  el.statStreakLongest.textContent = formatDays(stats.longestDayStreak);
-  el.statStreakLongestWeeks.textContent = formatWeeks(stats.longestWeekStreak);
+  if (stats.runCount > 0) {
+    el.periodStats.replaceChildren(
+      ...buildStatBlocks([
+        ['Distanz', `${numberFormat.format(round(stats.totalDistanceKm))} km`],
+        ['Läufe', String(stats.runCount)],
+        ['Ø pro Lauf', `${numberFormat.format(round(stats.averageDistanceKm))} km`],
+        ['Längster Lauf', `${numberFormat.format(stats.longestRun.distanceKm)} km`],
+      ])
+    );
+  }
 
   renderChart();
 }
 
 function renderChart() {
-  const weekly = chartRange === 'weeks';
+  const weekly = statsPeriod === 'week';
 
-  el.chartWeeks.className = weekly ? 'small' : 'small secondary';
-  el.chartMonths.className = weekly ? 'small secondary' : 'small';
-  el.chartWeeks.setAttribute('aria-pressed', String(weekly));
-  el.chartMonths.setAttribute('aria-pressed', String(!weekly));
+  // Ohne einen einzigen Lauf bliebe eine Überschrift über einer leeren Liste
+  // stehen – dann lieber gar kein Diagramm.
+  el.chartTitle.hidden = runs.length === 0;
 
   const buckets = weekly
     ? distanceByWeek(runs, { limit: 12 })
@@ -1950,10 +1961,6 @@ function createChartRow(label, bucket, maximum) {
 
 function formatDays(count) {
   return count === 0 ? '–' : `${count} ${count === 1 ? 'Tag' : 'Tage'}`;
-}
-
-function formatWeeks(count) {
-  return count === 0 ? 'keine laufende Woche' : `${count} ${count === 1 ? 'Woche' : 'Wochen'}`;
 }
 
 /** "2026-08" -> "Aug 2026". */
@@ -2072,17 +2079,14 @@ function renderProgress(progress, runXp, uebungsXp, bonusXp, planBonusXp) {
   el.nextTitleLevel.textContent = upcoming.level;
 }
 
+/**
+ * Die Achievements selbst stehen im Trophäen-Tab. Hier bleibt nur die
+ * Freischalt-Meldung: sie gehört zur gerade gespeicherten Sache und muss dort
+ * erscheinen, wo gespeichert wurde – nicht in einem Tab, den man erst
+ * aufsuchen müsste.
+ */
 function renderAchievements(achievements, announceUnlocks) {
   const unlocked = achievements.filter((a) => a.unlocked);
-  el.achievementCount.textContent = `${unlocked.length}/${achievements.length}`;
-
-  for (const [category, list] of Object.entries(el.achievementLists)) {
-    const items = achievements
-      .filter((a) => a.category === category)
-      .map(createAchievementItem);
-    list.replaceChildren(...items);
-  }
-
   const currentIds = new Set(unlocked.map((a) => a.id));
 
   // Die Meldung gehört zur letzten Speicheraktion. Bei Löschen, Import oder
@@ -2090,50 +2094,6 @@ function renderAchievements(achievements, announceUnlocks) {
   showUnlockNotice(announceUnlocks ? unlocked.filter((a) => !unlockedIds.has(a.id)) : []);
 
   unlockedIds = currentIds;
-}
-
-function createAchievementItem(achievement) {
-  const item = document.createElement('li');
-  item.className = achievement.unlocked ? 'achievement unlocked' : 'achievement';
-
-  const mark = document.createElement('span');
-  mark.className = 'achievement-mark';
-  mark.textContent = achievement.unlocked ? '✓' : '○';
-  mark.setAttribute('aria-hidden', 'true');
-
-  const info = document.createElement('div');
-  info.className = 'achievement-info';
-
-  const name = document.createElement('span');
-  name.className = 'achievement-name';
-  name.textContent = achievement.name;
-
-  const description = document.createElement('span');
-  description.className = 'achievement-description muted';
-  description.textContent = achievement.unlocked
-    ? achievement.description
-    : `${achievement.description}${formatProgress(achievement.progress)}`;
-
-  info.append(name, description);
-
-  const xp = document.createElement('span');
-  xp.className = 'achievement-xp';
-  xp.textContent = `${achievement.unlocked ? '+' : ''}${achievement.xp} XP`;
-
-  item.append(mark, info, xp);
-  item.setAttribute(
-    'aria-label',
-    `${achievement.name}: ${achievement.unlocked ? 'freigeschaltet' : 'offen'}`
-  );
-
-  return item;
-}
-
-/** " (3 / 5 Läufe)" für noch offene Achievements mit Zähler. */
-function formatProgress(progress) {
-  if (!progress) return '';
-  const current = numberFormat.format(Math.min(progress.current, progress.target));
-  return ` (${current} / ${numberFormat.format(progress.target)} ${progress.unit})`;
 }
 
 function showUnlockNotice(fresh) {

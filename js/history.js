@@ -1,6 +1,5 @@
 /**
- * Zeitpunkte statt nur Zustände: wann wurde ein Achievement freigeschaltet,
- * wann ein Titel erreicht.
+ * Zeitpunkte statt nur Zustände: wann wurde ein Achievement freigeschaltet.
  *
  * Pur und ohne DOM. Die restliche App fragt immer nur den Jetzt-Zustand ab –
  * hier wird die Historie einmal von vorn durchgespielt, Lauf für Lauf.
@@ -13,7 +12,6 @@
 
 import { evaluateAchievements, achievementXp } from './achievements.js';
 import { totalXpFromRuns, levelForXp } from './xp.js';
-import { titleForLevel } from './titles.js';
 import { exerciseXp, normalizeEntries } from './exercise-log.js';
 
 /**
@@ -77,33 +75,4 @@ export function achievementUnlockDates(runs, exerciseLog = []) {
   }
 
   return daten;
-}
-
-/**
- * Titel-Historie, älteste zuerst.
- *
- * Der erste Eintrag ist der Starttitel ohne Datum – den hat man von Anfang an,
- * dafür braucht es keinen Lauf.
- *
- * @returns {{ title: string, level: number, date: ?string }[]}
- */
-export function titleHistory(runs, exerciseLog = []) {
-  const erreicht = [{ title: titleForLevel(1), level: 1, date: null }];
-  let hoechstesLevel = 1;
-
-  for (const step of replayHistory(runs, exerciseLog)) {
-    if (step.level <= hoechstesLevel) continue;
-
-    // Ein einzelner Lauf kann mehrere Stufen auf einmal überspringen.
-    for (let level = hoechstesLevel + 1; level <= step.level; level++) {
-      const title = titleForLevel(level);
-      if (title !== erreicht.at(-1).title) {
-        erreicht.push({ title, level, date: step.date });
-      }
-    }
-
-    hoechstesLevel = step.level;
-  }
-
-  return erreicht;
 }

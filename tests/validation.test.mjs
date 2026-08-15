@@ -7,8 +7,10 @@ import {
   isValidIsoDate,
   isValidTimeOfDay,
   firstErrorMessage,
+  normalizeName,
   MAX_DISTANCE_KM,
   MAX_DURATION_MINUTES,
+  MAX_NAME_LENGTH,
 } from '../js/validation.js';
 
 /** Kurzform: gültige Basis, einzelne Felder überschreibbar. */
@@ -16,6 +18,42 @@ const input = (overrides = {}) => ({ distanceKm: 5, date: '2026-08-14', ...overr
 
 /** Feldnamen der gemeldeten Fehler. */
 const errorFields = (result) => (result.ok ? [] : result.errors.map((e) => e.field));
+
+describe('normalizeName', () => {
+  test('lässt einen normalen Namen in Ruhe', () => {
+    assert.equal(normalizeName('Tim'), 'Tim');
+    assert.equal(normalizeName('Anna-Lena Müller'), 'Anna-Lena Müller');
+  });
+
+  test('räumt Leerraum auf', () => {
+    assert.equal(normalizeName('  Tim  '), 'Tim');
+    assert.equal(normalizeName('Tim   B.'), 'Tim B.');
+    assert.equal(normalizeName('Tim\tB.\nC.'), 'Tim B. C.');
+  });
+
+  test('kürzt statt abzulehnen', () => {
+    const lang = 'a'.repeat(MAX_NAME_LENGTH + 20);
+    assert.equal(normalizeName(lang).length, MAX_NAME_LENGTH);
+  });
+
+  test('kein Leerzeichen am Rand nach dem Kürzen', () => {
+    // Schnitt genau auf einem Leerzeichen – das darf nicht stehen bleiben.
+    const name = `${'a'.repeat(MAX_NAME_LENGTH - 1)} bcd`;
+    assert.equal(normalizeName(name), 'a'.repeat(MAX_NAME_LENGTH - 1));
+  });
+
+  test('unsichtbare Zeichen fliegen raus, trennende werden zum Leerzeichen', () => {
+    // ‎ ist die Links-nach-rechts-Marke: unsichtbar, aber im Namen drin.
+    assert.equal(normalizeName('Ti‎m'), 'Tim', 'Richtungsmarke ersatzlos');
+    assert.equal(normalizeName('TimB.'), 'Tim B.', 'Steuerzeichen trennt');
+  });
+
+  test('nichts Brauchbares ergibt einen leeren Namen', () => {
+    for (const value of ['', '   ', null, undefined, 42, {}, []]) {
+      assert.equal(normalizeName(value), '', `${JSON.stringify(value)} sollte leer ergeben`);
+    }
+  });
+});
 
 describe('parseNumber', () => {
   test('nimmt Zahlen und Zahlentexte', () => {

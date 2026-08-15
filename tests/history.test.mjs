@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { replayHistory, achievementUnlockDates, titleHistory } from '../js/history.js';
+import { replayHistory, achievementUnlockDates } from '../js/history.js';
 import { ACHIEVEMENTS, evaluateAchievements } from '../js/achievements.js';
 import { makeRun, day } from './helpers.mjs';
 
@@ -159,60 +159,5 @@ describe('Übungen in der Historie', () => {
   test('das Protokoll ist wahlfrei', () => {
     assert.doesNotThrow(() => replayHistory([makeRun(0, 5)]));
     assert.doesNotThrow(() => achievementUnlockDates([makeRun(0, 5)]));
-    assert.doesNotThrow(() => titleHistory([makeRun(0, 5)]));
-  });
-});
-
-describe('titleHistory', () => {
-  test('ohne Läufe nur der Starttitel', () => {
-    assert.deepEqual(titleHistory([]), [{ title: 'Neuling', level: 1, date: null }]);
-  });
-
-  test('der Starttitel hat kein Datum – den hat man von Anfang an', () => {
-    assert.equal(titleHistory([makeRun(0, 5)])[0].date, null);
-  });
-
-  test('Läufer wird bei Level 5 vermerkt', () => {
-    // Level 5 braucht 360 XP; ein 40-km-Lauf bringt 400 plus Boni.
-    const verlauf = titleHistory([makeRun(0, 5), makeRun(1, 40)]);
-    const laeufer = verlauf.find((e) => e.title === 'Läufer');
-
-    assert.ok(laeufer, 'Läufer fehlt in der Historie');
-    assert.equal(laeufer.level, 5, 'der Titel gehört zu Level 5');
-    assert.equal(laeufer.date, day(1));
-  });
-
-  test('ein grosser Sprung überspringt keine Stufe', () => {
-    // Ein einziger sehr langer Lauf schiebt weit über Level 15 hinaus.
-    const verlauf = titleHistory([makeRun(0, 900)]);
-    const titel = verlauf.map((e) => e.title);
-
-    assert.deepEqual(titel.slice(0, 3), ['Neuling', 'Läufer', 'Ausdauerläufer']);
-    for (const eintrag of verlauf.slice(1)) {
-      assert.equal(eintrag.date, day(0), 'alle am selben Tag erreicht');
-    }
-  });
-
-  test('keine Dubletten und aufsteigende Level', () => {
-    const runs = Array.from({ length: 40 }, (_, i) => makeRun(i, 10));
-    const verlauf = titleHistory(runs);
-
-    assert.equal(new Set(verlauf.map((e) => e.title)).size, verlauf.length, 'Titel doppelt');
-    for (let i = 1; i < verlauf.length; i++) {
-      assert.ok(verlauf[i].level > verlauf[i - 1].level, 'Level nicht aufsteigend');
-    }
-  });
-
-  test('Daten laufen vorwärts', () => {
-    const runs = Array.from({ length: 30 }, (_, i) => makeRun(i * 2, 12));
-    const mitDatum = titleHistory(runs).filter((e) => e.date !== null);
-
-    for (let i = 1; i < mitDatum.length; i++) {
-      assert.ok(mitDatum[i].date >= mitDatum[i - 1].date, `Datum springt zurück bei ${i}`);
-    }
-  });
-
-  test('wer klein bleibt, bleibt Neuling', () => {
-    assert.deepEqual(titleHistory([makeRun(0, 1), makeRun(1, 1)]).map((e) => e.title), ['Neuling']);
   });
 });

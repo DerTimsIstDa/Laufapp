@@ -220,74 +220,6 @@
       <p class="unlock-notice" id="unlock-notice" role="status" hidden></p>
     </section>
 
-    <!-- Achievements -->
-    <section class="card" aria-labelledby="achievements-title">
-      <h2 id="achievements-title">
-        Achievements (<span id="achievement-count">0/0</span>)
-      </h2>
-
-      <h3 class="group-title">Meilensteine</h3>
-      <ul class="achievements" id="achievements-meilenstein"></ul>
-
-      <h3 class="group-title">Herausforderungen</h3>
-      <ul class="achievements" id="achievements-herausforderung"></ul>
-
-      <h3 class="group-title">Übungen</h3>
-      <ul class="achievements" id="achievements-uebung"></ul>
-    </section>
-
-    <!-- Statistik -->
-    <section class="card" aria-labelledby="stats-title">
-      <h2 id="stats-title">Statistik</h2>
-
-      <p class="muted" id="stats-empty">
-        Noch keine Läufe – hier erscheint die Auswertung, sobald der erste
-        eingetragen ist.
-      </p>
-
-      <div id="stats-body" hidden>
-        <dl class="stat-grid">
-          <div class="stat">
-            <dt>Gesamtdistanz</dt>
-            <dd id="stat-total">–</dd>
-          </div>
-          <div class="stat">
-            <dt>Läufe</dt>
-            <dd id="stat-count">–</dd>
-          </div>
-          <div class="stat">
-            <dt>Ø pro Lauf</dt>
-            <dd id="stat-average">–</dd>
-          </div>
-          <div class="stat">
-            <dt>Längster Lauf</dt>
-            <dd id="stat-longest">–</dd>
-            <dd class="stat-note muted" id="stat-longest-date"></dd>
-          </div>
-          <div class="stat">
-            <dt>Aktuelle Serie</dt>
-            <dd id="stat-streak-current">–</dd>
-            <dd class="stat-note muted" id="stat-streak-current-weeks"></dd>
-          </div>
-          <div class="stat">
-            <dt>Längste Serie</dt>
-            <dd id="stat-streak-longest">–</dd>
-            <dd class="stat-note muted" id="stat-streak-longest-weeks"></dd>
-          </div>
-        </dl>
-
-        <div class="chart-header">
-          <h3 class="group-title">Distanz im Verlauf</h3>
-          <div class="chart-toggle" role="group" aria-label="Zeitraum">
-            <button type="button" class="small" id="chart-weeks" aria-pressed="true">Wochen</button>
-            <button type="button" class="small secondary" id="chart-months" aria-pressed="false">Monate</button>
-          </div>
-        </div>
-
-        <ul class="chart" id="chart-list"></ul>
-      </div>
-    </section>
-
     <!-- Detailansicht eines Laufs -->
     <section class="card" id="detail-card" aria-labelledby="detail-title" hidden>
       <div class="detail-header">
@@ -476,6 +408,9 @@
     <div class="view" id="view-profile" role="tabpanel" aria-labelledby="tab-profile" hidden>
       <section class="card profile-hero" aria-labelledby="profile-title">
         <h2 id="profile-title">Profil</h2>
+        <!-- Bleibt versteckt, solange kein Name hinterlegt ist – dann steht
+             wie bisher nur der Titel da. -->
+        <p class="profile-name" id="profile-name" hidden></p>
         <img class="rank-icon profile-rank-icon" id="profile-badge" src="icons/badges/badge-neuling.png" alt="">
         <p class="profile-rank" id="profile-title-name">Neuling</p>
         <p class="profile-level">
@@ -498,14 +433,53 @@
         <p class="muted" id="profile-next">Nächster Titel: Läufer ab Level 5</p>
       </section>
 
+      <section class="card" aria-labelledby="profile-name-title">
+        <h2 id="profile-name-title">Name</h2>
+
+        <form id="profile-name-form" novalidate>
+          <div class="field">
+            <label for="profile-name-input">Dein Name <span class="optional">optional</span></label>
+            <input
+              type="text"
+              id="profile-name-input"
+              name="profile-name"
+              maxlength="30"
+              placeholder="Bleibt leer, dann steht nur der Titel da"
+              autocomplete="off"
+            >
+          </div>
+
+          <div class="form-buttons">
+            <button type="submit" id="profile-name-submit">Namen speichern</button>
+          </div>
+        </form>
+
+        <p class="data-status muted" id="profile-name-status" role="status" hidden></p>
+      </section>
+
       <section class="card" aria-labelledby="profile-trophies-title">
         <h2 id="profile-trophies-title">Trophäen</h2>
         <ul class="category-summary" id="profile-trophy-summary"></ul>
       </section>
 
-      <section class="card" aria-labelledby="titles-title">
-        <h2 id="titles-title">Titel-Historie</h2>
-        <ol class="title-history" id="title-history"></ol>
+      <!-- Statistik für den gewählten Zeitraum; der Umschalter steuert
+           zugleich die Balken darunter. -->
+      <section class="card" aria-labelledby="period-title">
+        <h2 id="period-title">Statistik</h2>
+
+        <div class="period-head">
+          <p class="muted period-caption" id="period-caption">Diese Woche</p>
+          <div class="chart-toggle" role="group" aria-label="Zeitraum">
+            <button type="button" class="small" id="period-week" aria-pressed="true">Woche</button>
+            <button type="button" class="small secondary" id="period-month" aria-pressed="false">Monat</button>
+          </div>
+        </div>
+
+        <p class="muted" id="period-empty">In diesem Zeitraum noch kein Lauf.</p>
+        <dl class="stat-grid" id="period-stats" hidden></dl>
+
+        <h3 class="group-title chart-title" id="chart-title" hidden>Distanz im Verlauf</h3>
+        <ul class="chart" id="chart-list"></ul>
       </section>
 
       <section class="card" aria-labelledby="profile-stats-title">

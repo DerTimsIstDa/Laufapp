@@ -11,6 +11,9 @@ import { normalizeTrack, MIN_POINTS } from './route.js';
 export const MAX_DISTANCE_KM = 1000;
 export const MAX_DURATION_MINUTES = 1440;
 
+/** Reicht für jeden Namen und für jede Kopfzeile, in die er passen muss. */
+export const MAX_NAME_LENGTH = 30;
+
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const TIME_OF_DAY = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -44,6 +47,31 @@ export function isValidIsoDate(value) {
     date.getUTCMonth() === month - 1 &&
     date.getUTCDate() === day
   );
+}
+
+/**
+ * Namen aufräumen: Rand-Leerraum weg, innere Leerraumketten auf ein Leerzeichen
+ * zusammengezogen, Steuerzeichen entfernt, dann auf MAX_NAME_LENGTH gekürzt.
+ *
+ * Mehr Prüfung wäre Anmaßung – ein Name ist, was jemand als seinen angibt.
+ * Gekürzt statt abgelehnt: wer 40 Zeichen tippt, will nicht belehrt werden.
+ *
+ * @returns {string} leer, wenn nichts Brauchbares übrig bleibt
+ */
+export function normalizeName(value) {
+  if (typeof value !== 'string') return '';
+
+  return value
+    // Tabulator und Zeilenumbruch trennen Wörter – die werden zum Leerzeichen,
+    // sonst klebte "Tim\tB." als "TimB." zusammen.
+    .replace(/\p{Cc}/gu, ' ')
+    // Was übrig bleibt (Richtungsmarken, unbelegte Stellen), ist unsichtbar
+    // und fliegt ersatzlos raus.
+    .replace(/\p{C}/gu, '')
+    .replace(/\s+/gu, ' ')
+    .trim()
+    .slice(0, MAX_NAME_LENGTH)
+    .trim();
 }
 
 /** "HH:MM" von 00:00 bis 23:59. */

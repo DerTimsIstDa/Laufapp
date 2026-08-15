@@ -116,6 +116,32 @@ export function distanceByMonth(runs, { limit = 12, todayIso = localIsoDate(new 
   });
 }
 
+/**
+ * Läufe der laufenden Woche bzw. des laufenden Monats.
+ *
+ * Die Woche beginnt montags – dieselbe Grenze, mit der auch das
+ * Balkendiagramm rechnet (siehe MONDAY_OFFSET). Zwei verschiedene
+ * Wochenanfänge in einer App wären ein Fehler, der nur sonntags auffällt.
+ *
+ * Läufe in der Zukunft fallen nicht heraus: wer einen Lauf auf morgen
+ * datiert, hat sich vertippt, und ein stillschweigend verschwundener Lauf
+ * wäre die schlechtere Rückmeldung als ein sichtbar falscher.
+ *
+ * @param {import('./storage.js').Run[]} runs
+ * @param {{ period: 'week' | 'month', todayIso?: string }} options
+ * @returns {import('./storage.js').Run[]}
+ */
+export function runsInPeriod(runs, { period, todayIso = localIsoDate(new Date()) } = {}) {
+  if (!Array.isArray(runs)) return [];
+
+  const inSelbem =
+    period === 'month'
+      ? (isoDate) => toMonthIndex(isoDate) === toMonthIndex(todayIso)
+      : (isoDate) => toWeekIndex(toDayNumber(isoDate)) === toWeekIndex(toDayNumber(todayIso));
+
+  return runs.filter((run) => typeof run?.date === 'string' && inSelbem(run.date));
+}
+
 /** Date -> "JJJJ-MM-TT" in lokaler Zeit. */
 export function localIsoDate(date) {
   const year = date.getFullYear();
