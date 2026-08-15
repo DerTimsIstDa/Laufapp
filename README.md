@@ -541,16 +541,17 @@ js/stats.js         Summen, Durchschnitte, Serien, Zeitreihen – ebenfalls pur
 js/route.js         GPS-Strecke auf Zeichenflächen-Koordinaten – ebenfalls pur
 js/pwa.js           Installationshinweis, eigene Caches erkennen – ebenfalls pur
 js/lock.js          Tastensperre: Halte-Fortschritt und Sperrregeln – ebenfalls pur
-js/history.js       Freischaltdaten und Titel-Historie – ebenfalls pur
+js/history.js       Freischaltdaten der Achievements – ebenfalls pur
 js/exercises.js     Übungsbibliothek und Filter – feste Daten, ebenfalls pur
 js/exercise-log.js  Erledigte Übungen: Zähler, Tageslimit, XP – ebenfalls pur
+js/exercise-plan.js Für einen Tag vorgenommene Übungen – ebenfalls pur
 js/training.js      Geplante Einheiten, Abgleich mit den Läufen – ebenfalls pur
 js/tracker.js       Live-Aufzeichnung: watchPosition, Pausen, Wake Lock
 js/storage.js       Laden/Speichern/Ändern der Läufe im localStorage
 js/app.js           Formular, Rendering, Verdrahtung
 manifest.json       PWA-Manifest
 sw.js               Service Worker (App-Shell-Cache)
-icons/icon.svg      App-Icon
+icons/icon-*.png    App-Icon; die maskable-Fassung hat Rand für Androids Zuschnitt
 icons/badges/       Rang-Abzeichen zu den Titeln, 160 px hoch
 tests/              Node-Tests, laufen mit `node --test`
 ```

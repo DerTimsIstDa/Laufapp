@@ -327,6 +327,20 @@ const el = {
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
+/**
+ * Beschriftung der Plan-Zustände aus matchPlan().
+ *
+ * Steht hier oben und nicht bei der Plan-Liste: der Start-Bereich braucht sie
+ * auch, und der wird schon beim ersten render() aus init() aufgebaut – weiter
+ * unten wäre die Konstante zu diesem Zeitpunkt noch nicht initialisiert.
+ */
+const STATUS_TEXT = {
+  geplant: 'Geplant',
+  erfuellt: 'Eingehalten',
+  teilweise: 'Angefangen',
+  verpasst: 'Verpasst',
+};
+
 const numberFormat = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 });
 const distanceFormat = new Intl.NumberFormat('de-DE', {
   minimumFractionDigits: 2,
@@ -712,13 +726,6 @@ function renderTraining() {
 
   el.planList.replaceChildren(...eintraege.map(createPlanItem));
 }
-
-const STATUS_TEXT = {
-  geplant: 'Geplant',
-  erfuellt: 'Eingehalten',
-  teilweise: 'Angefangen',
-  verpasst: 'Verpasst',
-};
 
 function createPlanItem({ session, run, status, targetKm, xp }) {
   const item = document.createElement('li');
