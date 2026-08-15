@@ -427,7 +427,21 @@
              wie bisher nur der Titel da. -->
         <p class="profile-name" id="profile-name" hidden></p>
         <img class="rank-icon profile-rank-icon" id="profile-badge" src="icons/badges/badge-neuling.png" alt="">
-        <p class="profile-rank" id="profile-title-name">Neuling</p>
+        <div class="profile-rank-row">
+          <p class="profile-rank" id="profile-title-name">Neuling</p>
+          <button type="button" id="share-open" class="share-button" aria-label="Profil teilen" aria-expanded="false">
+            <!-- Drei verbundene Punkte – das Teilen-Symbol, das überall
+                 dasselbe bedeutet. -->
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="17.5" cy="5.5" r="2.75"/>
+              <circle cx="6.5" cy="12" r="2.75"/>
+              <circle cx="17.5" cy="18.5" r="2.75"/>
+              <path d="M9 10.6 15 7.1"/>
+              <path d="m9 13.4 6 3.5"/>
+            </svg>
+          </button>
+        </div>
+
         <p class="profile-level">
           Level <strong id="profile-level">1</strong>
           &middot; <span id="profile-xp">0</span> XP
@@ -446,6 +460,32 @@
         <p class="muted progress-caption" id="profile-progress-caption"></p>
 
         <p class="muted" id="profile-next">Nächster Titel: Läufer ab Level 5</p>
+
+        <!-- Auswahl, was auf die Karte kommt. Direkt hier statt in einem
+             Systemdialog – wie die Löschrückfrage bei den Läufen auch. -->
+        <div class="share-panel" id="share-panel" hidden>
+          <p class="share-question">Was möchtest du teilen?</p>
+
+          <div class="filter-row share-choices">
+            <button type="button" class="chip" data-share="run">Einzelner Lauf</button>
+            <button type="button" class="chip" data-share="total">Gesamt</button>
+            <button type="button" class="chip" data-share="week">Woche</button>
+            <button type="button" class="chip" data-share="month">Monat</button>
+          </div>
+
+          <div class="field share-run-picker" id="share-run-picker" hidden>
+            <label for="share-run">Welcher Lauf?</label>
+            <select id="share-run"></select>
+          </div>
+
+          <div class="share-buttons">
+            <button type="button" id="share-create" class="small" hidden>Karte erstellen</button>
+            <button type="button" id="share-cancel" class="secondary small">Abbrechen</button>
+          </div>
+
+          <p class="share-status muted" id="share-status" role="status" hidden></p>
+          <p class="error" id="share-error" role="alert" hidden></p>
+        </div>
       </section>
 
       <section class="card" aria-labelledby="profile-name-title">

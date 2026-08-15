@@ -17,6 +17,7 @@
  *   training.js     Geplante Einheiten, Abgleich mit den Läufen
  *   exercise-plan.js Für einen Tag vorgenommene Übungen
  *   goal.js         Wochenziel: erreichte Wochen und Bonus-XP
+ *   share-card.js   Teilen-Karte auf einem Canvas
  *   storage.js      Persistenz
  */
 
@@ -42,6 +43,7 @@ import {
 import { serializeExport, exportFileName, parseImport } from './transfer.js';
 import { buildStats, distanceByWeek, distanceByMonth, runsInPeriod } from './stats.js';
 import { goalXp, reachedGoalWeeks, XP_PER_GOAL_WEEK } from './goal.js';
+import { drawShareCard } from './share-card.js';
 import { projectTrack, hasDrawableRoute, toStorageTrack, DEFAULT_VIEWPORT } from './route.js';
 import {
   isStandalone,
@@ -313,6 +315,15 @@ const el = {
   profileProgressFill: document.getElementById('profile-progress-fill'),
   profileProgressCaption: document.getElementById('profile-progress-caption'),
   profileTrophySummary: document.getElementById('profile-trophy-summary'),
+
+  shareOpen: document.getElementById('share-open'),
+  sharePanel: document.getElementById('share-panel'),
+  shareRunPicker: document.getElementById('share-run-picker'),
+  shareRun: document.getElementById('share-run'),
+  shareCreate: document.getElementById('share-create'),
+  shareCancel: document.getElementById('share-cancel'),
+  shareStatus: document.getElementById('share-status'),
+  shareError: document.getElementById('share-error'),
   profileStats: document.getElementById('profile-stats'),
   profileStatsEmpty: document.getElementById('profile-stats-empty'),
 
@@ -407,6 +418,7 @@ function init() {
   fillProfileForm();
   document.getElementById('goal-xp-hint').textContent = XP_PER_GOAL_WEEK;
   el.profileNameForm.addEventListener('submit', handleProfileSubmit);
+  setupShare();
 
   el.form.addEventListener('submit', handleSubmit);
   el.formCancel.addEventListener('click', stopEditing);
@@ -1700,6 +1712,222 @@ function renderGoal() {
     'aria-label',
     `Wochenziel: ${gelaufen} von ${ziel} Läufen`
   );
+}
+
+/* ----------------------------------------------------------------- Teilen */
+
+/** Gewählte Art der Karte: 'run', 'total', 'week' oder 'month'. */
+let shareKind = null;
+
+function setupShare() {
+  el.shareOpen.addEventListener('click', toggleSharePanel);
+  el.shareCancel.addEventListener('click', closeSharePanel);
+  el.shareCreate.addEventListener('click', handleShare);
+
+  for (const knopf of el.sharePanel.querySelectorAll('[data-share]')) {
+    knopf.addEventListener('click', () => selectShareKind(knopf.dataset.share));
+  }
+}
+
+function toggleSharePanel() {
+  if (!el.sharePanel.hidden) return closeSharePanel();
+
+  shareKind = null;
+  el.sharePanel.hidden = false;
+  el.shareOpen.setAttribute('aria-expanded', 'true');
+
+  renderShareChoices();
+  fillShareRuns();
+}
+
+function closeSharePanel() {
+  shareKind = null;
+  el.sharePanel.hidden = true;
+  el.shareOpen.setAttribute('aria-expanded', 'false');
+  clearShareMessages();
+  renderShareChoices();
+}
+
+function selectShareKind(kind) {
+  shareKind = kind;
+  clearShareMessages();
+  renderShareChoices();
+}
+
+function renderShareChoices() {
+  for (const knopf of el.sharePanel.querySelectorAll('[data-share]')) {
+    const aktiv = knopf.dataset.share === shareKind;
+    knopf.className = aktiv ? 'chip active' : 'chip';
+    knopf.setAttribute('aria-pressed', String(aktiv));
+  }
+
+  // Die Auswahl des Laufs erscheint nur, wenn sie gebraucht wird.
+  el.shareRunPicker.hidden = shareKind !== 'run' || runs.length === 0;
+  el.shareCreate.hidden = shareKind === null || (shareKind === 'run' && runs.length === 0);
+
+  if (shareKind === 'run' && runs.length === 0) {
+    showShareError('Es gibt noch keinen Lauf zum Teilen.');
+  }
+}
+
+function fillShareRuns() {
+  el.shareRun.replaceChildren(
+    ...runs.map((run) => {
+      const option = document.createElement('option');
+      option.value = run.id;
+      option.textContent = `${numberFormat.format(run.distanceKm)} km · ${formatDate(run.date)}`;
+      return option;
+    })
+  );
+}
+
+/**
+ * Karte bauen und weitergeben.
+ *
+ * Die Web Share API braucht eine Nutzeraktion. Zwischen Klick und Aufruf
+ * liegt deshalb nur das Zeichnen und toBlob – wird dazwischen noch etwas
+ * anderes abgewartet, verwirft Safari die Erlaubnis und der Dialog bleibt zu.
+ */
+async function handleShare() {
+  if (shareKind === null) return;
+
+  clearShareMessages();
+
+  const daten = buildShareData(shareKind);
+  if (daten === null) return showShareError('Für diesen Zeitraum gibt es noch keine Läufe.');
+
+  const canvas = document.createElement('canvas');
+  drawShareCard(canvas, daten);
+
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+  if (blob === null) return showShareError('Die Karte konnte nicht erzeugt werden.');
+
+  const datei = new File([blob], shareFileName(), { type: 'image/png' });
+
+  if (navigator.canShare?.({ files: [datei] })) {
+    try {
+      await navigator.share({ files: [datei], title: 'FunRun' });
+      return showShareStatus('Geteilt.');
+    } catch (err) {
+      // Abbrechen ist kein Fehler – nur alles andere ist einer.
+      if (err?.name === 'AbortError') return;
+      console.warn('Teilen fehlgeschlagen, lade stattdessen herunter:', err);
+    }
+  }
+
+  downloadCard(blob, datei.name);
+  showShareStatus('Als Bild gespeichert.');
+}
+
+/** Ohne Web Share API bleibt der Weg über den Download. */
+function downloadCard(blob, name) {
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = name;
+  link.click();
+
+  URL.revokeObjectURL(url);
+}
+
+function shareFileName() {
+  const teil = { run: 'lauf', total: 'gesamt', week: 'woche', month: 'monat' }[shareKind];
+  return `funrun-${teil}-${todayIso()}.png`;
+}
+
+/**
+ * Was auf die Karte kommt.
+ *
+ * Der Profil-Kopf ist immer derselbe; nur der Block darunter hängt von der
+ * Auswahl ab.
+ *
+ * @returns {?import('./share-card.js').CardData} null, wenn es nichts zu zeigen gibt
+ */
+function buildShareData(kind) {
+  const achievements = evaluateAchievements(runs, exerciseLog);
+  const progress = getProgress(
+    totalXpFromRuns(runs) +
+      exerciseXp(exerciseLog) +
+      achievementXp(achievements) +
+      planXp(sessions, runs, { today: todayIso() }) +
+      currentGoalXp()
+  );
+
+  const unten = kind === 'run' ? shareRunBlock() : sharePeriodBlock(kind);
+  if (unten === null) return null;
+
+  return {
+    name: profile.name,
+    title: titleForLevel(progress.level),
+    percent: progress.progressPercent,
+    badge: el.profileBadge.complete ? el.profileBadge : null,
+    ...unten,
+  };
+}
+
+function shareRunBlock() {
+  const run = runs.find((entry) => entry.id === el.shareRun.value) ?? runs[0];
+  if (!run) return null;
+
+  const stats = [
+    { label: 'Distanz', value: `${numberFormat.format(run.distanceKm)} km` },
+  ];
+
+  if (run.durationMinutes) {
+    stats.push({ label: 'Dauer', value: `${numberFormat.format(run.durationMinutes)} min` });
+  }
+
+  const pace = runPaceMinPerKm(run);
+  if (pace !== null) stats.push({ label: 'Pace', value: `${formatPace(pace)} min/km` });
+
+  stats.push({ label: 'Verdient', value: `${numberFormat.format(xpForDistance(run.distanceKm))} XP` });
+
+  return {
+    heading: 'Einzelner Lauf',
+    subheading: formatDate(run.date),
+    stats,
+  };
+}
+
+function sharePeriodBlock(kind) {
+  const heute = todayIso();
+
+  const gewaehlt =
+    kind === 'total' ? runs : runsInPeriod(runs, { period: kind, todayIso: heute });
+
+  const stats = buildStats(gewaehlt, { todayIso: heute });
+  if (stats.runCount === 0) return null;
+
+  const ueberschrift = { total: 'Gesamt', week: 'Diese Woche', month: 'Dieser Monat' }[kind];
+
+  return {
+    heading: ueberschrift,
+    subheading: kind === 'total' ? null : `Stand ${formatDate(heute)}`,
+    stats: [
+      { label: 'Distanz', value: `${numberFormat.format(round(stats.totalDistanceKm))} km` },
+      { label: 'Läufe', value: String(stats.runCount) },
+      { label: 'Ø Pace', value: formatAveragePace(stats.averagePaceMinPerKm) },
+      { label: 'Längster Lauf', value: `${numberFormat.format(stats.longestRun.distanceKm)} km` },
+    ],
+  };
+}
+
+function showShareStatus(message) {
+  el.shareStatus.textContent = message;
+  el.shareStatus.hidden = false;
+}
+
+function showShareError(message) {
+  el.shareError.textContent = message;
+  el.shareError.hidden = false;
+}
+
+function clearShareMessages() {
+  el.shareStatus.hidden = true;
+  el.shareStatus.textContent = '';
+  el.shareError.hidden = true;
+  el.shareError.textContent = '';
 }
 
 /** Kompakte Übersicht: wie viele Achievements je Gruppe. */

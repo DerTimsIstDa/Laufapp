@@ -1879,6 +1879,86 @@ textarea:focus {
   overflow-wrap: anywhere;
 }
 
+/* Titel und Teilen-Knopf in einer Zeile, zusammen mittig. */
+.profile-rank-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.share-button {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  margin-top: var(--space-2);
+  background: var(--sunken);
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  color: var(--muted);
+}
+
+.share-button:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent-line);
+  color: var(--accent);
+}
+
+.share-button[aria-expanded="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent);
+}
+
+.share-button svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.share-panel {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+  text-align: left;
+}
+
+.share-question {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--body);
+}
+
+.share-choices {
+  margin: var(--space-3) 0 0;
+}
+
+.share-run-picker {
+  margin-top: var(--space-3);
+}
+
+.share-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.share-status {
+  margin: var(--space-3) 0 0;
+  font-size: 0.8125rem;
+}
+
 .profile-rank {
   margin: var(--space-2) 0 0;
   font-size: 2.25rem;
