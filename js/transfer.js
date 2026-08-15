@@ -10,6 +10,7 @@
  */
 
 import { validateRun, isValidIsoDate } from './validation.js';
+import { validateSession } from './training.js';
 
 export const EXPORT_FORMAT = 'laufapp-export';
 export const EXPORT_VERSION = 1;
@@ -18,16 +19,17 @@ export const EXPORT_VERSION = 1;
  * Baut das Export-Objekt.
  * @param {import('./storage.js').Run[]} runs
  */
-export function buildExport(runs, { exportedAt = new Date(), exerciseLog = [] } = {}) {
+export function buildExport(runs, { exportedAt = new Date(), exerciseLog = [], sessions = [] } = {}) {
   return {
     format: EXPORT_FORMAT,
     version: EXPORT_VERSION,
     exportedAt: exportedAt.toISOString(),
     runCount: runs.length,
     runs,
-    // Erledigte Übungen gehören mit in die Sicherung, sonst wäre der Export
-    // kein vollständiges Abbild mehr.
+    // Erledigte Übungen und der Trainingsplan gehören mit in die Sicherung,
+    // sonst wäre der Export kein vollständiges Abbild mehr.
     exerciseLog,
+    sessions,
   };
 }
 
@@ -110,7 +112,45 @@ export function parseImport(text) {
     );
   }
 
-  return { ok: true, runs, skipped, exerciseLog: readExerciseLog(payload.exerciseLog) };
+  return {
+    ok: true,
+    runs,
+    skipped,
+    exerciseLog: readExerciseLog(payload.exerciseLog),
+    sessions: readSessions(payload.sessions),
+  };
+}
+
+/**
+ * Geplante Einheiten aus der Datei. Fehlen sie – etwa in einer Sicherung von
+ * vor diesem Feature – ist das kein Fehler, dann gibt es eben keinen Plan.
+ *
+ * Kaputte Einheiten werden still übersprungen: anders als bei den Läufen wäre
+ * ein verlorener Planeintrag kein Datenverlust, sondern nur ein Termin weniger.
+ */
+function readSessions(raw) {
+  if (!Array.isArray(raw)) return [];
+
+  const einheiten = [];
+  const vergebeneIds = new Set();
+
+  raw.forEach((entry, index) => {
+    const geprueft = validateSession(entry);
+    if (!geprueft.ok) return;
+
+    const kandidat =
+      entry !== null && typeof entry === 'object' && typeof entry.id === 'string'
+        ? entry.id.trim()
+        : '';
+
+    let id = kandidat !== '' && !vergebeneIds.has(kandidat) ? kandidat : `einheit-${index + 1}`;
+    while (vergebeneIds.has(id)) id = `${id}-x`;
+    vergebeneIds.add(id);
+
+    einheiten.push({ id, ...geprueft.session });
+  });
+
+  return einheiten;
 }
 
 /**

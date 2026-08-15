@@ -14,6 +14,7 @@
  *   pwa.js          Installationshinweis und Aktualisierung
  *   lock.js         Tastensperre während der Aufzeichnung
  *   history.js      Freischaltdaten und Titel-Historie
+ *   training.js     Geplante Einheiten, Abgleich mit den Läufen
  *   storage.js      Persistenz
  */
 
@@ -50,8 +51,23 @@ import {
   countByCategory,
 } from './exercises.js';
 import {
+  SESSION_TYPES,
+  SEGMENT_KINDS,
+  XP_PER_SESSION,
+  MAX_SEGMENTS,
+  validateSession,
+  matchPlan,
+  planXp,
+  buildPlanStats,
+  describeSession,
+  typeLabel,
+  isRestType,
+  plannedInAdvance,
+} from './training.js';
+import {
   loadRuns, addRun, updateRun, removeRun, replaceRuns,
   loadExerciseLog, addExerciseEntry, replaceExerciseLog,
+  loadSessions, addSession, updateSession, removeSession, replaceSessions,
 } from './storage.js';
 import {
   exerciseXp,
@@ -68,6 +84,21 @@ let runs = [];
 
 /** @type {import('./exercise-log.js').ExerciseEntry[]} */
 let exerciseLog = [];
+
+/** @type {import('./training.js').Session[]} */
+let sessions = [];
+
+/** id der Einheit, die gerade im Formular liegt – null heißt "neu anlegen". */
+let editingSessionId = null;
+
+/**
+ * Abschnitte im Formular, noch ungeprüft und als Rohtext.
+ * Eigener Zustand, weil sie erst beim Speichern eine Einheit ergeben.
+ */
+let sessionDraft = [];
+
+/** id der Einheit, für die gerade die Löschrückfrage offen ist. */
+let pendingSessionDeleteId = null;
 
 /** IDs der zuletzt gerenderten Achievements – für die Freischalt-Meldung. */
 let unlockedIds = new Set();
@@ -230,6 +261,29 @@ const el = {
   detailClose: document.getElementById('detail-close'),
   routeContainer: document.getElementById('route-container'),
 
+  planXpTotal: document.getElementById('plan-xp-total'),
+  sessionForm: document.getElementById('session-form'),
+  sessionDate: document.getElementById('session-date'),
+  sessionType: document.getElementById('session-type'),
+  sessionTypeHint: document.getElementById('session-type-hint'),
+  sessionNote: document.getElementById('session-note'),
+  sessionError: document.getElementById('session-error'),
+  sessionSubmit: document.getElementById('session-submit'),
+  sessionCancel: document.getElementById('session-cancel'),
+  sessionSegmentsBox: document.getElementById('session-segments-box'),
+  sessionSegments: document.getElementById('session-segments'),
+  sessionSegmentsEmpty: document.getElementById('session-segments-empty'),
+  sessionAddSegment: document.getElementById('session-add-segment'),
+  sessionXpHint: document.getElementById('session-xp-hint'),
+  planEmpty: document.getElementById('plan-empty'),
+  planBody: document.getElementById('plan-body'),
+  planList: document.getElementById('plan-list'),
+  planFulfilled: document.getElementById('plan-fulfilled'),
+  planDecided: document.getElementById('plan-decided'),
+  planAdherence: document.getElementById('plan-adherence'),
+  planOpen: document.getElementById('plan-open'),
+  planXp: document.getElementById('plan-xp'),
+
   runCount: document.getElementById('run-count'),
   runsEmpty: document.getElementById('runs-empty'),
   runsList: document.getElementById('runs-list'),
@@ -259,11 +313,14 @@ init();
 function init() {
   runs = loadRuns();
   exerciseLog = loadExerciseLog();
+  sessions = loadSessions();
   el.date.value = todayIso();
 
   el.form.addEventListener('submit', handleSubmit);
   el.formCancel.addEventListener('click', stopEditing);
   el.runsList.addEventListener('click', handleListClick);
+
+  setupSessionForm();
 
   bindTabs();
   el.refreshButton.addEventListener('click', handleRefresh);
@@ -346,8 +403,401 @@ function setView(view) {
   if (view === 'trophies') renderTrophies();
   if (view === 'profile') renderProfile();
   if (view === 'exercises') renderExercises();
+  if (view === 'training') renderTraining();
 
   window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+/* -------------------------------------------------------------- Training */
+
+function setupSessionForm() {
+  el.sessionXpHint.textContent = XP_PER_SESSION;
+
+  el.sessionType.replaceChildren(
+    ...SESSION_TYPES.map((type) => {
+      const option = document.createElement('option');
+      option.value = type.id;
+      option.textContent = type.label;
+      return option;
+    })
+  );
+
+  el.sessionForm.addEventListener('submit', handleSessionSubmit);
+  el.sessionCancel.addEventListener('click', stopEditingSession);
+  el.sessionAddSegment.addEventListener('click', () => addDraftSegment());
+  el.sessionType.addEventListener('change', renderSessionTypeHint);
+  el.sessionSegments.addEventListener('click', handleSegmentClick);
+  el.planList.addEventListener('click', handlePlanClick);
+
+  resetSessionForm();
+}
+
+/** Formular auf "neue Einheit" zurücksetzen. */
+function resetSessionForm() {
+  editingSessionId = null;
+  sessionDraft = [];
+
+  el.sessionForm.reset();
+  el.sessionDate.value = todayIso();
+  el.sessionType.value = SESSION_TYPES[0].id;
+  el.sessionSubmit.textContent = 'Einheit speichern';
+  el.sessionCancel.hidden = true;
+  el.sessionError.hidden = true;
+
+  renderSessionTypeHint();
+  renderDraftSegments();
+}
+
+function stopEditingSession() {
+  resetSessionForm();
+  renderTraining();
+}
+
+/**
+ * Ein Ruhetag hat keine Abschnitte – der ganze Block verschwindet, statt
+ * Eingaben anzubieten, die beim Speichern stillschweigend wegfallen.
+ */
+function renderSessionTypeHint() {
+  const type = SESSION_TYPES.find((entry) => entry.id === el.sessionType.value);
+
+  el.sessionTypeHint.textContent = type?.hint ?? '';
+  el.sessionSegmentsBox.hidden = isRestType(el.sessionType.value);
+}
+
+function addDraftSegment(segment = { kind: 'main', repeats: '1', distanceKm: '', durationMinutes: '' }) {
+  if (sessionDraft.length >= MAX_SEGMENTS) {
+    return showSessionError(`Mehr als ${MAX_SEGMENTS} Abschnitte sind zu viel für eine Einheit.`);
+  }
+
+  sessionDraft.push({ ...segment });
+  renderDraftSegments();
+}
+
+function handleSegmentClick(event) {
+  const remove = event.target.closest('[data-remove-segment]');
+  if (!remove) return;
+
+  sessionDraft.splice(Number(remove.dataset.removeSegment), 1);
+  renderDraftSegments();
+}
+
+function renderDraftSegments() {
+  el.sessionSegmentsEmpty.hidden = sessionDraft.length > 0;
+  el.sessionSegments.replaceChildren(...sessionDraft.map(createSegmentRow));
+}
+
+/**
+ * Eine Zeile im Abschnitts-Editor.
+ *
+ * Die Eingaben schreiben direkt in `sessionDraft` zurück, statt die Liste beim
+ * Tippen neu aufzubauen – sonst verlöre das Feld bei jedem Zeichen den Fokus.
+ */
+function createSegmentRow(segment, index) {
+  const zeile = document.createElement('li');
+  zeile.className = 'segment';
+
+  const art = document.createElement('select');
+  art.className = 'segment-kind';
+  art.setAttribute('aria-label', `Abschnitt ${index + 1}: Art`);
+  art.replaceChildren(
+    ...SEGMENT_KINDS.map((kind) => {
+      const option = document.createElement('option');
+      option.value = kind.id;
+      option.textContent = kind.label;
+      return option;
+    })
+  );
+  art.value = segment.kind;
+  art.addEventListener('change', () => {
+    segment.kind = art.value;
+  });
+
+  const wiederholungen = createSegmentInput(segment, 'repeats', {
+    label: `Abschnitt ${index + 1}: Wiederholungen`,
+    area: 'repeats',
+    placeholder: '1',
+    step: '1',
+    min: '1',
+    suffix: '×',
+  });
+
+  const distanz = createSegmentInput(segment, 'distanceKm', {
+    label: `Abschnitt ${index + 1}: Distanz in Kilometern`,
+    area: 'distance',
+    placeholder: '0,4',
+    step: '0.01',
+    min: '0.01',
+    suffix: 'km',
+  });
+
+  const dauer = createSegmentInput(segment, 'durationMinutes', {
+    label: `Abschnitt ${index + 1}: Dauer in Minuten`,
+    area: 'duration',
+    placeholder: '3',
+    step: '1',
+    min: '1',
+    suffix: 'min',
+  });
+
+  const entfernen = document.createElement('button');
+  entfernen.type = 'button';
+  entfernen.className = 'icon-button segment-remove';
+  entfernen.dataset.removeSegment = index;
+  entfernen.textContent = '×';
+  entfernen.setAttribute('aria-label', `Abschnitt ${index + 1} entfernen`);
+
+  zeile.append(art, wiederholungen, distanz, dauer, entfernen);
+  return zeile;
+}
+
+function createSegmentInput(segment, field, { label, area, placeholder, step, min, suffix }) {
+  const huelle = document.createElement('span');
+  huelle.className = `segment-input segment-${area}`;
+
+  const feld = document.createElement('input');
+  feld.type = 'number';
+  feld.step = step;
+  feld.min = min;
+  feld.inputMode = step === '1' ? 'numeric' : 'decimal';
+  feld.placeholder = placeholder;
+  feld.autocomplete = 'off';
+  feld.value = segment[field] ?? '';
+  feld.setAttribute('aria-label', label);
+  feld.addEventListener('input', () => {
+    segment[field] = feld.value;
+  });
+
+  const einheit = document.createElement('span');
+  einheit.className = 'segment-unit muted';
+  einheit.textContent = suffix;
+
+  huelle.append(feld, einheit);
+  return huelle;
+}
+
+function handleSessionSubmit(event) {
+  event.preventDefault();
+
+  const eingabe = {
+    date: el.sessionDate.value,
+    type: el.sessionType.value,
+    segments: isRestType(el.sessionType.value) ? [] : sessionDraft,
+    note: el.sessionNote.value,
+  };
+
+  const geprueft = validateSession(eingabe);
+  if (!geprueft.ok) return showSessionError(firstErrorMessage(geprueft));
+
+  if (editingSessionId === null) {
+    sessions = addSession(sessions, geprueft.session);
+  } else {
+    sessions = updateSession(sessions, editingSessionId, geprueft.session);
+  }
+
+  resetSessionForm();
+  render({ announceUnlocks: true });
+}
+
+function startEditingSession(id) {
+  const session = sessions.find((entry) => entry.id === id);
+  if (!session) return;
+
+  editingSessionId = id;
+  pendingSessionDeleteId = null;
+
+  el.sessionDate.value = session.date;
+  el.sessionType.value = session.type;
+  el.sessionNote.value = session.note ?? '';
+  el.sessionError.hidden = true;
+
+  // Zahlen als Text ins Formular: die Felder arbeiten mit Rohwerten, geprüft
+  // wird erst beim Speichern.
+  sessionDraft = (session.segments ?? []).map((segment) => ({
+    kind: segment.kind,
+    repeats: String(segment.repeats ?? 1),
+    distanceKm: segment.distanceKm === undefined ? '' : String(segment.distanceKm),
+    durationMinutes: segment.durationMinutes === undefined ? '' : String(segment.durationMinutes),
+  }));
+
+  el.sessionSubmit.textContent = 'Änderung speichern';
+  el.sessionCancel.hidden = false;
+
+  renderSessionTypeHint();
+  renderDraftSegments();
+  renderTraining();
+
+  el.sessionForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function handlePlanClick(event) {
+  const edit = event.target.closest('[data-edit-session]');
+  if (edit) return startEditingSession(edit.dataset.editSession);
+
+  const ask = event.target.closest('[data-ask-delete-session]');
+  if (ask) {
+    pendingSessionDeleteId = ask.dataset.askDeleteSession;
+    return renderTraining();
+  }
+
+  const cancel = event.target.closest('[data-cancel-delete-session]');
+  if (cancel) {
+    pendingSessionDeleteId = null;
+    return renderTraining();
+  }
+
+  const confirm = event.target.closest('[data-confirm-delete-session]');
+  if (!confirm) return;
+
+  const id = confirm.dataset.confirmDeleteSession;
+  pendingSessionDeleteId = null;
+  if (editingSessionId === id) resetSessionForm();
+
+  sessions = removeSession(sessions, id);
+  render({ announceUnlocks: false });
+}
+
+function showSessionError(message) {
+  el.sessionError.textContent = message;
+  el.sessionError.hidden = false;
+}
+
+function renderTraining() {
+  const eintraege = matchPlan(sessions, runs, { today: todayIso() });
+  const kennzahlen = buildPlanStats(sessions, runs, { today: todayIso() });
+
+  el.planEmpty.hidden = eintraege.length > 0;
+  el.planBody.hidden = eintraege.length === 0;
+  if (eintraege.length === 0) return;
+
+  el.planFulfilled.textContent = kennzahlen.fulfilled;
+  el.planDecided.textContent = kennzahlen.decided;
+  el.planAdherence.textContent =
+    kennzahlen.decided === 0 ? '–' : `${Math.round(kennzahlen.adherencePercent)} %`;
+  el.planOpen.textContent = kennzahlen.open;
+  el.planXp.textContent = numberFormat.format(kennzahlen.xp);
+
+  el.planList.replaceChildren(...eintraege.map(createPlanItem));
+}
+
+const STATUS_TEXT = {
+  geplant: 'Geplant',
+  erfuellt: 'Eingehalten',
+  teilweise: 'Angefangen',
+  verpasst: 'Verpasst',
+};
+
+function createPlanItem({ session, run, status, targetKm, xp }) {
+  const item = document.createElement('li');
+  item.className = `plan-item ${status}`;
+  if (session.id === editingSessionId) item.classList.add('editing');
+
+  if (session.id === pendingSessionDeleteId) return fillSessionDeleteConfirm(item, session);
+
+  const kopf = document.createElement('div');
+  kopf.className = 'plan-head';
+
+  const datum = document.createElement('span');
+  datum.className = 'plan-date';
+  datum.textContent = formatDate(session.date);
+
+  const art = document.createElement('span');
+  art.className = 'plan-type';
+  art.textContent = typeLabel(session.type);
+
+  const marke = document.createElement('span');
+  marke.className = 'plan-status';
+  marke.textContent = STATUS_TEXT[status] ?? status;
+
+  kopf.append(datum, art, marke);
+
+  const beschreibung = document.createElement('p');
+  beschreibung.className = 'plan-description muted';
+  beschreibung.textContent = describeSession(session);
+
+  item.append(kopf, beschreibung);
+
+  if (session.note) {
+    const notiz = document.createElement('p');
+    notiz.className = 'plan-note muted';
+    notiz.textContent = session.note;
+    item.append(notiz);
+  }
+
+  const fuss = document.createElement('div');
+  fuss.className = 'plan-foot';
+
+  const bilanz = document.createElement('span');
+  bilanz.className = 'plan-result muted';
+  bilanz.textContent = planResultText({ run, status, targetKm, session, xp });
+  fuss.append(bilanz);
+
+  const bearbeiten = document.createElement('button');
+  bearbeiten.type = 'button';
+  bearbeiten.className = 'icon-button';
+  bearbeiten.dataset.editSession = session.id;
+  bearbeiten.textContent = '✎';
+  bearbeiten.setAttribute('aria-label', `Einheit vom ${formatDate(session.date)} bearbeiten`);
+
+  const entfernen = document.createElement('button');
+  entfernen.type = 'button';
+  entfernen.className = 'icon-button';
+  entfernen.dataset.askDeleteSession = session.id;
+  entfernen.textContent = '×';
+  entfernen.setAttribute('aria-label', `Einheit vom ${formatDate(session.date)} löschen`);
+
+  fuss.append(bearbeiten, entfernen);
+  item.append(fuss);
+
+  return item;
+}
+
+/** Was aus der Einheit geworden ist – und warum es dafür XP gab oder nicht. */
+function planResultText({ run, status, targetKm, session, xp }) {
+  if (status === 'geplant') {
+    return targetKm > 0 ? `Ziel: ${numberFormat.format(round(targetKm))} km` : 'Noch offen';
+  }
+
+  if (isRestType(session.type)) {
+    return status === 'erfuellt' ? 'Pause eingehalten' : 'An diesem Tag wurde gelaufen';
+  }
+
+  if (status === 'verpasst') return 'Kein Lauf an diesem Tag';
+
+  const gelaufen = `${numberFormat.format(run.distanceKm)} km gelaufen`;
+  if (status === 'teilweise') {
+    return `${gelaufen} – zu wenig für das Ziel von ${numberFormat.format(round(targetKm))} km`;
+  }
+
+  // Nachträglich eingetragene Einheiten erfüllen sich selbst; ohne diesen
+  // Hinweis wirkt die fehlende Belohnung wie ein Fehler.
+  if (xp === 0 && !plannedInAdvance(session)) {
+    return `${gelaufen} – nachträglich geplant, deshalb keine Bonus-XP`;
+  }
+
+  return `${gelaufen} · +${numberFormat.format(xp)} XP`;
+}
+
+function fillSessionDeleteConfirm(item, session) {
+  item.classList.add('confirming');
+
+  const frage = document.createElement('span');
+  frage.className = 'plan-question';
+  frage.textContent = `${typeLabel(session.type)} am ${formatDate(session.date)} wirklich löschen?`;
+
+  const loeschen = document.createElement('button');
+  loeschen.type = 'button';
+  loeschen.className = 'small danger';
+  loeschen.dataset.confirmDeleteSession = session.id;
+  loeschen.textContent = 'Löschen';
+
+  const abbrechen = document.createElement('button');
+  abbrechen.type = 'button';
+  abbrechen.className = 'small secondary';
+  abbrechen.dataset.cancelDeleteSession = '';
+  abbrechen.textContent = 'Abbrechen';
+
+  item.append(frage, loeschen, abbrechen);
+  return item;
 }
 
 /* --------------------------------------------------------------- Übungen */
@@ -690,7 +1140,11 @@ function createTrophyProgress(progress) {
 
 function renderProfile() {
   const achievements = evaluateAchievements(runs, exerciseLog);
-  const gesamtXp = totalXpFromRuns(runs) + exerciseXp(exerciseLog) + achievementXp(achievements);
+  const gesamtXp =
+    totalXpFromRuns(runs) +
+    exerciseXp(exerciseLog) +
+    achievementXp(achievements) +
+    planXp(sessions, runs, { today: todayIso() });
   const progress = getProgress(gesamtXp);
   const upcoming = nextTitle(progress.level);
 
@@ -1118,7 +1572,9 @@ function handleExport() {
     return showDataError('Es gibt noch keine Läufe zum Exportieren.');
   }
 
-  const blob = new Blob([serializeExport(runs, { exerciseLog })], { type: 'application/json' });
+  const blob = new Blob([serializeExport(runs, { exerciseLog, sessions })], {
+    type: 'application/json',
+  });
   const url = URL.createObjectURL(blob);
 
   const link = document.createElement('a');
@@ -1155,8 +1611,15 @@ async function handleImportFile(event) {
 
 function buildImportSummary(result) {
   const uebungen = result.exerciseLog?.length ?? 0;
-  const mitUebungen = uebungen > 0 ? ` und ${uebungen} erledigte Übungen` : '';
-  const found = `${result.runs.length} ${result.runs.length === 1 ? 'Lauf' : 'Läufe'}${mitUebungen} gefunden`;
+  const einheiten = result.sessions?.length ?? 0;
+
+  const anhang = [
+    uebungen > 0 ? `${uebungen} erledigte Übungen` : null,
+    einheiten > 0 ? `${einheiten} geplante ${einheiten === 1 ? 'Einheit' : 'Einheiten'}` : null,
+  ].filter(Boolean);
+
+  const mitAnhang = anhang.length > 0 ? ` und ${anhang.join(', ')}` : '';
+  const found = `${result.runs.length} ${result.runs.length === 1 ? 'Lauf' : 'Läufe'}${mitAnhang} gefunden`;
   const skipped =
     result.skipped.length > 0
       ? `, ${result.skipped.length} unlesbare übersprungen`
@@ -1174,11 +1637,14 @@ function handleImportApply() {
 
   const imported = pendingImport.runs;
   const importierteUebungen = pendingImport.exerciseLog ?? [];
+  const importierterPlan = pendingImport.sessions ?? [];
   cancelImport();
   stopEditing();
+  resetSessionForm();
 
   runs = replaceRuns(imported);
   exerciseLog = replaceExerciseLog(importierteUebungen);
+  sessions = replaceSessions(importierterPlan);
 
   // Ohne Freischalt-Meldung: nach einem Import wäre sie eine Aufzählung
   // sämtlicher Achievements statt einer Neuigkeit.
@@ -1378,9 +1844,10 @@ function render({ announceUnlocks }) {
   const runXp = totalXpFromRuns(runs);
   const uebungsXp = exerciseXp(exerciseLog);
   const bonusXp = achievementXp(achievements);
-  const progress = getProgress(runXp + uebungsXp + bonusXp);
+  const planBonusXp = planXp(sessions, runs, { today: todayIso() });
+  const progress = getProgress(runXp + uebungsXp + bonusXp + planBonusXp);
 
-  renderProgress(progress, runXp, uebungsXp, bonusXp);
+  renderProgress(progress, runXp, uebungsXp, bonusXp, planBonusXp);
   renderStats();
   renderAchievements(achievements, announceUnlocks);
   renderDetail();
@@ -1391,6 +1858,7 @@ function render({ announceUnlocks }) {
   if (activeView === 'trophies') renderTrophies();
   if (activeView === 'profile') renderProfile();
   if (activeView === 'exercises') renderExercises();
+  if (activeView === 'training') renderTraining();
 }
 
 /* ------------------------------------------------------------- Statistik */
@@ -1578,7 +2046,7 @@ function clearTrackError() {
   el.trackError.hidden = true;
 }
 
-function renderProgress(progress, runXp, uebungsXp, bonusXp) {
+function renderProgress(progress, runXp, uebungsXp, bonusXp, planBonusXp) {
   const percent = Math.min(100, Math.max(0, progress.progressPercent));
   const upcoming = nextTitle(progress.level);
 
@@ -1597,6 +2065,7 @@ function renderProgress(progress, runXp, uebungsXp, bonusXp) {
   el.runXp.textContent = numberFormat.format(runXp);
   el.exerciseXp.textContent = numberFormat.format(uebungsXp);
   el.bonusXp.textContent = numberFormat.format(bonusXp);
+  el.planXpTotal.textContent = numberFormat.format(planBonusXp);
   el.nextTitle.textContent = upcoming.title;
   el.nextTitleLevel.textContent = upcoming.level;
 }

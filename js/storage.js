@@ -9,6 +9,7 @@
 
 const STORAGE_KEY = 'laufapp.runs.v1';
 const EXERCISE_KEY = 'laufapp.exercises.v1';
+const TRAINING_KEY = 'laufapp.training.v1';
 
 /**
  * `timeOfDay` ("HH:MM") und `durationMinutes` sind optional. Sie werden nur
@@ -180,6 +181,130 @@ export function replaceExerciseLog(entries) {
   const next = [...entries];
   saveExerciseLog(next);
   return next;
+}
+
+/* ------------------------------------------------ Geplante Einheiten ---- */
+
+/**
+ * Der Trainingsplan liegt neben den Läufen, nicht in ihnen: eine geplante
+ * Einheit ist ein Vorhaben, ein Lauf eine Tatsache. Ob ein Lauf eine Einheit
+ * erfüllt, rechnet training.js bei jeder Anzeige neu aus.
+ *
+ * @typedef {import('./training.js').Session} Session
+ * @returns {Session[]} nach Datum, nächster Termin zuerst
+ */
+export function loadSessions() {
+  let raw;
+  try {
+    raw = localStorage.getItem(TRAINING_KEY);
+  } catch {
+    return [];
+  }
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(isValidSession).sort(bySessionDate);
+  } catch {
+    return [];
+  }
+}
+
+/** @param {Session[]} sessions */
+export function saveSessions(sessions) {
+  try {
+    localStorage.setItem(TRAINING_KEY, JSON.stringify(sessions));
+  } catch (err) {
+    console.error('Trainingsplan konnte nicht gespeichert werden:', err);
+  }
+}
+
+/**
+ * Legt eine geprüfte Einheit an und gibt die neue Liste zurück.
+ *
+ * `createdAt` wird hier gesetzt und nie wieder angefasst: daran hängt, ob eine
+ * Einheit rechtzeitig geplant war und XP bringen kann (siehe
+ * training.js/plannedInAdvance).
+ *
+ * @param {Session[]} sessions
+ * @returns {Session[]}
+ */
+export function addSession(sessions, { date, type, segments, note, createdAt }) {
+  const session = {
+    id: createId(),
+    date,
+    type,
+    segments: segments ?? [],
+    createdAt: createdAt ?? new Date().toISOString(),
+  };
+  if (note) session.note = note;
+
+  const next = [...sessions, session].sort(bySessionDate);
+  saveSessions(next);
+  return next;
+}
+
+/**
+ * Überschreibt eine Einheit mit geprüften Feldern.
+ *
+ * `id` und `createdAt` bleiben erhalten – sonst liesse sich eine nachträglich
+ * erfundene Einheit durch einmaliges Bearbeiten in eine rechtzeitig geplante
+ * verwandeln.
+ *
+ * @param {Session[]} sessions
+ * @returns {Session[]} unverändert, falls es die id nicht gibt
+ */
+export function updateSession(sessions, id, { date, type, segments, note }) {
+  const existing = sessions.find((session) => session.id === id);
+  if (!existing) return sessions;
+
+  const updated = { id, date, type, segments: segments ?? [] };
+  if (note) updated.note = note;
+  if (existing.createdAt) updated.createdAt = existing.createdAt;
+
+  const next = sessions.map((session) => (session.id === id ? updated : session)).sort(bySessionDate);
+  saveSessions(next);
+  return next;
+}
+
+/**
+ * Entfernt eine Einheit und gibt die neue Liste zurück.
+ * @param {Session[]} sessions
+ * @returns {Session[]}
+ */
+export function removeSession(sessions, id) {
+  const next = sessions.filter((session) => session.id !== id);
+  saveSessions(next);
+  return next;
+}
+
+/** Ersetzt den kompletten Bestand – für den Import. */
+export function replaceSessions(nextSessions) {
+  const next = [...nextSessions].sort(bySessionDate);
+  saveSessions(next);
+  return next;
+}
+
+function isValidSession(session) {
+  return (
+    session !== null &&
+    typeof session === 'object' &&
+    typeof session.id === 'string' &&
+    session.id !== '' &&
+    typeof session.date === 'string' &&
+    typeof session.type === 'string' &&
+    session.type !== ''
+  );
+}
+
+/**
+ * Älteste zuerst. Anders als bei den Läufen: ein Plan liest sich vorwärts, vom
+ * nächsten Termin in die Zukunft.
+ */
+function bySessionDate(a, b) {
+  if (a.date === b.date) return 0;
+  return a.date < b.date ? -1 : 1;
 }
 
 function isValidEntry(entry) {

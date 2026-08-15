@@ -573,7 +573,8 @@ label {
   color: var(--dim);
 }
 
-input {
+input,
+select {
   width: 100%;
   padding: 0.65rem 0.75rem;
   background: var(--sunken);
@@ -585,17 +586,30 @@ input {
   transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
 }
 
+/* Ohne das Zurücksetzen zeichnet der Browser sein eigenes helles Feld. */
+select {
+  appearance: none;
+  padding-right: 2rem;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: right 1.1rem center, right 0.85rem center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
 input::placeholder {
   color: var(--dim);
 }
 
-input:hover {
+input:hover,
+select:hover {
   border-color: var(--line-strong);
 }
 
-input:focus {
+input:focus,
+select:focus {
   outline: none;
-  background: var(--bg);
+  background-color: var(--bg);
   border-color: var(--accent-line);
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
@@ -1321,37 +1335,210 @@ input:focus {
   color: var(--muted);
 }
 
-/* ---------------------------------------------------------- Platzhalter */
+/* -------------------------------------------------------------- Training */
 
-.placeholder {
+.session-type-hint {
+  margin: var(--space-2) 0 0;
+  font-size: 0.8125rem;
+}
+
+.segments-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.segments-head .group-title {
+  margin: 0;
+}
+
+.segments {
   display: flex;
   flex-direction: column;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.segment {
+  display: grid;
+  /* Auf dem Handy zwei Zeilen: oben die Art über die ganze Breite, darunter
+     die drei Zahlen. Alles in einer Flucht wäre so schmal, dass weder die Art
+     noch die Werte lesbar blieben. Breite Schirme: siehe unten. */
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  grid-template-areas:
+    'kind kind kind remove'
+    'repeats distance duration duration';
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-6) var(--space-4);
-  text-align: center;
-  border: 1px dashed var(--line-strong);
+  padding: var(--space-2);
+  background: var(--sunken);
+  border: 1px solid var(--line);
   border-radius: var(--radius-md);
 }
 
-.placeholder svg {
-  width: 2.5rem;
-  height: 2.5rem;
-  fill: none;
-  stroke: var(--dim);
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.segment-kind {
+  grid-area: kind;
 }
 
-.placeholder strong {
-  font-size: 1rem;
+.segment-repeats {
+  grid-area: repeats;
+}
+
+.segment-distance {
+  grid-area: distance;
+}
+
+.segment-duration {
+  grid-area: duration;
+}
+
+.segment-remove {
+  grid-area: remove;
+}
+
+.segment select,
+.segment input {
+  padding: 0.45rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.segment select {
+  padding-right: 1.5rem;
+  background-position: right 0.75rem center, right 0.5rem center;
+}
+
+.segment-input {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.segment-unit {
+  font-size: 0.6875rem;
+}
+
+.plan-stats {
+  margin-bottom: var(--space-4);
+}
+
+.plan-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan-item {
+  padding: var(--space-3);
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line-strong);
+  border-radius: var(--radius-md);
+}
+
+/* Der linke Balken trägt den Status – in der Liste auf einen Blick lesbar. */
+.plan-item.erfuellt {
+  border-left-color: var(--accent);
+}
+
+.plan-item.teilweise {
+  border-left-color: var(--accent-line);
+}
+
+.plan-item.verpasst {
+  border-left-color: var(--danger-line);
+}
+
+.plan-item.editing {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+.plan-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.plan-date {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.plan-type {
+  font-size: 0.8125rem;
   color: var(--body);
 }
 
-.placeholder span {
-  font-size: 0.8125rem;
+.plan-status {
+  margin-left: auto;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   color: var(--dim);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+}
+
+.plan-item.erfuellt .plan-status {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+
+.plan-item.verpasst .plan-status {
+  color: #ffb3b3;
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
+}
+
+.plan-description,
+.plan-note {
+  margin: var(--space-2) 0 0;
+  font-size: 0.8125rem;
+}
+
+.plan-note {
+  font-style: italic;
+}
+
+.plan-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.plan-result {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.75rem;
+}
+
+.plan-item.confirming {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
+  border-left-color: var(--danger-line);
+}
+
+.plan-question {
+  flex: 1 1 100%;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffb3b3;
 }
 
 /* ------------------------------------------------------------- Trophäen */
@@ -1735,6 +1922,13 @@ input:focus {
     padding: var(--space-5);
   }
 
+  /* Genug Platz: Art, Wiederholungen, Distanz, Dauer und Löschknopf in einer
+     Flucht – so liest sich ein Abschnitt wie eine Zeile im Trainingsbuch. */
+  .segment {
+    grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr)) auto;
+    grid-template-areas: 'kind repeats distance duration remove';
+  }
+
   .card:has(#progress-bar) {
     padding: var(--space-6) var(--space-5);
   }
@@ -1745,6 +1939,12 @@ input:focus {
 
   .fields {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  /* Die vier Spalten sind auf das Lauf-Formular zugeschnitten. Die Einheit hat
+     nur zwei Felder – in Viertelbreite wäre das Datum abgeschnitten. */
+  #session-form .fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .stat-grid {

@@ -99,6 +99,7 @@
         <span id="run-xp">0</span> XP aus Läufen &middot;
         <span id="exercise-xp">0</span> XP aus Übungen &middot;
         <span id="bonus-xp">0</span> XP aus Achievements &middot;
+        <span id="plan-xp-total">0</span> XP aus Plantreue &middot;
         nächster Titel <strong id="next-title">Läufer</strong> ab Level
         <span id="next-title-level">5</span>
       </p>
@@ -355,14 +356,95 @@
     <div class="view" id="view-training" role="tabpanel" aria-labelledby="tab-training" hidden>
       <section class="card" aria-labelledby="training-title">
         <h2 id="training-title">Training erstellen</h2>
-        <div class="placeholder">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="4" y="5.5" width="16" height="14" rx="2.5"/>
-            <path d="M8 3.5v4"/><path d="M16 3.5v4"/><path d="M4 10h16"/>
-            <path d="M12 13v4"/><path d="M10 15h4"/>
-          </svg>
-          <strong>Individueller Trainingsplan – kommt bald</strong>
-          <span>Hier entsteht später die Planung eigener Einheiten.</span>
+
+        <p class="muted">
+          Plane einzelne Einheiten auf ein Datum. Wird an dem Tag ein passender
+          Lauf aufgezeichnet, gilt die Einheit als eingehalten und bringt
+          <strong id="session-xp-hint">15</strong> Bonus-XP &ndash; aber nur,
+          wenn sie vorher im Plan stand.
+        </p>
+
+        <form id="session-form" novalidate>
+          <div class="fields">
+            <div class="field">
+              <label for="session-date">Datum</label>
+              <input type="date" id="session-date" name="session-date" required>
+            </div>
+
+            <div class="field">
+              <label for="session-type">Art der Einheit</label>
+              <select id="session-type" name="session-type" required></select>
+            </div>
+          </div>
+
+          <p class="muted session-type-hint" id="session-type-hint"></p>
+
+          <div id="session-segments-box">
+            <div class="segments-head">
+              <h3 class="group-title">Abschnitte <span class="optional">optional</span></h3>
+              <button type="button" id="session-add-segment" class="small secondary">
+                Abschnitt hinzufügen
+              </button>
+            </div>
+
+            <p class="muted" id="session-segments-empty">
+              Ohne Abschnitte ist die Einheit ein Termin ohne festes Ziel &ndash;
+              dann erfüllt sie jeder Lauf an diesem Tag.
+            </p>
+
+            <ul class="segments" id="session-segments"></ul>
+          </div>
+
+          <div class="field">
+            <label for="session-note">Notiz <span class="optional">optional</span></label>
+            <input
+              type="text"
+              id="session-note"
+              name="session-note"
+              maxlength="200"
+              placeholder="Auf dem Feldweg, nicht auf Asphalt"
+              autocomplete="off"
+            >
+          </div>
+
+          <p class="error" id="session-error" role="alert" hidden></p>
+
+          <div class="form-buttons">
+            <button type="submit" id="session-submit">Einheit speichern</button>
+            <button type="button" id="session-cancel" class="secondary" hidden>Abbrechen</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card" aria-labelledby="plan-title">
+        <h2 id="plan-title">Mein Plan</h2>
+
+        <p class="muted" id="plan-empty">
+          Noch nichts geplant. Die erste Einheit erscheint hier, sobald sie
+          gespeichert ist.
+        </p>
+
+        <div id="plan-body" hidden>
+          <dl class="stat-grid plan-stats">
+            <div class="stat">
+              <dt>Eingehalten</dt>
+              <dd><strong id="plan-fulfilled">0</strong> von <span id="plan-decided">0</span></dd>
+            </div>
+            <div class="stat">
+              <dt>Plantreue</dt>
+              <dd><strong id="plan-adherence">0 %</strong></dd>
+            </div>
+            <div class="stat">
+              <dt>Noch offen</dt>
+              <dd><strong id="plan-open">0</strong></dd>
+            </div>
+            <div class="stat">
+              <dt>Bonus-XP</dt>
+              <dd><strong id="plan-xp">0</strong></dd>
+            </div>
+          </dl>
+
+          <ul class="plan-list" id="plan-list"></ul>
         </div>
       </section>
     </div>

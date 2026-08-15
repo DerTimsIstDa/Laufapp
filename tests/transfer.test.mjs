@@ -264,3 +264,73 @@ describe('Import – Nachsicht beim Format', () => {
     assert.equal(parseImport(text).ok, true);
   });
 });
+
+describe('Trainingsplan in der Sicherung', () => {
+  const lauf = { id: 'r1', distanceKm: 5, date: '2026-08-14' };
+  const einheit = {
+    id: 's1',
+    date: '2026-08-20',
+    type: 'interval',
+    segments: [{ kind: 'main', repeats: 6, distanceKm: 0.4 }],
+    createdAt: '2026-08-15T09:00:00.000Z',
+  };
+
+  test('der Export nimmt geplante Einheiten mit', () => {
+    const daten = buildExport([lauf], { sessions: [einheit] });
+    assert.deepEqual(daten.sessions, [einheit]);
+  });
+
+  test('ohne Plan steht eine leere Liste in der Datei', () => {
+    assert.deepEqual(buildExport([lauf]).sessions, []);
+  });
+
+  test('Rundlauf: was exportiert wurde, kommt unverändert zurück', () => {
+    const text = serializeExport([lauf], { sessions: [einheit] });
+    const result = parseImport(text);
+
+    assert.equal(result.ok, true);
+    assert.deepEqual(result.sessions, [einheit]);
+  });
+
+  test('eine Sicherung von vor dem Feature ergibt einen leeren Plan', () => {
+    const result = parseImport(JSON.stringify({ runs: [lauf] }));
+
+    assert.equal(result.ok, true);
+    assert.deepEqual(result.sessions, []);
+  });
+
+  test('kaputte Einheiten werden still übersprungen, die Läufe bleiben', () => {
+    const text = JSON.stringify({
+      runs: [lauf],
+      sessions: [einheit, { id: 's2', date: 'irgendwann', type: 'easy' }, null],
+    });
+
+    const result = parseImport(text);
+
+    assert.equal(result.ok, true);
+    assert.equal(result.runs.length, 1);
+    assert.deepEqual(result.sessions.map((s) => s.id), ['s1']);
+  });
+
+  test('doppelte Einheiten-Ids werden entzerrt', () => {
+    const text = JSON.stringify({
+      runs: [lauf],
+      sessions: [einheit, { ...einheit, date: '2026-08-22' }],
+    });
+
+    const ids = parseImport(text).sessions.map((s) => s.id);
+    assert.equal(new Set(ids).size, 2);
+  });
+
+  test('geschmuggelte Felder überstehen den Import nicht', () => {
+    const text = JSON.stringify({
+      runs: [lauf],
+      sessions: [{ ...einheit, xp: 9999, status: 'erfuellt' }],
+    });
+
+    const [importiert] = parseImport(text).sessions;
+
+    assert.equal(importiert.xp, undefined);
+    assert.equal(importiert.status, undefined);
+  });
+});

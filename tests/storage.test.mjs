@@ -1,7 +1,10 @@
 import { test, describe, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { loadRuns, addRun, updateRun, removeRun, replaceRuns } from '../js/storage.js';
+import {
+  loadRuns, addRun, updateRun, removeRun, replaceRuns,
+  loadSessions, addSession, updateSession, removeSession, replaceSessions,
+} from '../js/storage.js';
 import { getProgress, totalXpFromRuns } from '../js/xp.js';
 import { evaluateAchievements, achievementXp } from '../js/achievements.js';
 import { titleForLevel } from '../js/titles.js';
@@ -246,5 +249,77 @@ describe('Neuberechnung nach dem Bearbeiten', () => {
     assert.deepEqual(nachher.unlocked, ['erste-meile']);
     assert.equal(nachher.totalXp, 35, '20 aus dem Lauf plus 15 für Erste Meile');
     assert.equal(nachher.level, 1);
+  });
+});
+
+describe('Trainingsplan im Speicher', () => {
+  test('legt eine Einheit an, vergibt id und createdAt', () => {
+    const sessions = addSession([], { date: '2026-08-20', type: 'easy', segments: [] });
+
+    assert.equal(sessions.length, 1);
+    assert.ok(sessions[0].id);
+    assert.ok(sessions[0].createdAt, 'ohne createdAt liesse sich Plantreue nicht prüfen');
+    assert.deepEqual(store.read('laufapp.training.v1'), sessions);
+  });
+
+  test('sortiert vorwärts – der nächste Termin steht oben', () => {
+    let sessions = addSession([], { date: '2026-08-25', type: 'easy', segments: [] });
+    sessions = addSession(sessions, { date: '2026-08-20', type: 'long', segments: [] });
+
+    assert.deepEqual(sessions.map((s) => s.date), ['2026-08-20', '2026-08-25']);
+  });
+
+  test('liest den Bestand zurück und wirft Unbrauchbares weg', () => {
+    addSession([], { date: '2026-08-20', type: 'easy', segments: [] });
+    assert.equal(loadSessions().length, 1);
+
+    localStorage.setItem(
+      'laufapp.training.v1',
+      JSON.stringify([{ id: 'a', date: '2026-08-20', type: 'easy' }, null, { date: 'x' }])
+    );
+
+    assert.equal(loadSessions().length, 1);
+  });
+
+  test('Bearbeiten behält id und createdAt', () => {
+    const sessions = addSession([], { date: '2026-08-20', type: 'easy', segments: [] });
+    const { id, createdAt } = sessions[0];
+
+    const next = updateSession(sessions, id, {
+      date: '2026-08-21',
+      type: 'tempo',
+      segments: [{ kind: 'main', repeats: 1, distanceKm: 8 }],
+    });
+
+    assert.equal(next[0].id, id);
+    assert.equal(next[0].createdAt, createdAt, 'sonst würde Bearbeiten Plantreue erschleichen');
+    assert.equal(next[0].type, 'tempo');
+  });
+
+  test('Bearbeiten einer unbekannten id ändert nichts', () => {
+    const sessions = addSession([], { date: '2026-08-20', type: 'easy', segments: [] });
+    const next = updateSession(sessions, 'gibt-es-nicht', { date: '2026-09-01', type: 'long' });
+
+    assert.equal(next, sessions);
+  });
+
+  test('Löschen entfernt nur die gewählte Einheit', () => {
+    let sessions = addSession([], { date: '2026-08-20', type: 'easy', segments: [] });
+    sessions = addSession(sessions, { date: '2026-08-22', type: 'long', segments: [] });
+
+    const next = removeSession(sessions, sessions[0].id);
+
+    assert.equal(next.length, 1);
+    assert.equal(next[0].date, '2026-08-22');
+    assert.deepEqual(store.read('laufapp.training.v1'), next);
+  });
+
+  test('der Import ersetzt den ganzen Plan', () => {
+    addSession([], { date: '2026-08-20', type: 'easy', segments: [] });
+
+    const next = replaceSessions([{ id: 'i1', date: '2026-09-01', type: 'long', segments: [] }]);
+
+    assert.deepEqual(next.map((s) => s.id), ['i1']);
+    assert.deepEqual(store.read('laufapp.training.v1'), next);
   });
 });
