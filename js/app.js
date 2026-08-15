@@ -20,7 +20,7 @@
 
 import { getProgress, totalXpFromRuns, xpForDistance } from './xp.js';
 import { evaluateAchievements, achievementXp, achievementsByCategory } from './achievements.js';
-import { titleForLevel, nextTitle } from './titles.js';
+import { titleForLevel, nextTitle, badgeForLevel, badgeSrc } from './titles.js';
 import { paceMinPerKm, formatDuration, formatPace } from './geo.js';
 import { createTracker } from './tracker.js';
 import { validateRun, firstErrorMessage, parseNumber } from './validation.js';
@@ -142,6 +142,7 @@ let unlockFrame = null;
 const el = {
   level: document.getElementById('level'),
   title: document.getElementById('title'),
+  titleBadgeIcon: document.getElementById('title-badge-icon'),
   totalXp: document.getElementById('total-xp'),
   progressBar: document.getElementById('progress-bar'),
   progressFill: document.getElementById('progress-fill'),
@@ -239,6 +240,7 @@ const el = {
   },
 
   profileTitleName: document.getElementById('profile-title-name'),
+  profileBadge: document.getElementById('profile-badge'),
   profileLevel: document.getElementById('profile-level'),
   profileXp: document.getElementById('profile-xp'),
   profileNext: document.getElementById('profile-next'),
@@ -1147,6 +1149,7 @@ function renderProfile() {
   const upcoming = nextTitle(progress.level);
 
   el.profileTitleName.textContent = titleForLevel(progress.level);
+  el.profileBadge.src = badgeSrc(badgeForLevel(progress.level));
   el.profileLevel.textContent = progress.level;
   el.profileXp.textContent = numberFormat.format(progress.totalXp);
   el.profileNext.textContent = `Nächster Titel: ${upcoming.title} ab Level ${upcoming.level}`;
@@ -2050,6 +2053,7 @@ function renderProgress(progress, runXp, uebungsXp, bonusXp, planBonusXp) {
 
   el.level.textContent = progress.level;
   el.title.textContent = titleForLevel(progress.level);
+  el.titleBadgeIcon.src = badgeSrc(badgeForLevel(progress.level));
   el.totalXp.textContent = numberFormat.format(progress.totalXp);
 
   el.progressFill.style.width = `${percent}%`;

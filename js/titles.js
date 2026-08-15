@@ -11,18 +11,31 @@
  *
  * Weitere feste Stufe ergänzen: Eintrag in BASE_TITLES (aufsteigend) und
  * ggf. ENDLESS_START_LEVEL anpassen.
+ *
+ * Zu jedem Titel gehört ein Abzeichen. Die Zuordnung steht nur hier – wer ein
+ * anderes Bild will, ändert einen Namen und nicht jede Anzeigestelle.
  */
 
 export const BASE_TITLES = [
-  { level: 1, title: 'Neuling' },
-  { level: 5, title: 'Läufer' },
-  { level: 15, title: 'Ausdauerläufer' },
-  { level: 30, title: 'Veteran' },
+  { level: 1, title: 'Neuling', badge: 'neuling' },
+  { level: 5, title: 'Läufer', badge: 'laeufer' },
+  { level: 15, title: 'Ausdauerläufer', badge: 'ausdauerlaeufer' },
+  { level: 30, title: 'Veteran', badge: 'veteran' },
 ];
 
 /** Ab hier kommt alle ENDLESS_STEP Level ein neuer Titel. */
 export const ENDLESS_START_LEVEL = 80;
 export const ENDLESS_STEP = 50;
+
+export const ELITE_BADGE = 'elite';
+
+/**
+ * Alle Legenden-Stufen teilen sich ein Abzeichen – es gibt nur sechs Bilder,
+ * die Stufen sind endlos. Die römische Ziffer steht daneben im Text.
+ */
+export const LEGEND_BADGE = 'legende';
+
+const BADGE_ORDNER = 'icons/badges/';
 
 /** Titel zum aktuellen Level. */
 export function titleForLevel(level) {
@@ -38,13 +51,35 @@ export function titleForLevel(level) {
   return title;
 }
 
+/** Abzeichen zum aktuellen Level, als Kurzname (siehe BASE_TITLES). */
+export function badgeForLevel(level) {
+  if (level >= ENDLESS_START_LEVEL) {
+    const index = Math.floor((level - ENDLESS_START_LEVEL) / ENDLESS_STEP);
+    return index === 0 ? ELITE_BADGE : LEGEND_BADGE;
+  }
+
+  let badge = BASE_TITLES[0].badge;
+  for (const tier of BASE_TITLES) {
+    if (level >= tier.level) badge = tier.badge;
+  }
+  return badge;
+}
+
+/** Pfad zur Bilddatei eines Abzeichens. */
+export function badgeSrc(badge) {
+  return `${BADGE_ORDNER}badge-${badge}.png`;
+}
+
 /**
  * Nächster Titel und ab welchem Level es ihn gibt.
  * @returns {{ level: number, title: string }}
  */
 export function nextTitle(level) {
+  // Nur Level und Titel, nicht das ganze Stufenobjekt: der endlose Zweig
+  // unten hat kein BASE_TITLES-Gegenstueck, und beide muessen dieselbe Form
+  // liefern. Ein Spread haette hier das Abzeichen mitgeschleppt und dort nicht.
   const nextBase = BASE_TITLES.find((tier) => tier.level > level);
-  if (nextBase) return { ...nextBase };
+  if (nextBase) return { level: nextBase.level, title: nextBase.title };
 
   const nextLevel =
     level < ENDLESS_START_LEVEL

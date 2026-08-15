@@ -72,7 +72,12 @@
       <div class="level-row">
         <div class="level-block">
           <span class="level-badge">Level <strong id="level">1</strong></span>
-          <span class="title-badge" id="title">Neuling</span>
+          <!-- alt="" mit Absicht: der Titel steht als Text daneben, das
+               Abzeichen sagt nichts Zusaetzliches. -->
+          <span class="title-badge">
+            <img class="rank-icon" id="title-badge-icon" src="icons/badges/badge-neuling.png" alt="">
+            <span id="title">Neuling</span>
+          </span>
         </div>
         <span class="muted"><strong id="total-xp">0</strong> XP gesamt</span>
       </div>
@@ -471,6 +476,7 @@
     <div class="view" id="view-profile" role="tabpanel" aria-labelledby="tab-profile" hidden>
       <section class="card profile-hero" aria-labelledby="profile-title">
         <h2 id="profile-title">Profil</h2>
+        <img class="rank-icon profile-rank-icon" id="profile-badge" src="icons/badges/badge-neuling.png" alt="">
         <p class="profile-rank" id="profile-title-name">Neuling</p>
         <p class="profile-level">
           Level <strong id="profile-level">1</strong>

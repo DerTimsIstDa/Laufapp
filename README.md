@@ -513,6 +513,19 @@ Definiert in `js/titles.js`: Level 1 Neuling, 5 Läufer, 15 Ausdauerläufer,
 30 Veteran, 80 Elite, danach alle 50 Level `Legende I`, `Legende II`, … –
 endlos.
 
+Zu jedem Titel gehört ein **Abzeichen** aus `icons/badges/`, aufsteigend von
+Bronze bis zum Kronen-Schild. Die Zuordnung steht ausschliesslich in
+`titles.js` (`badge` je Stufe, dazu `badgeForLevel()` und `badgeSrc()`) – die
+Anzeigestellen fragen nur ab. Es gibt sechs Bilder, aber endlos viele
+Legenden-Stufen: alle teilen sich das Kronen-Abzeichen, unterschieden werden
+sie durch die römische Ziffer im Text. Ein Test prüft, dass das Bild nur dort
+wechselt, wo auch der Titel wechselt.
+
+Gezeigt wird es an zwei Stellen: klein in der Titel-Pille im Fortschritts-
+bereich und gross über dem Rang im Profil. Die Grafiken bringen Plastik und
+Glanz schon mit, deshalb setzt das CSS nur Grösse und Abstand – kein Rahmen,
+keine Tönung. Sie sind der einzige Ort in der App mit voller Farbigkeit.
+
 ## Struktur
 
 ```
@@ -538,6 +551,7 @@ js/app.js           Formular, Rendering, Verdrahtung
 manifest.json       PWA-Manifest
 sw.js               Service Worker (App-Shell-Cache)
 icons/icon.svg      App-Icon
+icons/badges/       Rang-Abzeichen zu den Titeln, 160 px hoch
 tests/              Node-Tests, laufen mit `node --test`
 ```
 

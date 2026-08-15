@@ -1,7 +1,73 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { titleForLevel, nextTitle, BASE_TITLES, ENDLESS_START_LEVEL } from '../js/titles.js';
+import { existsSync } from 'node:fs';
+
+import {
+  titleForLevel,
+  nextTitle,
+  badgeForLevel,
+  badgeSrc,
+  BASE_TITLES,
+  ENDLESS_START_LEVEL,
+  ENDLESS_STEP,
+  ELITE_BADGE,
+  LEGEND_BADGE,
+} from '../js/titles.js';
+
+describe('Rang-Abzeichen', () => {
+  test('jede feste Stufe hat ihr eigenes Abzeichen', () => {
+    assert.equal(badgeForLevel(1), 'neuling');
+    assert.equal(badgeForLevel(4), 'neuling');
+    assert.equal(badgeForLevel(5), 'laeufer');
+    assert.equal(badgeForLevel(15), 'ausdauerlaeufer');
+    assert.equal(badgeForLevel(30), 'veteran');
+    assert.equal(badgeForLevel(79), 'veteran');
+    assert.equal(badgeForLevel(ENDLESS_START_LEVEL), ELITE_BADGE);
+  });
+
+  test('alle Legenden-Stufen teilen sich ein Abzeichen', () => {
+    // Es gibt sechs Bilder, aber endlos viele Legenden. Die roemische Ziffer
+    // unterscheidet sie im Text, nicht im Bild.
+    for (let stufe = 1; stufe <= 40; stufe++) {
+      const level = ENDLESS_START_LEVEL + stufe * ENDLESS_STEP;
+      assert.equal(badgeForLevel(level), LEGEND_BADGE, `Level ${level}`);
+      assert.match(titleForLevel(level), /^Legende /);
+    }
+  });
+
+  test('das Abzeichen wechselt genau dort, wo der Titel wechselt', () => {
+    let vorherTitel = titleForLevel(1);
+    let vorherBadge = badgeForLevel(1);
+
+    for (let level = 2; level <= 300; level++) {
+      const titel = titleForLevel(level);
+      const badge = badgeForLevel(level);
+
+      // Umgekehrt gilt es nicht: Legende II erbt das Bild von Legende I.
+      if (badge !== vorherBadge) {
+        assert.notEqual(titel, vorherTitel, `Level ${level}: Bild wechselt ohne Titelwechsel`);
+      }
+      vorherTitel = titel;
+      vorherBadge = badge;
+    }
+  });
+
+  test('zu jedem Abzeichen liegt eine Bilddatei', () => {
+    const namen = [...BASE_TITLES.map((t) => t.badge), ELITE_BADGE, LEGEND_BADGE];
+
+    for (const name of namen) {
+      const pfad = new URL(`../${badgeSrc(name)}`, import.meta.url);
+      assert.ok(existsSync(pfad), `fehlt: ${badgeSrc(name)}`);
+    }
+  });
+
+  test('jeder feste Titel bringt ein Abzeichen mit', () => {
+    for (const stufe of BASE_TITLES) {
+      assert.ok(stufe.badge, `${stufe.title} hat kein Abzeichen`);
+    }
+  });
+});
 
 describe('Feste Titelstufen', () => {
   test('greifen ab ihrem Level und gelten bis zur nächsten Stufe', () => {

@@ -18,7 +18,7 @@ const LEGACY_CACHE_PREFIXES = ['laufapp-'];
 
 const OWN_PREFIXES = [CACHE_PREFIX, ...LEGACY_CACHE_PREFIXES];
 
-const CACHE_VERSION = `${CACHE_PREFIX}v27`;
+const CACHE_VERSION = `${CACHE_PREFIX}v28`;
 
 const APP_SHELL = [
   './',
@@ -46,6 +46,12 @@ const APP_SHELL = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-180.png',
+  './icons/badges/badge-neuling.png',
+  './icons/badges/badge-laeufer.png',
+  './icons/badges/badge-ausdauerlaeufer.png',
+  './icons/badges/badge-veteran.png',
+  './icons/badges/badge-elite.png',
+  './icons/badges/badge-legende.png',
 ];
 
 self.addEventListener('install', (event) => {

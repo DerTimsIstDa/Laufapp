@@ -375,7 +375,11 @@ strong {
 }
 
 .title-badge {
-  padding: 0.25rem 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  /* Links weniger als rechts: das Abzeichen bringt seinen eigenen Rand mit. */
+  padding: 0.2rem 0.7rem 0.2rem 0.35rem;
   background: var(--accent-soft);
   border: 1px solid var(--accent-line);
   border-radius: var(--radius-pill);
@@ -384,6 +388,28 @@ strong {
   font-weight: 600;
   letter-spacing: 0.02em;
   white-space: nowrap;
+}
+
+/* ------------------------------------------------------- Rang-Abzeichen */
+
+/**
+ * Die Grafiken bringen Plastik, Glanz und Schattierung schon mit. Deshalb
+ * hier nur Groesse und Abstand - kein Rahmen, keine Tönung, kein Neongrün.
+ * Sie sind der einzige Ort in der App mit voller Farbigkeit und vertragen
+ * keine Konkurrenz.
+ */
+.rank-icon {
+  flex: none;
+  height: 1.4rem;
+  width: auto;
+}
+
+.profile-rank-icon {
+  display: block;
+  height: 5.25rem;
+  margin: var(--space-3) auto 0;
+  /* Hebt das Abzeichen von der Karte ab, ohne die Grafik selbst anzufassen. */
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.5));
 }
 
 .level-row > .muted {
