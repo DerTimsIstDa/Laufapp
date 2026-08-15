@@ -11,12 +11,19 @@
  */
 
 import { buildExerciseStats } from './exercise-log.js';
+import { weekStart } from './stats.js';
 
 /** Distanzen, auf denen persönliche Rekorde gezählt werden (km). */
 const PR_DISTANCES_KM = [5, 10];
 
 /** Toleranz, mit der ein Lauf einer PR-Distanz zugeordnet wird (km). */
 const PR_TOLERANCE_KM = 0.5;
+
+/**
+ * Ab dieser Distanz zählt ein Lauf für die Pace-Trophäe. Auf 500 m ist eine
+ * schnelle Pace kein Ausdauerbeleg, sondern ein Sprint.
+ */
+const PACE_MIN_DISTANCE_KM = 3;
 
 /**
  * @typedef {Object} Achievement
@@ -96,6 +103,24 @@ export const ACHIEVEMENTS = [
     progress: (s) => ({ current: s.runCount, target: 250, unit: 'Läufe' }),
   },
   {
+    id: 'club-10-km',
+    name: '10-km-Club',
+    description: '10 km Gesamtdistanz erreicht.',
+    xp: 20,
+    category: 'meilenstein',
+    check: (s) => s.totalDistanceKm >= 10,
+    progress: (s) => ({ current: s.totalDistanceKm, target: 10, unit: 'km' }),
+  },
+  {
+    id: 'club-25-km',
+    name: '25-km-Club',
+    description: '25 km Gesamtdistanz erreicht.',
+    xp: 35,
+    category: 'meilenstein',
+    check: (s) => s.totalDistanceKm >= 25,
+    progress: (s) => ({ current: s.totalDistanceKm, target: 25, unit: 'km' }),
+  },
+  {
     id: 'club-50-km',
     name: '50-km-Club',
     description: '50 km Gesamtdistanz erreicht.',
@@ -141,6 +166,15 @@ export const ACHIEVEMENTS = [
     progress: (s) => ({ current: s.totalDistanceKm, target: 1000, unit: 'km' }),
   },
   {
+    id: 'drei-am-stueck',
+    name: 'Drei am Stück',
+    description: 'An 3 Tagen in Folge gelaufen.',
+    xp: 20,
+    category: 'meilenstein',
+    check: (s) => s.longestDailyStreak >= 3,
+    progress: (s) => ({ current: s.longestDailyStreak, target: 3, unit: 'Tage' }),
+  },
+  {
     id: 'serientaeter',
     name: 'Serientäter',
     description: 'An 7 Tagen in Folge gelaufen.',
@@ -161,6 +195,70 @@ export const ACHIEVEMENTS = [
       target: 30,
       unit: 'Tage',
     }),
+  },
+
+  {
+    id: 'vier-wochen-serie',
+    name: 'Vier Wochen am Stück',
+    description: 'In 4 aufeinanderfolgenden Wochen gelaufen.',
+    xp: 45,
+    category: 'meilenstein',
+    check: (s) => s.longestWeekStreak >= 4,
+    progress: (s) => ({ current: s.longestWeekStreak, target: 4, unit: 'Wochen' }),
+  },
+  {
+    id: 'zehn-wochen-serie',
+    name: 'Zehn Wochen am Stück',
+    description: 'In 10 aufeinanderfolgenden Wochen gelaufen.',
+    xp: 110,
+    category: 'meilenstein',
+    check: (s) => s.longestWeekStreak >= 10,
+    progress: (s) => ({ current: s.longestWeekStreak, target: 10, unit: 'Wochen' }),
+  },
+  {
+    id: 'vier-wochen-aktiv',
+    name: 'Erster Monat',
+    description: 'In 4 verschiedenen Wochen gelaufen – Pausen erlaubt.',
+    xp: 30,
+    category: 'meilenstein',
+    check: (s) => s.activeWeeks >= 4,
+    progress: (s) => ({ current: s.activeWeeks, target: 4, unit: 'Wochen' }),
+  },
+  {
+    id: 'zwoelf-wochen-aktiv',
+    name: 'Durchgehalten',
+    description: 'In 12 verschiedenen Wochen gelaufen.',
+    xp: 70,
+    category: 'meilenstein',
+    check: (s) => s.activeWeeks >= 12,
+    progress: (s) => ({ current: s.activeWeeks, target: 12, unit: 'Wochen' }),
+  },
+  {
+    id: 'halbes-jahr',
+    name: 'Halbes Jahr',
+    description: 'In 26 verschiedenen Wochen gelaufen.',
+    xp: 160,
+    category: 'meilenstein',
+    check: (s) => s.activeWeeks >= 26,
+    progress: (s) => ({ current: s.activeWeeks, target: 26, unit: 'Wochen' }),
+  },
+  {
+    id: 'drei-monate',
+    name: 'Über die Monate',
+    description: 'In 3 verschiedenen Kalendermonaten gelaufen.',
+    xp: 30,
+    category: 'meilenstein',
+    check: (s) => s.activeMonths >= 3,
+    progress: (s) => ({ current: s.activeMonths, target: 3, unit: 'Monate' }),
+  },
+  {
+    id: 'fuenf-stunden',
+    name: 'Fünf Stunden unterwegs',
+    description: '5 Stunden Laufzeit gesammelt (Dauer eintragen).',
+    xp: 45,
+    category: 'meilenstein',
+    check: (s) => s.totalDurationMinutes >= 300,
+    progress: (s) => ({ current: s.totalDurationMinutes / 60, target: 5, unit: 'Stunden' }),
   },
 
   // --- Herausforderungen (situativ) ---------------------------------------
@@ -219,6 +317,52 @@ export const ACHIEVEMENTS = [
     progress: (s) => ({ current: s.lateRunCount, target: 15, unit: 'Läufe' }),
   },
   {
+    id: 'die-zehn',
+    name: 'Die Zehn',
+    description: 'Ein einzelner Lauf über 10 km.',
+    xp: 30,
+    category: 'herausforderung',
+    check: (s) => s.maxDistanceKm >= 10,
+    progress: (s) => ({ current: s.maxDistanceKm, target: 10, unit: 'km' }),
+  },
+  {
+    id: 'die-fuenfzehn',
+    name: 'Die Fünfzehn',
+    description: 'Ein einzelner Lauf über 15 km.',
+    xp: 55,
+    category: 'herausforderung',
+    check: (s) => s.maxDistanceKm >= 15,
+    progress: (s) => ({ current: s.maxDistanceKm, target: 15, unit: 'km' }),
+  },
+  {
+    id: 'flott-unterwegs',
+    name: 'Flott unterwegs',
+    description: `Ein Lauf ab ${PACE_MIN_DISTANCE_KM} km schneller als 6:00 min/km (Dauer eintragen).`,
+    xp: 35,
+    category: 'herausforderung',
+    // Kein Fortschrittsbalken: eine Pace läuft nach unten, ein Balken nach
+    // oben. "5,8 von 6" sähe aus wie fast geschafft, wäre aber schon erfüllt.
+    check: (s) => s.bestPaceMinPerKm !== null && s.bestPaceMinPerKm < 6,
+  },
+  {
+    id: 'doppelschicht',
+    name: 'Doppelschicht',
+    description: 'Zwei Läufe an einem Tag.',
+    xp: 25,
+    category: 'herausforderung',
+    check: (s) => s.maxRunsPerDay >= 2,
+    progress: (s) => ({ current: s.maxRunsPerDay, target: 2, unit: 'Läufe' }),
+  },
+  {
+    id: 'volle-woche',
+    name: 'Volle Woche',
+    description: '3 Läufe in einer Kalenderwoche.',
+    xp: 30,
+    category: 'herausforderung',
+    check: (s) => s.maxRunsPerWeek >= 3,
+    progress: (s) => ({ current: s.maxRunsPerWeek, target: 3, unit: 'Läufe' }),
+  },
+  {
     id: 'neue-bestzeit',
     name: 'Neue Bestzeit',
     description: 'Persönlicher Rekord auf 5 oder 10 km (Dauer eintragen).',
@@ -272,6 +416,81 @@ export const ACHIEVEMENTS = [
     progress: (s) => ({ current: s.exerciseCompletions, target: 50, unit: 'Übungen' }),
   },
   {
+    id: 'hundertfach',
+    name: 'Hundertfach',
+    description: '100 Übungen insgesamt erledigt.',
+    xp: 150,
+    category: 'uebung',
+    check: (s) => s.exerciseCompletions >= 100,
+    progress: (s) => ({ current: s.exerciseCompletions, target: 100, unit: 'Übungen' }),
+  },
+
+  // Tage statt Erledigungen: fünf Übungen an einem Nachmittag sind kein
+  // Training, fünf Tage mit einer Übung schon.
+  {
+    id: 'fuenf-uebungstage',
+    name: 'Fünf Übungstage',
+    description: 'An 5 verschiedenen Tagen geübt.',
+    xp: 20,
+    category: 'uebung',
+    check: (s) => s.exerciseDays >= 5,
+    progress: (s) => ({ current: s.exerciseDays, target: 5, unit: 'Tage' }),
+  },
+  {
+    id: 'zwanzig-uebungstage',
+    name: 'Zwanzig Übungstage',
+    description: 'An 20 verschiedenen Tagen geübt.',
+    xp: 55,
+    category: 'uebung',
+    check: (s) => s.exerciseDays >= 20,
+    progress: (s) => ({ current: s.exerciseDays, target: 20, unit: 'Tage' }),
+  },
+  {
+    id: 'uebungsserie-3',
+    name: 'Drei Tage am Stück',
+    description: 'An 3 Tagen in Folge geübt.',
+    xp: 25,
+    category: 'uebung',
+    check: (s) => s.longestExerciseDayStreak >= 3,
+    progress: (s) => ({ current: s.longestExerciseDayStreak, target: 3, unit: 'Tage' }),
+  },
+  {
+    id: 'uebungsserie-7',
+    name: 'Eine Woche am Stück',
+    description: 'An 7 Tagen in Folge geübt.',
+    xp: 60,
+    category: 'uebung',
+    check: (s) => s.longestExerciseDayStreak >= 7,
+    progress: (s) => ({ current: s.longestExerciseDayStreak, target: 7, unit: 'Tage' }),
+  },
+  {
+    id: 'fuenf-verschiedene',
+    name: 'Neugierig',
+    description: '5 verschiedene Übungen ausprobiert.',
+    xp: 20,
+    category: 'uebung',
+    check: (s) => s.distinctExercises >= 5,
+    progress: (s) => ({ current: s.distinctExercises, target: 5, unit: 'Übungen' }),
+  },
+  {
+    id: 'zehn-verschiedene',
+    name: 'Entdecker',
+    description: '10 verschiedene Übungen ausprobiert.',
+    xp: 40,
+    category: 'uebung',
+    check: (s) => s.distinctExercises >= 10,
+    progress: (s) => ({ current: s.distinctExercises, target: 10, unit: 'Übungen' }),
+  },
+  {
+    id: 'zwanzig-verschiedene',
+    name: 'Kenner',
+    description: '20 verschiedene Übungen ausprobiert.',
+    xp: 80,
+    category: 'uebung',
+    check: (s) => s.distinctExercises >= 20,
+    progress: (s) => ({ current: s.distinctExercises, target: 20, unit: 'Übungen' }),
+  },
+  {
     id: 'vielseitig',
     name: 'Vielseitig',
     description: 'Aus jeder der fünf Kategorien mindestens eine Übung gemacht.',
@@ -283,6 +502,24 @@ export const ACHIEVEMENTS = [
       target: s.exerciseCategoryTotal,
       unit: 'Kategorien',
     }),
+  },
+  {
+    id: 'volle-reihe',
+    name: 'Volle Reihe',
+    description: 'Alle Übungen einer Kategorie mindestens einmal gemacht.',
+    xp: 40,
+    category: 'uebung',
+    check: (s) => s.completeExerciseCategories >= 1,
+    progress: (s) => ({ current: s.completeExerciseCategories, target: 1, unit: 'Kategorien' }),
+  },
+  {
+    id: 'zwei-volle-reihen',
+    name: 'Zwei volle Reihen',
+    description: 'Zwei Kategorien komplett durchgemacht.',
+    xp: 80,
+    category: 'uebung',
+    check: (s) => s.completeExerciseCategories >= 2,
+    progress: (s) => ({ current: s.completeExerciseCategories, target: 2, unit: 'Kategorien' }),
   },
 ];
 
@@ -296,6 +533,15 @@ export const ACHIEVEMENTS = [
  * @property {number} longestWeeklyStreakDays   längste Spanne ohne Pause > 7 Tage
  * @property {number} earlyRunCount             Läufe vor 7:00 Uhr
  * @property {number} lateRunCount              Läufe ab 21:00 Uhr
+ * @property {number} activeDays                Tage mit mindestens einem Lauf
+ * @property {number} activeWeeks               Wochen mit mindestens einem Lauf
+ * @property {number} activeMonths              Kalendermonate mit Lauf
+ * @property {number} longestWeekStreak         Wochen in Folge mit Lauf
+ * @property {number} maxDistanceKm             längster einzelner Lauf
+ * @property {number} totalDurationMinutes      nur Läufe mit eingetragener Dauer
+ * @property {number} maxRunsPerDay
+ * @property {number} maxRunsPerWeek
+ * @property {?number} bestPaceMinPerKm         beste Pace ab PACE_MIN_DISTANCE_KM
  * @property {boolean} hasPersonalBest
  * @property {boolean} hasComeback
  * @property {boolean} hasLongRunBreakthrough
@@ -313,10 +559,24 @@ export function buildRunStats(runs) {
     longestWeeklyStreakDays: 0,
     earlyRunCount: 0,
     lateRunCount: 0,
+    activeDays: 0,
+    activeWeeks: 0,
+    activeMonths: 0,
+    longestWeekStreak: 0,
+    maxDistanceKm: 0,
+    totalDurationMinutes: 0,
+    maxRunsPerDay: 0,
+    maxRunsPerWeek: 0,
+    bestPaceMinPerKm: null,
     hasPersonalBest: false,
     hasComeback: false,
     hasLongRunBreakthrough: false,
   };
+
+  /** Läufe je Tag und je Woche – daraus kommen Zähler und Serien. */
+  const proTag = new Map();
+  const proWoche = new Map();
+  const monate = new Set();
 
   let longestSoFarKm = 0;
   /** @type {Map<number, number>} beste Dauer je PR-Distanz */
@@ -324,6 +584,25 @@ export function buildRunStats(runs) {
 
   for (const run of chronological) {
     stats.totalDistanceKm += run.distanceKm;
+    stats.maxDistanceKm = Math.max(stats.maxDistanceKm, run.distanceKm);
+
+    proTag.set(run.date, (proTag.get(run.date) ?? 0) + 1);
+    monate.add(run.date.slice(0, 7));
+
+    const woche = weekStart(run.date);
+    if (woche !== null) proWoche.set(woche, (proWoche.get(woche) ?? 0) + 1);
+
+    // Dauer ist optional. Was fehlt, zählt nicht mit – geschätzt wird nichts.
+    if (isPositive(run.durationMinutes)) {
+      stats.totalDurationMinutes += run.durationMinutes;
+
+      if (run.distanceKm >= PACE_MIN_DISTANCE_KM) {
+        const pace = run.durationMinutes / run.distanceKm;
+        if (stats.bestPaceMinPerKm === null || pace < stats.bestPaceMinPerKm) {
+          stats.bestPaceMinPerKm = pace;
+        }
+      }
+    }
 
     // Tageszeit. Gezählt statt nur vermerkt: darauf bauen mehrere Stufen auf.
     // Läufe ohne Uhrzeit zählen für keine Seite – ohne Angabe ist nicht
@@ -377,7 +656,29 @@ export function buildRunStats(runs) {
     );
   });
 
+  stats.activeDays = days.length;
+  stats.activeMonths = monate.size;
+  stats.activeWeeks = proWoche.size;
+  stats.maxRunsPerDay = maxWert(proTag);
+  stats.maxRunsPerWeek = maxWert(proWoche);
+
+  // Wochen in Folge: die Montage liegen sieben Tage auseinander, deshalb
+  // lässt sich dieselbe Nachbarschaftsprüfung wie bei den Tagen anwenden.
+  const wochen = [...proWoche.keys()].map(toDayNumber).sort((a, b) => a - b);
+  let wochenSerie = 0;
+
+  wochen.forEach((woche, index) => {
+    const vorige = index > 0 ? wochen[index - 1] : null;
+    wochenSerie = vorige !== null && woche - vorige === 7 ? wochenSerie + 1 : 1;
+    stats.longestWeekStreak = Math.max(stats.longestWeekStreak, wochenSerie);
+  });
+
   return stats;
+}
+
+/** Grösster Wert einer Zähl-Map; 0 bei leerer Map. */
+function maxWert(zaehler) {
+  return zaehler.size === 0 ? 0 : Math.max(...zaehler.values());
 }
 
 /**

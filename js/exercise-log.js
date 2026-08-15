@@ -152,25 +152,88 @@ function sortKey(entry) {
   return `${entry.date}T${entry.at ?? ''}`;
 }
 
+/** Wie viele Übungen jede Kategorie umfasst – für "Reihe vollständig". */
+const SIZE_OF_CATEGORY = new Map(
+  CATEGORIES.map((kategorie) => [
+    kategorie.id,
+    EXERCISES.filter((exercise) => exercise.category === kategorie.id).length,
+  ])
+);
+
 /**
  * Kennzahlen für die Übungs-Achievements.
  *
- * @returns {{ exerciseCompletions: number, exerciseCategoriesDone: number, exerciseCategoryTotal: number }}
+ * Mehr als eine Zahl, weil "oft" und "vielseitig" und "regelmässig" drei
+ * verschiedene Dinge sind: dreissigmal dieselbe Dehnübung ist etwas anderes
+ * als dreissig verschiedene, und beides etwas anderes als dreissig Tage.
+ *
+ * @typedef {Object} ExerciseStats
+ * @property {number} exerciseCompletions       Erledigungen insgesamt
+ * @property {number} exerciseDays              Tage mit mindestens einer Übung
+ * @property {number} longestExerciseDayStreak  Tage in Folge mit Übung
+ * @property {number} distinctExercises         verschiedene Übungen gemacht
+ * @property {number} exerciseCategoriesDone    Kategorien mit mindestens einer
+ * @property {number} exerciseCategoryTotal
+ * @property {number} completeExerciseCategories  Kategorien komplett durch
+ *
+ * @returns {ExerciseStats}
  */
 export function buildExerciseStats(entries) {
   const sauber = normalizeEntries(entries);
   const kategorien = new Set();
+  const tage = new Set();
+  const uebungen = new Set();
+
+  /** Kategorie -> verschiedene Übungen daraus, die gemacht wurden. */
+  const proKategorie = new Map();
 
   for (const entry of sauber) {
+    tage.add(entry.date);
+    uebungen.add(entry.exerciseId);
+
     // Einträge zu unbekannten Übungen zählen mit, tragen aber zu keiner
     // Kategorie bei – etwa nach einem Import aus einer älteren Bibliothek.
     const kategorie = CATEGORY_OF.get(entry.exerciseId);
-    if (kategorie) kategorien.add(kategorie);
+    if (!kategorie) continue;
+
+    kategorien.add(kategorie);
+    if (!proKategorie.has(kategorie)) proKategorie.set(kategorie, new Set());
+    proKategorie.get(kategorie).add(entry.exerciseId);
+  }
+
+  let vollstaendig = 0;
+  for (const [kategorie, gemacht] of proKategorie) {
+    if (gemacht.size >= SIZE_OF_CATEGORY.get(kategorie)) vollstaendig++;
   }
 
   return {
     exerciseCompletions: sauber.length,
+    exerciseDays: tage.size,
+    longestExerciseDayStreak: longestDayStreak(tage),
+    distinctExercises: uebungen.size,
     exerciseCategoriesDone: kategorien.size,
     exerciseCategoryTotal: CATEGORIES.length,
+    completeExerciseCategories: vollstaendig,
   };
+}
+
+/** Längste Kette aufeinanderfolgender Kalendertage. */
+function longestDayStreak(tage) {
+  const nummern = [...tage].map(toDayNumber).sort((a, b) => a - b);
+
+  let laengste = 0;
+  let aktuelle = 0;
+
+  nummern.forEach((tag, index) => {
+    aktuelle = index > 0 && tag === nummern[index - 1] + 1 ? aktuelle + 1 : 1;
+    laengste = Math.max(laengste, aktuelle);
+  });
+
+  return laengste;
+}
+
+/** ISO-Tag -> fortlaufende Tagesnummer, damit sich Abstände rechnen lassen. */
+function toDayNumber(isoDate) {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
 }

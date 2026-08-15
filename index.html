@@ -389,18 +389,17 @@
       <section class="card" aria-labelledby="trophies-title">
         <h2 id="trophies-title">Trophäen</h2>
         <p class="trophy-score">
-          <strong id="trophy-count">0</strong> von <span id="trophy-total">27</span> freigeschaltet
+          <strong id="trophy-count">0</strong> von <span id="trophy-total">52</span> freigeschaltet
           &middot; <span id="trophy-xp">0</span> Bonus-XP
         </p>
 
-        <h3 class="group-title">Meilensteine</h3>
+        <!-- Die Chips benennen die Kategorie, deshalb stehen über den Listen
+             keine Überschriften mehr – das spart Höhe für die Trophäen. -->
+        <div class="filter-row" id="trophy-filter" role="group" aria-label="Nach Kategorie filtern"></div>
+
         <ul class="trophies" id="trophies-meilenstein"></ul>
-
-        <h3 class="group-title">Herausforderungen</h3>
-        <ul class="trophies" id="trophies-herausforderung"></ul>
-
-        <h3 class="group-title">Übungen</h3>
-        <ul class="trophies" id="trophies-uebung"></ul>
+        <ul class="trophies" id="trophies-herausforderung" hidden></ul>
+        <ul class="trophies" id="trophies-uebung" hidden></ul>
       </section>
     </div>
 

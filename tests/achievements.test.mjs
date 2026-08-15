@@ -423,8 +423,9 @@ describe('achievementsByCategory', () => {
     const log = [{ id: 'u1', exerciseId: 'kraft-plank', date: day(0) }];
     const uebungen = achievementsByCategory(evaluateAchievements([], log)).find((g) => g.id === 'uebung');
 
-    assert.equal(uebungen.unlocked, 1);
-    assert.equal(uebungen.total, 4);
+    assert.equal(uebungen.unlocked, 1, 'nur die erste Übung');
+    // Mitgezählt statt fest verdrahtet: die Gruppe darf wachsen.
+    assert.equal(uebungen.total, ACHIEVEMENTS.filter((a) => a.category === 'uebung').length);
   });
 
   test('leere Eingabe kippt nicht', () => {
@@ -436,21 +437,31 @@ describe('achievementsByCategory', () => {
 describe('Vollständigkeit', () => {
   const langesLaufjahr = [
     makeRun(0, 5, { timeOfDay: '06:00', durationMinutes: 30 }),
-    ...Array.from({ length: 40 }, (_, i) => makeRun(i + 1, 13, { timeOfDay: '22:00' })),
-    makeRun(41, 5, { durationMinutes: 25 }),
-    makeRun(60, 30),
-    ...Array.from({ length: 200 }, (_, i) => makeRun(200 + i * 100, 20)),
+    // 80 Tage am Stück: deckt Tagesserie, Wochenserie und Läufe je Woche ab.
+    ...Array.from({ length: 80 }, (_, i) =>
+      makeRun(i + 1, 13, { timeOfDay: '22:00', durationMinutes: 70 })
+    ),
+    // Dieselbe Distanz schneller als oben – Bestzeit und Pace unter 6:00.
+    makeRun(81, 5, { durationMinutes: 25 }),
+    // Zweiter Lauf am selben Tag.
+    makeRun(81, 4),
+    // 19 Tage Pause, dann weit über den bisher längsten Lauf.
+    makeRun(100, 30),
+    ...Array.from({ length: 200 }, (_, i) => makeRun(300 + i * 100, 20)),
     // Weit auseinander und ohne Uhrzeit-Nachbarn: die frühen Läufe sollen die
     // Zähler füllen, aber keine Serie und keine Pause verfälschen.
     ...Array.from({ length: 14 }, (_, i) => makeRun(30_000 + i * 100, 6, { timeOfDay: '06:00' })),
   ];
 
-  /** 50 Erledigungen, verteilt über alle fünf Kategorien. */
-  const vieleUebungen = Array.from({ length: 50 }, (_, i) => {
-    const kategorie = CATEGORIES[i % CATEGORIES.length];
-    const uebung = EXERCISES.find((e) => e.category === kategorie.id);
-    return { id: `u${i}`, exerciseId: uebung.id, date: day(i) };
-  });
+  /**
+   * 100 Erledigungen an aufeinanderfolgenden Tagen, reihum durch die ganze
+   * Bibliothek – damit ist jede Übung mehrfach dran und jede Kategorie voll.
+   */
+  const vieleUebungen = Array.from({ length: 100 }, (_, i) => ({
+    id: `u${i}`,
+    exerciseId: EXERCISES[i % EXERCISES.length].id,
+    date: day(i),
+  }));
 
   test('Läufe allein schalten alle Lauf-Achievements frei', () => {
     const laufIds = ACHIEVEMENTS.filter((a) => a.category !== 'uebung').map((a) => a.id).sort();
@@ -470,5 +481,127 @@ describe('Vollständigkeit', () => {
       achievementXp(alle),
       ACHIEVEMENTS.reduce((sum, a) => sum + a.xp, 0)
     );
+  });
+});
+
+describe('Neue Kennzahlen aus den Läufen', () => {
+  test('Läufe je Tag und je Woche', () => {
+    // Zwei am selben Tag, danach zwei weitere in derselben Woche.
+    const stats = buildRunStats([
+      makeRun(0, 5),
+      makeRun(0, 3),
+      makeRun(1, 4),
+      makeRun(2, 4),
+      makeRun(40, 4),
+    ]);
+
+    assert.equal(stats.maxRunsPerDay, 2);
+    assert.equal(stats.maxRunsPerWeek, 4, 'die vier Läufe der ersten Woche');
+    assert.equal(stats.activeDays, 4, 'zwei Läufe an einem Tag sind ein Tag');
+  });
+
+  test('aktive Wochen und Wochen in Folge sind zweierlei', () => {
+    // 2026-01-01 ist ein Donnerstag. Tag 0 und 7 liegen in Folgewochen,
+    // Tag 100 steht allein.
+    const stats = buildRunStats([makeRun(0, 3), makeRun(7, 3), makeRun(100, 3)]);
+
+    assert.equal(stats.activeWeeks, 3);
+    assert.equal(stats.longestWeekStreak, 2, 'die Lücke bricht die Serie');
+  });
+
+  test('Kalendermonate werden gezählt, nicht Zeiträume von 30 Tagen', () => {
+    const stats = buildRunStats([makeRun(0, 3), makeRun(31, 3), makeRun(60, 3)]);
+    assert.equal(stats.activeMonths, 3);
+  });
+
+  test('längster Lauf und Gesamtdauer', () => {
+    const stats = buildRunStats([
+      makeRun(0, 5, { durationMinutes: 30 }),
+      makeRun(1, 12),
+      makeRun(2, 8, { durationMinutes: 50 }),
+    ]);
+
+    assert.equal(stats.maxDistanceKm, 12);
+    assert.equal(stats.totalDurationMinutes, 80, 'der Lauf ohne Dauer zählt nicht mit');
+  });
+
+  test('die beste Pace ignoriert kurze Strecken', () => {
+    // 1 km in 4 Minuten waere 4:00, zaehlt aber nicht: zu kurz.
+    const kurz = buildRunStats([makeRun(0, 1, { durationMinutes: 4 })]);
+    assert.equal(kurz.bestPaceMinPerKm, null);
+
+    const lang = buildRunStats([
+      makeRun(0, 5, { durationMinutes: 30 }),
+      makeRun(1, 4, { durationMinutes: 22 }),
+    ]);
+    assert.equal(lang.bestPaceMinPerKm, 5.5, 'die schnellere der beiden');
+  });
+
+  test('ohne eingetragene Dauer gibt es keine Pace', () => {
+    assert.equal(buildRunStats([makeRun(0, 10)]).bestPaceMinPerKm, null);
+    assert.equal(has([makeRun(0, 10)], 'flott-unterwegs'), false);
+  });
+
+  test('die Pace-Trophäe greift unter 6:00 min/km', () => {
+    assert.equal(has([makeRun(0, 5, { durationMinutes: 30 })], 'flott-unterwegs'), false);
+    assert.equal(has([makeRun(0, 5, { durationMinutes: 29 })], 'flott-unterwegs'), true);
+  });
+});
+
+describe('Neue Kennzahlen aus den Übungen', () => {
+  /** Wie `has`, aber für den Übungs-Zweig: die Läufe bleiben leer. */
+  const hat = (log, id) =>
+    evaluateAchievements([], log)
+      .filter((a) => a.unlocked)
+      .some((a) => a.id === id);
+
+  /** Eine Erledigung je Tag, reihum durch die Bibliothek. */
+  const reihum = (anzahl, startTag = 0) =>
+    Array.from({ length: anzahl }, (_, i) => ({
+      id: `u${i}`,
+      exerciseId: EXERCISES[i % EXERCISES.length].id,
+      date: day(startTag + i),
+    }));
+
+  test('Tage zählen anders als Erledigungen', () => {
+    const dreimalAmSelbenTag = [0, 1, 2].map((i) => ({
+      id: `u${i}`,
+      exerciseId: EXERCISES[i].id,
+      date: day(0),
+    }));
+
+    assert.equal(hat(dreimalAmSelbenTag, 'fuenf-uebungstage'), false, 'ein Tag bleibt ein Tag');
+    assert.equal(hat(reihum(5), 'fuenf-uebungstage'), true);
+  });
+
+  test('die Übungsserie bricht bei einer Lücke', () => {
+    const mitLuecke = [...reihum(3), ...reihum(3, 10)];
+
+    assert.equal(hat(reihum(3), 'uebungsserie-3'), true);
+    assert.equal(hat(mitLuecke, 'uebungsserie-7'), false, '3 und 3 sind keine 7 in Folge');
+    assert.equal(hat(reihum(7), 'uebungsserie-7'), true);
+  });
+
+  test('verschiedene Übungen statt oft dieselbe', () => {
+    const immerDieselbe = Array.from({ length: 20 }, (_, i) => ({
+      id: `u${i}`,
+      exerciseId: EXERCISES[0].id,
+      date: day(i),
+    }));
+
+    assert.equal(hat(immerDieselbe, 'fuenf-verschiedene'), false);
+    assert.equal(hat(reihum(5), 'fuenf-verschiedene'), true);
+    assert.equal(hat(reihum(10), 'zehn-verschiedene'), true);
+    assert.equal(hat(reihum(20), 'zwanzig-verschiedene'), true);
+  });
+
+  test('eine volle Reihe ist eine komplette Kategorie', () => {
+    const aufwaermen = EXERCISES.filter((e) => e.category === CATEGORIES[0].id);
+    const halb = aufwaermen.slice(0, -1).map((e, i) => ({ id: `u${i}`, exerciseId: e.id, date: day(i) }));
+    const ganz = aufwaermen.map((e, i) => ({ id: `u${i}`, exerciseId: e.id, date: day(i) }));
+
+    assert.equal(hat(halb, 'volle-reihe'), false, 'eine Übung fehlt noch');
+    assert.equal(hat(ganz, 'volle-reihe'), true);
+    assert.equal(hat(ganz, 'zwei-volle-reihen'), false);
   });
 });

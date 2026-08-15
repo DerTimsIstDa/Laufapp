@@ -1127,6 +1127,12 @@ textarea:focus {
   font-size: 0.8125rem;
 }
 
+/* Im Trophäen-Tab sitzt der Filter dicht unter der Punktzahl – dort steht
+   keine Beschreibung dazwischen wie bei den Übungen. */
+#trophy-filter {
+  margin-top: var(--space-3);
+}
+
 .exercises {
   list-style: none;
   margin: 0;

@@ -199,8 +199,9 @@ describe('Neuberechnung nach dem Bearbeiten', () => {
     assert.equal(vorher.totalXp, 65, '50 aus dem Lauf plus 15 für Erste Meile');
     assert.equal(
       nachher.totalXp,
-      3335,
-      '3000 plus Erste Meile (15) plus die Clubs 50/100/250 km (50+90+180)'
+      3475,
+      '3000 aus dem Lauf, 15 Erste Meile, 375 aus den Clubs bis 250 km, ' +
+        '85 aus Die Zehn und Die Fünfzehn'
     );
     assert.ok(nachher.level > vorher.level);
     assert.ok(nachher.unlocked.includes('club-50-km'));
@@ -216,7 +217,11 @@ describe('Neuberechnung nach dem Bearbeiten', () => {
     const nachher = derive(next);
 
     assert.equal(nachher.unlocked.includes('club-50-km'), false);
-    assert.equal(nachher.totalXp, 115, '100 aus dem Lauf plus 15 für Erste Meile');
+    assert.equal(
+      nachher.totalXp,
+      165,
+      '100 aus dem Lauf, 15 Erste Meile, 20 der 10-km-Club, 30 Die Zehn'
+    );
   });
 
   test('ein geändertes Datum kann eine Serie zerreißen', () => {

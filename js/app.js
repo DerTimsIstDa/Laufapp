@@ -21,7 +21,12 @@
  */
 
 import { getProgress, totalXpFromRuns, xpForDistance } from './xp.js';
-import { evaluateAchievements, achievementXp, achievementsByCategory } from './achievements.js';
+import {
+  evaluateAchievements,
+  achievementXp,
+  achievementsByCategory,
+  ACHIEVEMENT_CATEGORIES,
+} from './achievements.js';
 import { titleForLevel, nextTitle, badgeForLevel, badgeSrc } from './titles.js';
 import { paceMinPerKm, formatDuration, formatPace } from './geo.js';
 import { createTracker } from './tracker.js';
@@ -174,6 +179,12 @@ const PLANNED_VIEW = 'geplant';
 /** Gewählte Übungskategorie; ALL_CATEGORIES zeigt alles, PLANNED_VIEW den Plan. */
 let exerciseCategory = ALL_CATEGORIES;
 
+/**
+ * Sichtbare Trophäen-Gruppe. Immer genau eine – zweiundfünfzig Kacheln am
+ * Stück wären eine Scrollstrecke, kein Überblick.
+ */
+let trophyCategory = ACHIEVEMENT_CATEGORIES[0].id;
+
 /** id der Übung, deren Zähler gerade von Hand korrigiert wird. */
 let editingExerciseId = null;
 
@@ -271,6 +282,7 @@ const el = {
   exerciseFeedback: document.getElementById('exercise-feedback'),
   exerciseXp: document.getElementById('exercise-xp'),
 
+  trophyFilter: document.getElementById('trophy-filter'),
   trophyCount: document.getElementById('trophy-count'),
   trophyTotal: document.getElementById('trophy-total'),
   trophyXp: document.getElementById('trophy-xp'),
@@ -1444,13 +1456,41 @@ function renderTrophies() {
   el.trophyTotal.textContent = achievements.length;
   el.trophyXp.textContent = numberFormat.format(achievementXp(achievements));
 
+  renderTrophyFilter(achievements);
+
   for (const [category, liste] of Object.entries(el.trophyLists)) {
+    liste.hidden = category !== trophyCategory;
+
+    // Auch die verborgenen Listen werden gefüllt: das Umschalten soll nichts
+    // nachladen müssen, und zweiundfünfzig Kacheln sind schnell gebaut.
     liste.replaceChildren(
       ...achievements
         .filter((a) => a.category === category)
         .map((a) => createTrophyTile(a, daten.get(a.id)))
     );
   }
+}
+
+/** Kompakte Chips wie im Übungen-Tab, mit dem Stand je Gruppe. */
+function renderTrophyFilter(achievements) {
+  el.trophyFilter.replaceChildren(
+    ...achievementsByCategory(achievements).map(({ id, label, unlocked, total }) => {
+      const aktiv = id === trophyCategory;
+
+      const knopf = document.createElement('button');
+      knopf.type = 'button';
+      knopf.className = aktiv ? 'chip active' : 'chip';
+      knopf.dataset.trophyCategory = id;
+      knopf.setAttribute('aria-pressed', String(aktiv));
+      knopf.textContent = `${label} ${unlocked}/${total}`;
+      knopf.addEventListener('click', () => {
+        trophyCategory = id;
+        renderTrophies();
+      });
+
+      return knopf;
+    })
+  );
 }
 
 function createTrophyTile(achievement, unlockDate) {
