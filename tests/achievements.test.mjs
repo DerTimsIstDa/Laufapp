@@ -441,8 +441,9 @@ describe('Vollständigkeit', () => {
     ...Array.from({ length: 80 }, (_, i) =>
       makeRun(i + 1, 13, { timeOfDay: '22:00', durationMinutes: 70 })
     ),
-    // Dieselbe Distanz schneller als oben – Bestzeit und Pace unter 6:00.
-    makeRun(81, 5, { durationMinutes: 25 }),
+    // Dieselbe Distanz deutlich schneller als oben: Bestzeit, Pace unter 5:00
+    // und zusammen mit dem ersten Lauf (6:00) über 30 Sekunden Verbesserung.
+    makeRun(81, 5, { durationMinutes: 24 }),
     // Zweiter Lauf am selben Tag.
     makeRun(81, 4),
     // 19 Tage Pause, dann weit über den bisher längsten Lauf.
@@ -603,5 +604,103 @@ describe('Neue Kennzahlen aus den Übungen', () => {
     assert.equal(hat(halb, 'volle-reihe'), false, 'eine Übung fehlt noch');
     assert.equal(hat(ganz, 'volle-reihe'), true);
     assert.equal(hat(ganz, 'zwei-volle-reihen'), false);
+  });
+});
+
+describe('Pace-Trophäen', () => {
+  /** n Läufe mit dieser Pace, weit genug auseinander für keine Serie. */
+  const mitPace = (anzahl, paceMinPerKm, distanceKm = 5) =>
+    Array.from({ length: anzahl }, (_, i) => makeRun(i * 100, distanceKm, { paceMinPerKm }));
+
+  test('die drei Stufen greifen strikt unter ihrer Schwelle', () => {
+    for (const [id, schwelle] of [
+      ['flott-unterwegs', 6],
+      ['zuegig', 5.5],
+      ['unter-fuenf', 5],
+    ]) {
+      assert.equal(has(mitPace(1, schwelle), id), false, `${id} genau auf der Schwelle`);
+      assert.equal(has(mitPace(1, schwelle - 0.01), id), true, `${id} knapp darunter`);
+    }
+  });
+
+  test('die Stufen bauen aufeinander auf', () => {
+    const frei = unlockedIds(mitPace(1, 4.9));
+
+    assert.ok(frei.includes('flott-unterwegs'));
+    assert.ok(frei.includes('zuegig'));
+    assert.ok(frei.includes('unter-fuenf'));
+  });
+
+  test('kurze Läufe zählen nicht – ein Sprint ist kein Ausdauerbeleg', () => {
+    assert.equal(has(mitPace(1, 4, 2.9), 'unter-fuenf'), false);
+    assert.equal(has(mitPace(1, 4, 3), 'unter-fuenf'), true);
+  });
+
+  test('eine von Hand eingetragene Pace zählt genauso', () => {
+    // Ohne Dauer, nur mit Pace – aus Teil 1 des Formulars.
+    const nurPace = [{ id: 'a', date: day(0), distanceKm: 5, paceMinPerKm: 5.2 }];
+    assert.equal(has(nurPace, 'zuegig'), true);
+  });
+
+  test('Läufe ohne Pace verursachen keinen Fehler', () => {
+    const ohne = [makeRun(0, 10), makeRun(100, 12)];
+
+    assert.doesNotThrow(() => buildRunStats(ohne));
+    assert.equal(buildRunStats(ohne).bestPaceMinPerKm, null);
+    assert.equal(buildRunStats(ohne).steadyPaceRunCount, 0);
+    assert.equal(has(ohne, 'flott-unterwegs'), false);
+  });
+
+  test('die Zähler der Meilensteine greifen an ihrer Schwelle', () => {
+    for (const [id, schwelle] of [
+      ['fuenfmal-flott', 5],
+      ['regelmaessig-flott', 15],
+    ]) {
+      assert.equal(has(mitPace(schwelle - 1, 5.5), id), false, `${id} knapp darunter`);
+      assert.equal(has(mitPace(schwelle, 5.5), id), true, `${id} auf der Schwelle`);
+    }
+  });
+
+  test('langsame Läufe füllen den Zähler nicht', () => {
+    assert.equal(has(mitPace(10, 6.5), 'fuenfmal-flott'), false);
+  });
+
+  describe('Schneller geworden', () => {
+    test('misst gegen den ersten gewerteten Lauf', () => {
+      const runs = [
+        makeRun(0, 5, { paceMinPerKm: 6 }),
+        makeRun(10, 5, { paceMinPerKm: 5.6 }),
+      ];
+
+      // Nicht auf die Nachkommastelle festnageln: 6 − 5,6 ist im Fließkomma
+      // nicht exakt 0,4, und für die Trophäe zählt ohnehin nur die Schwelle.
+      assert.ok(Math.abs(buildRunStats(runs).paceImprovementMin - 0.4) < 1e-9);
+      assert.equal(has(runs, 'schneller-geworden'), false, '24 Sekunden reichen nicht');
+
+      const schneller = [...runs, makeRun(20, 5, { paceMinPerKm: 5.5 })];
+      assert.equal(has(schneller, 'schneller-geworden'), true, '30 Sekunden reichen');
+    });
+
+    test('ein späterer langsamer Lauf nimmt die Verbesserung nicht weg', () => {
+      // Sonst verschwaende eine Trophaee wieder, weil man einmal ruhig lief.
+      const runs = [
+        makeRun(0, 5, { paceMinPerKm: 6 }),
+        makeRun(10, 5, { paceMinPerKm: 5.4 }),
+        makeRun(20, 5, { paceMinPerKm: 7 }),
+      ];
+
+      assert.equal(has(runs, 'schneller-geworden'), true);
+    });
+
+    test('wer schnell anfängt, hat nichts zu verbessern', () => {
+      const runs = [makeRun(0, 5, { paceMinPerKm: 5 }), makeRun(10, 5, { paceMinPerKm: 5.5 })];
+
+      assert.equal(buildRunStats(runs).paceImprovementMin, 0, 'nie negativ');
+      assert.equal(has(runs, 'schneller-geworden'), false);
+    });
+
+    test('ein einziger Lauf ergibt keine Verbesserung', () => {
+      assert.equal(buildRunStats(mitPace(1, 4)).paceImprovementMin, 0);
+    });
   });
 });

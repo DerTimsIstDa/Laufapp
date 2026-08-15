@@ -12,6 +12,7 @@
 
 import { buildExerciseStats } from './exercise-log.js';
 import { weekStart } from './stats.js';
+import { runPaceMinPerKm } from './geo.js';
 
 /** Distanzen, auf denen persönliche Rekorde gezählt werden (km). */
 const PR_DISTANCES_KM = [5, 10];
@@ -20,10 +21,22 @@ const PR_DISTANCES_KM = [5, 10];
 const PR_TOLERANCE_KM = 0.5;
 
 /**
- * Ab dieser Distanz zählt ein Lauf für die Pace-Trophäe. Auf 500 m ist eine
+ * Ab dieser Distanz zählt ein Lauf für die Pace-Trophäen. Auf 500 m ist eine
  * schnelle Pace kein Ausdauerbeleg, sondern ein Sprint.
  */
 const PACE_MIN_DISTANCE_KM = 3;
+
+/**
+ * Die drei Pace-Stufen. 6:00 ist der Einstieg, 5:00 das obere Ende dessen,
+ * was im Alltag vorkommt – dazwischen liegt die Spanne, in der die meisten
+ * Läufe tatsächlich landen.
+ */
+const PACE_STEADY_MIN_PER_KM = 6;
+const PACE_BRISK_MIN_PER_KM = 5.5;
+const PACE_FAST_MIN_PER_KM = 5;
+
+/** Um so viele Minuten muss sich die Bestpace verbessern. */
+const PACE_IMPROVEMENT_MIN = 0.5;
 
 /**
  * @typedef {Object} Achievement
@@ -252,6 +265,38 @@ export const ACHIEVEMENTS = [
     progress: (s) => ({ current: s.activeMonths, target: 3, unit: 'Monate' }),
   },
   {
+    id: 'fuenfmal-flott',
+    name: 'Fünfmal flott',
+    description: '5 Läufe schneller als 6:00 min/km.',
+    xp: 50,
+    category: 'meilenstein',
+    check: (s) => s.steadyPaceRunCount >= 5,
+    progress: (s) => ({ current: s.steadyPaceRunCount, target: 5, unit: 'Läufe' }),
+  },
+  {
+    id: 'regelmaessig-flott',
+    name: 'Regelmäßig flott',
+    description: '15 Läufe schneller als 6:00 min/km.',
+    xp: 110,
+    category: 'meilenstein',
+    check: (s) => s.steadyPaceRunCount >= 15,
+    progress: (s) => ({ current: s.steadyPaceRunCount, target: 15, unit: 'Läufe' }),
+  },
+  {
+    id: 'schneller-geworden',
+    name: 'Schneller geworden',
+    description: 'Die eigene Bestpace um 30 Sekunden je Kilometer verbessert.',
+    xp: 60,
+    category: 'meilenstein',
+    check: (s) => s.paceImprovementMin >= PACE_IMPROVEMENT_MIN,
+    progress: (s) => ({
+      // In Sekunden, weil "0,3 von 0,5 Minuten" niemand im Kopf umrechnet.
+      current: Math.round(s.paceImprovementMin * 60),
+      target: Math.round(PACE_IMPROVEMENT_MIN * 60),
+      unit: 'Sekunden',
+    }),
+  },
+  {
     id: 'fuenf-stunden',
     name: 'Fünf Stunden unterwegs',
     description: '5 Stunden Laufzeit gesammelt (Dauer eintragen).',
@@ -337,12 +382,28 @@ export const ACHIEVEMENTS = [
   {
     id: 'flott-unterwegs',
     name: 'Flott unterwegs',
-    description: `Ein Lauf ab ${PACE_MIN_DISTANCE_KM} km schneller als 6:00 min/km (Dauer eintragen).`,
+    description: `Ein Lauf ab ${PACE_MIN_DISTANCE_KM} km schneller als 6:00 min/km.`,
     xp: 35,
     category: 'herausforderung',
     // Kein Fortschrittsbalken: eine Pace läuft nach unten, ein Balken nach
     // oben. "5,8 von 6" sähe aus wie fast geschafft, wäre aber schon erfüllt.
-    check: (s) => s.bestPaceMinPerKm !== null && s.bestPaceMinPerKm < 6,
+    check: (s) => underPace(s, PACE_STEADY_MIN_PER_KM),
+  },
+  {
+    id: 'zuegig',
+    name: 'Zügig',
+    description: `Ein Lauf ab ${PACE_MIN_DISTANCE_KM} km schneller als 5:30 min/km.`,
+    xp: 55,
+    category: 'herausforderung',
+    check: (s) => underPace(s, PACE_BRISK_MIN_PER_KM),
+  },
+  {
+    id: 'unter-fuenf',
+    name: 'Unter fünf',
+    description: `Ein Lauf ab ${PACE_MIN_DISTANCE_KM} km schneller als 5:00 min/km.`,
+    xp: 90,
+    category: 'herausforderung',
+    check: (s) => underPace(s, PACE_FAST_MIN_PER_KM),
   },
   {
     id: 'doppelschicht',
@@ -542,6 +603,11 @@ export const ACHIEVEMENTS = [
  * @property {number} maxRunsPerDay
  * @property {number} maxRunsPerWeek
  * @property {?number} bestPaceMinPerKm         beste Pace ab PACE_MIN_DISTANCE_KM
+ * @property {?number} firstPaceMinPerKm        Pace des ersten gewerteten Laufs
+ * @property {number} paceImprovementMin        um wie viel die Bestpace sank
+ * @property {number} steadyPaceRunCount        Läufe schneller als 6:00
+ * @property {number} briskPaceRunCount         Läufe schneller als 5:30
+ * @property {number} fastPaceRunCount          Läufe schneller als 5:00
  * @property {boolean} hasPersonalBest
  * @property {boolean} hasComeback
  * @property {boolean} hasLongRunBreakthrough
@@ -568,6 +634,11 @@ export function buildRunStats(runs) {
     maxRunsPerDay: 0,
     maxRunsPerWeek: 0,
     bestPaceMinPerKm: null,
+    firstPaceMinPerKm: null,
+    paceImprovementMin: 0,
+    steadyPaceRunCount: 0,
+    briskPaceRunCount: 0,
+    fastPaceRunCount: 0,
     hasPersonalBest: false,
     hasComeback: false,
     hasLongRunBreakthrough: false,
@@ -593,15 +664,20 @@ export function buildRunStats(runs) {
     if (woche !== null) proWoche.set(woche, (proWoche.get(woche) ?? 0) + 1);
 
     // Dauer ist optional. Was fehlt, zählt nicht mit – geschätzt wird nichts.
-    if (isPositive(run.durationMinutes)) {
-      stats.totalDurationMinutes += run.durationMinutes;
+    if (isPositive(run.durationMinutes)) stats.totalDurationMinutes += run.durationMinutes;
 
-      if (run.distanceKm >= PACE_MIN_DISTANCE_KM) {
-        const pace = run.durationMinutes / run.distanceKm;
-        if (stats.bestPaceMinPerKm === null || pace < stats.bestPaceMinPerKm) {
-          stats.bestPaceMinPerKm = pace;
-        }
+    // Die Pace kommt über runPaceMinPerKm: eine von Hand eingetragene zählt
+    // genauso wie eine gerechnete. Läufe ohne beides fallen still heraus.
+    const pace = runPaceMinPerKm(run);
+    if (pace !== null && run.distanceKm >= PACE_MIN_DISTANCE_KM) {
+      if (stats.firstPaceMinPerKm === null) stats.firstPaceMinPerKm = pace;
+      if (stats.bestPaceMinPerKm === null || pace < stats.bestPaceMinPerKm) {
+        stats.bestPaceMinPerKm = pace;
       }
+
+      if (pace < PACE_STEADY_MIN_PER_KM) stats.steadyPaceRunCount++;
+      if (pace < PACE_BRISK_MIN_PER_KM) stats.briskPaceRunCount++;
+      if (pace < PACE_FAST_MIN_PER_KM) stats.fastPaceRunCount++;
     }
 
     // Tageszeit. Gezählt statt nur vermerkt: darauf bauen mehrere Stufen auf.
@@ -656,6 +732,12 @@ export function buildRunStats(runs) {
     );
   });
 
+  // Wie viel schneller als der erste gewertete Lauf. Wächst nur: die erste
+  // Pace steht fest, die beste kann bloss sinken.
+  if (stats.firstPaceMinPerKm !== null && stats.bestPaceMinPerKm !== null) {
+    stats.paceImprovementMin = Math.max(0, stats.firstPaceMinPerKm - stats.bestPaceMinPerKm);
+  }
+
   stats.activeDays = days.length;
   stats.activeMonths = monate.size;
   stats.activeWeeks = proWoche.size;
@@ -674,6 +756,16 @@ export function buildRunStats(runs) {
   });
 
   return stats;
+}
+
+/**
+ * War schon ein gewerteter Lauf schneller als diese Pace?
+ *
+ * Ohne einen einzigen Lauf mit Pace ist die Antwort nein, nicht "Fehler" –
+ * eine fehlende Angabe ist kein Ergebnis.
+ */
+function underPace(stats, schwelle) {
+  return stats.bestPaceMinPerKm !== null && stats.bestPaceMinPerKm < schwelle;
 }
 
 /** Grösster Wert einer Zähl-Map; 0 bei leerer Map. */
