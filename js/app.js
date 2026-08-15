@@ -15,6 +15,7 @@
  *   lock.js         Tastensperre während der Aufzeichnung
  *   history.js      Freischaltdaten der Achievements
  *   training.js     Geplante Einheiten, Abgleich mit den Läufen
+ *   exercise-plan.js Für einen Tag vorgenommene Übungen
  *   storage.js      Persistenz
  */
 
@@ -23,7 +24,13 @@ import { evaluateAchievements, achievementXp, achievementsByCategory } from './a
 import { titleForLevel, nextTitle, badgeForLevel, badgeSrc } from './titles.js';
 import { paceMinPerKm, formatDuration, formatPace } from './geo.js';
 import { createTracker } from './tracker.js';
-import { validateRun, firstErrorMessage, parseNumber, normalizeName } from './validation.js';
+import {
+  validateRun,
+  firstErrorMessage,
+  parseNumber,
+  normalizeName,
+  isValidIsoDate,
+} from './validation.js';
 import { serializeExport, exportFileName, parseImport } from './transfer.js';
 import { buildStats, distanceByWeek, distanceByMonth, runsInPeriod } from './stats.js';
 import { projectTrack, hasDrawableRoute, toStorageTrack, DEFAULT_VIEWPORT } from './route.js';
@@ -44,6 +51,7 @@ import {
 } from './lock.js';
 import { achievementUnlockDates } from './history.js';
 import {
+  EXERCISES,
   CATEGORIES,
   ALL_CATEGORIES,
   findCategory,
@@ -68,8 +76,18 @@ import {
   loadRuns, addRun, updateRun, removeRun, replaceRuns,
   loadExerciseLog, addExerciseEntry, replaceExerciseLog,
   loadSessions, addSession, updateSession, removeSession, replaceSessions,
+  loadExercisePlan, saveExercisePlan,
   loadProfileName, saveProfileName,
 } from './storage.js';
+import {
+  normalizePlan,
+  plannedOn,
+  isPlanned,
+  hasRoomOn,
+  planExercise,
+  unplanExercise,
+  MAX_PLANNED_PER_DAY,
+} from './exercise-plan.js';
 import {
   exerciseXp,
   countsByExercise,
@@ -88,6 +106,12 @@ let exerciseLog = [];
 
 /** @type {import('./training.js').Session[]} */
 let sessions = [];
+
+/** @type {import('./exercise-plan.js').PlannedExercise[]} */
+let exercisePlan = [];
+
+/** id der Übung, für die gerade ein Termin gewählt wird; null = keine. */
+let planningExerciseId = null;
 
 /** Selbst eingetragener Name; leer heißt "nur den Titel zeigen". */
 let profileName = '';
@@ -217,6 +241,9 @@ const el = {
     profile: document.getElementById('view-profile'),
   },
 
+  todayEmpty: document.getElementById('today-empty'),
+  todayList: document.getElementById('today-list'),
+
   exerciseFilter: document.getElementById('exercise-filter'),
   exerciseList: document.getElementById('exercise-list'),
   exerciseNote: document.getElementById('exercise-note'),
@@ -312,6 +339,7 @@ function init() {
   runs = loadRuns();
   exerciseLog = loadExerciseLog();
   sessions = loadSessions();
+  exercisePlan = normalizePlan(loadExercisePlan());
   profileName = normalizeName(loadProfileName());
   el.date.value = todayIso();
   el.profileNameInput.value = profileName;
@@ -795,6 +823,61 @@ function fillSessionDeleteConfirm(item, session) {
   return item;
 }
 
+/* ------------------------------------------------------- Übungen heute */
+
+/**
+ * Was für heute vorgenommen ist – reine Anzeige. Eingeplant und abgehakt wird
+ * im Übungen-Tab; ein zweiter Weg zum Abhaken wäre ein zweiter Weg, sich zu
+ * verzählen.
+ *
+ * Der Bereich bleibt auch ohne Eintrag stehen und zeigt einen Hinweis. Ihn
+ * auszublenden würde den Tab an jedem übungsfreien Tag anders hoch machen.
+ */
+function renderToday() {
+  const heute = todayIso();
+  const geplant = plannedOn(exercisePlan, heute);
+
+  el.todayEmpty.hidden = geplant.length > 0;
+  el.todayList.replaceChildren(
+    ...geplant.map((eintrag) => {
+      const uebung = EXERCISES.find((e) => e.id === eintrag.exerciseId);
+      return createTodayItem(uebung, doneOnDay(exerciseLog, eintrag.exerciseId, heute));
+    })
+  );
+}
+
+function createTodayItem(exercise, erledigt) {
+  const zeile = document.createElement('li');
+  zeile.className = erledigt ? 'today-item done' : 'today-item';
+
+  const marke = document.createElement('span');
+  marke.className = 'today-mark';
+  marke.textContent = erledigt ? '✓' : '○';
+  marke.setAttribute('aria-hidden', 'true');
+
+  const text = document.createElement('span');
+  text.className = 'today-text';
+
+  const name = document.createElement('span');
+  name.className = 'today-name';
+  name.textContent = exercise.name;
+
+  const dosis = document.createElement('span');
+  dosis.className = 'today-dose muted';
+  dosis.textContent = exercise.dose;
+
+  text.append(name, dosis);
+
+  const marke2 = document.createElement('span');
+  marke2.className = 'today-state';
+  marke2.textContent = erledigt ? 'erledigt' : 'offen';
+
+  zeile.append(marke, text, marke2);
+  zeile.setAttribute('aria-label', `${exercise.name}: ${erledigt ? 'erledigt' : 'offen'}`);
+
+  return zeile;
+}
+
 /* --------------------------------------------------------------- Übungen */
 
 function renderExercises() {
@@ -819,6 +902,7 @@ function renderExercises() {
       createExerciseCard(uebung, nummeriert ? index + 1 : null, {
         anzahl: zaehler.get(uebung.id) ?? 0,
         heuteErledigt: doneOnDay(exerciseLog, uebung.id, heute),
+        heuteGeplant: isPlanned(exercisePlan, uebung.id, heute),
       })
     )
   );
@@ -883,7 +967,7 @@ function renderExerciseFilter() {
   );
 }
 
-function createExerciseCard(exercise, position, { anzahl, heuteErledigt }) {
+function createExerciseCard(exercise, position, { anzahl, heuteErledigt, heuteGeplant }) {
   const karte = document.createElement('li');
   karte.className = heuteErledigt ? 'exercise done-today' : 'exercise';
 
@@ -933,6 +1017,26 @@ function createExerciseCard(exercise, position, { anzahl, heuteErledigt }) {
     links.append(heute);
   }
 
+  // Nur den heutigen Termin als Marke: der ist der einzige, der auf dem
+  // Start-Tab auftaucht. Spätere sieht man, wenn der Tag da ist.
+  if (heuteGeplant) {
+    const vorgemerkt = document.createElement('span');
+    vorgemerkt.className = 'exercise-planned';
+    vorgemerkt.textContent = 'für heute geplant';
+    links.append(vorgemerkt);
+  }
+
+  const einplanen = document.createElement('button');
+  einplanen.type = 'button';
+  einplanen.className = 'icon-button';
+  einplanen.textContent = '📅';
+  einplanen.setAttribute('aria-label', `${exercise.name} einplanen`);
+  einplanen.addEventListener('click', () => {
+    planningExerciseId = planningExerciseId === exercise.id ? null : exercise.id;
+    editingExerciseId = null;
+    renderExercises();
+  });
+
   const korrigieren = document.createElement('button');
   korrigieren.type = 'button';
   korrigieren.className = 'icon-button';
@@ -940,6 +1044,7 @@ function createExerciseCard(exercise, position, { anzahl, heuteErledigt }) {
   korrigieren.setAttribute('aria-label', `Zähler von ${exercise.name} korrigieren`);
   korrigieren.addEventListener('click', () => {
     editingExerciseId = exercise.id;
+    planningExerciseId = null;
     renderExercises();
   });
 
@@ -952,14 +1057,115 @@ function createExerciseCard(exercise, position, { anzahl, heuteErledigt }) {
 
   const aktionen = document.createElement('div');
   aktionen.className = 'exercise-actions';
-  aktionen.append(korrigieren, knopf);
+  aktionen.append(einplanen, korrigieren, knopf);
 
   fuss.append(links, aktionen);
   karte.append(fuss);
 
   if (exercise.id === editingExerciseId) karte.append(createCountEditor(exercise, anzahl));
+  if (exercise.id === planningExerciseId) karte.append(createPlanEditor(exercise));
 
   return karte;
+}
+
+/**
+ * Termin wählen, direkt auf der Karte – wie die Zählerkorrektur daneben.
+ * Voreingestellt ist heute: das ist der häufige Fall, und der Start-Tab zeigt
+ * ohnehin nur den heutigen Tag.
+ */
+function createPlanEditor(exercise) {
+  const box = document.createElement('form');
+  box.className = 'plan-editor';
+
+  const feldHuelle = document.createElement('div');
+  feldHuelle.className = 'field';
+
+  const label = document.createElement('label');
+  label.setAttribute('for', 'plan-date-input');
+  label.textContent = 'An welchem Tag?';
+
+  const feld = document.createElement('input');
+  feld.type = 'date';
+  feld.id = 'plan-date-input';
+  feld.value = todayIso();
+
+  feldHuelle.append(label, feld);
+
+  const hinweis = document.createElement('p');
+  hinweis.className = 'count-hint muted';
+  hinweis.textContent =
+    `Höchstens ${MAX_PLANNED_PER_DAY} Übungen je Tag. Geplantes bringt keine ` +
+    'XP – die gibt es fürs Erledigen, unverändert einmal je Übung und Tag.';
+
+  const knoepfe = document.createElement('div');
+  knoepfe.className = 'count-buttons';
+
+  const speichern = document.createElement('button');
+  speichern.type = 'submit';
+  speichern.className = 'small';
+  speichern.textContent = 'Einplanen';
+
+  const abbrechen = document.createElement('button');
+  abbrechen.type = 'button';
+  abbrechen.className = 'secondary small';
+  abbrechen.textContent = 'Abbrechen';
+  abbrechen.addEventListener('click', () => {
+    planningExerciseId = null;
+    renderExercises();
+  });
+
+  knoepfe.append(speichern, abbrechen);
+
+  // Austragen nur anbieten, wenn es etwas auszutragen gibt.
+  if (isPlanned(exercisePlan, exercise.id, todayIso())) {
+    const austragen = document.createElement('button');
+    austragen.type = 'button';
+    austragen.className = 'ghost small';
+    austragen.textContent = 'Für heute austragen';
+    austragen.addEventListener('click', () => handleUnplan(exercise, todayIso()));
+    knoepfe.append(austragen);
+  }
+
+  box.append(feldHuelle, hinweis, knoepfe);
+  box.addEventListener('submit', (event) => {
+    event.preventDefault();
+    handlePlan(exercise, feld.value);
+  });
+
+  return box;
+}
+
+function handlePlan(exercise, datum) {
+  if (!isValidIsoDate(datum)) {
+    return showExerciseFeedback('Bitte ein gültiges Datum wählen.', false);
+  }
+
+  if (isPlanned(exercisePlan, exercise.id, datum)) {
+    planningExerciseId = null;
+    showExerciseFeedback(`${exercise.name} steht am ${formatDate(datum)} schon im Plan.`, false);
+    return renderExercises();
+  }
+
+  if (!hasRoomOn(exercisePlan, datum)) {
+    return showExerciseFeedback(
+      `Am ${formatDate(datum)} stehen schon ${MAX_PLANNED_PER_DAY} Übungen – das reicht.`,
+      false
+    );
+  }
+
+  exercisePlan = saveExercisePlan(planExercise(exercisePlan, { exerciseId: exercise.id, date: datum }));
+  planningExerciseId = null;
+
+  showExerciseFeedback(`${exercise.name} für den ${formatDate(datum)} eingeplant.`, true);
+  render({ announceUnlocks: false });
+}
+
+function handleUnplan(exercise, datum) {
+  exercisePlan = saveExercisePlan(unplanExercise(exercisePlan, { exerciseId: exercise.id, date: datum }));
+  planningExerciseId = null;
+
+  showExerciseFeedback(`${exercise.name} am ${formatDate(datum)} ausgetragen.`, false);
+  render({ announceUnlocks: false });
 }
 
 /**
@@ -1847,6 +2053,7 @@ function render({ announceUnlocks }) {
   const progress = getProgress(runXp + uebungsXp + bonusXp + planBonusXp);
 
   renderProgress(progress, runXp, uebungsXp, bonusXp, planBonusXp);
+  renderToday();
   renderAchievements(achievements, announceUnlocks);
   renderDetail();
   renderRuns();

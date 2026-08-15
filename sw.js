@@ -39,6 +39,7 @@ const APP_SHELL = [
   './js/history.js',
   './js/exercises.js',
   './js/exercise-log.js',
+  './js/exercise-plan.js',
   './js/training.js',
   './js/storage.js',
   './manifest.json',

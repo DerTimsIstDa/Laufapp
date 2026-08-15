@@ -16,6 +16,7 @@ const STORAGE_KEY = 'laufapp.runs.v1';
 const EXERCISE_KEY = 'laufapp.exercises.v1';
 const TRAINING_KEY = 'laufapp.training.v1';
 const PROFILE_KEY = 'laufapp.profile.v1';
+const EXERCISE_PLAN_KEY = 'laufapp.exercise-plan.v1';
 
 /**
  * `timeOfDay` ("HH:MM") und `durationMinutes` sind optional. Sie werden nur
@@ -290,6 +291,53 @@ export function replaceSessions(nextSessions) {
   const next = [...nextSessions].sort(bySessionDate);
   saveSessions(next);
   return next;
+}
+
+/* ------------------------------------------------- Geplante Übungen ---- */
+
+/**
+ * Eigener Schlüssel neben dem Übungs-Protokoll: das eine ist ein Vorhaben,
+ * das andere eine Tatsache. Vermischt liessen sie sich nicht mehr trennen,
+ * und ein Vorhaben darf keine XP bringen.
+ *
+ * @typedef {import('./exercise-plan.js').PlannedExercise} PlannedExercise
+ * @returns {PlannedExercise[]}
+ */
+export function loadExercisePlan() {
+  let raw;
+  try {
+    raw = localStorage.getItem(EXERCISE_PLAN_KEY);
+  } catch {
+    return [];
+  }
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(isValidPlanned) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** @param {PlannedExercise[]} entries bereits geprüfte Einträge */
+export function saveExercisePlan(entries) {
+  try {
+    localStorage.setItem(EXERCISE_PLAN_KEY, JSON.stringify(entries));
+  } catch (err) {
+    console.error('Übungsplan konnte nicht gespeichert werden:', err);
+  }
+  return entries;
+}
+
+function isValidPlanned(entry) {
+  return (
+    entry !== null &&
+    typeof entry === 'object' &&
+    typeof entry.exerciseId === 'string' &&
+    entry.exerciseId !== '' &&
+    typeof entry.date === 'string'
+  );
 }
 
 /* -------------------------------------------------------------- Profil ---- */
