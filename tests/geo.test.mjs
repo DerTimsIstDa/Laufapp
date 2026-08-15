@@ -6,6 +6,7 @@ import {
   evaluateSegment,
   reduceTrack,
   paceMinPerKm,
+  runPaceMinPerKm,
   formatDuration,
   formatPace,
 } from '../js/geo.js';
@@ -210,5 +211,37 @@ describe('Formatierung', () => {
     assert.equal(formatPace(5.5), '5:30');
     assert.equal(formatPace(null), '–');
     assert.equal(formatPace(Infinity), '–');
+  });
+});
+
+describe('runPaceMinPerKm', () => {
+  test('rechnet aus Distanz und Dauer', () => {
+    assert.equal(runPaceMinPerKm({ distanceKm: 5, durationMinutes: 27.5 }), 5.5);
+  });
+
+  test('die eingetragene Pace sticht die Rechnung', () => {
+    // Wer sie von der Uhr abtippt, hat sie genauer als zwei gerundete Zahlen.
+    const run = { distanceKm: 5, durationMinutes: 28, paceMinPerKm: 5.5 };
+    assert.equal(runPaceMinPerKm(run), 5.5);
+  });
+
+  test('eine eingetragene Pace reicht auch ohne Dauer', () => {
+    assert.equal(runPaceMinPerKm({ distanceKm: 5, paceMinPerKm: 6 }), 6);
+  });
+
+  test('ohne beides gibt es keine Pace', () => {
+    assert.equal(runPaceMinPerKm({ distanceKm: 5 }), null);
+  });
+
+  test('unbrauchbare Läufe ergeben null statt NaN', () => {
+    for (const run of [null, undefined, {}, 'text', 42, { distanceKm: 0, durationMinutes: 30 }]) {
+      assert.equal(runPaceMinPerKm(run), null, `${JSON.stringify(run)}`);
+    }
+  });
+
+  test('kaputte Werte werden nicht durchgereicht', () => {
+    assert.equal(runPaceMinPerKm({ distanceKm: 5, paceMinPerKm: 0 }), null);
+    assert.equal(runPaceMinPerKm({ distanceKm: 5, durationMinutes: NaN }), null);
+    assert.equal(runPaceMinPerKm({ distanceKm: NaN, durationMinutes: 30 }), null);
   });
 });

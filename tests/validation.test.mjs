@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   validateRun,
   parseNumber,
+  parsePace,
   isValidIsoDate,
   isValidTimeOfDay,
   firstErrorMessage,
@@ -268,5 +269,99 @@ describe('normalizeWeeklyGoal', () => {
     for (const value of ['', '   ', 'viel', null, undefined, {}, [], NaN, Infinity]) {
       assert.equal(normalizeWeeklyGoal(value), 0, `${JSON.stringify(value)}`);
     }
+  });
+});
+
+describe('parsePace', () => {
+  test('liest die Uhren-Schreibweise', () => {
+    assert.equal(parsePace('5:30'), 5.5);
+    assert.equal(parsePace('4:00'), 4);
+    assert.equal(parsePace('12:06'), 12.1);
+    assert.equal(parsePace(' 5:30 '), 5.5);
+  });
+
+  test('nimmt auch eine Dezimalzahl an', () => {
+    assert.equal(parsePace('5,5'), 5.5);
+    assert.equal(parsePace('5.5'), 5.5);
+    assert.equal(parsePace(5.5), 5.5);
+  });
+
+  test('Sekunden über 59 sind ein Tippfehler', () => {
+    assert.equal(parsePace('5:60'), null);
+    assert.equal(parsePace('5:99'), null);
+  });
+
+  test('ein halber Doppelpunkt wird nicht zur Dezimalzahl umgedeutet', () => {
+    // "5:3" koennte 5:03 oder 5:30 heissen – raten waere hier falsch.
+    assert.equal(parsePace('5:3'), null);
+    assert.equal(parsePace('5:'), null);
+    assert.equal(parsePace(':30'), null);
+  });
+
+  test('Unbrauchbares ergibt null', () => {
+    for (const value of ['', '   ', 'schnell', null, undefined, {}, [], NaN]) {
+      assert.equal(parsePace(value), null, `${JSON.stringify(value)}`);
+    }
+  });
+});
+
+describe('Pace im Lauf-Formular', () => {
+  test('wird übernommen und in Minuten gespeichert', () => {
+    const result = validateRun(input({ paceMinPerKm: '5:30' }));
+
+    assert.equal(result.ok, true);
+    assert.equal(result.run.paceMinPerKm, 5.5);
+  });
+
+  test('bleibt weg, wenn das Feld leer ist', () => {
+    const result = validateRun(input({ paceMinPerKm: '' }));
+
+    assert.equal(result.ok, true);
+    assert.equal('paceMinPerKm' in result.run, false, 'kein leeres Feld im Datensatz');
+  });
+
+  test('unbrauchbare Eingaben werden abgelehnt', () => {
+    assert.deepEqual(errorFields(validateRun(input({ paceMinPerKm: 'schnell' }))), ['paceMinPerKm']);
+    assert.deepEqual(errorFields(validateRun(input({ paceMinPerKm: '5:70' }))), ['paceMinPerKm']);
+  });
+
+  test('unmögliche Werte werden abgelehnt', () => {
+    assert.deepEqual(errorFields(validateRun(input({ paceMinPerKm: '1:30' }))), ['paceMinPerKm']);
+    assert.deepEqual(errorFields(validateRun(input({ paceMinPerKm: '45:00' }))), ['paceMinPerKm']);
+  });
+
+  test('passende Pace erzeugt keinen Hinweis', () => {
+    // 5 km in 27,5 min sind genau 5:30.
+    const result = validateRun(input({ durationMinutes: 27.5, paceMinPerKm: '5:30' }));
+    assert.deepEqual(result.warnings, []);
+  });
+
+  test('Rundungsdifferenzen sind kein Hinweis wert', () => {
+    // 5 km in 28 min sind 5:36 – zehn Sekunden daneben, das passiert.
+    const result = validateRun(input({ durationMinutes: 28, paceMinPerKm: '5:30' }));
+    assert.deepEqual(result.warnings, []);
+  });
+
+  test('grobe Abweichung meldet sich, blockiert aber nicht', () => {
+    // 5 km in 40 min sind 8:00, eingetragen ist 5:00.
+    const result = validateRun(input({ durationMinutes: 40, paceMinPerKm: '5:00' }));
+
+    assert.equal(result.ok, true, 'gespeichert wird trotzdem');
+    assert.equal(result.run.paceMinPerKm, 5, 'die eigene Angabe gewinnt');
+    assert.equal(result.warnings.length, 1);
+    assert.match(result.warnings[0], /8:00/);
+  });
+
+  test('ohne Dauer gibt es nichts zu vergleichen', () => {
+    const result = validateRun(input({ paceMinPerKm: '3:00' }));
+    assert.deepEqual(result.warnings, []);
+  });
+
+  test('Läufe ohne Pace bleiben gültig', () => {
+    const result = validateRun(input());
+
+    assert.equal(result.ok, true);
+    assert.equal(result.run.paceMinPerKm, undefined);
+    assert.deepEqual(result.warnings, []);
   });
 });

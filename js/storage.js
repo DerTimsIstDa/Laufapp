@@ -23,6 +23,11 @@ const EXERCISE_PLAN_KEY = 'laufapp.exercise-plan.v1';
  * für die Achievements Frühaufsteher, Nachteule und Neue Bestzeit gebraucht;
  * Läufe ohne diese Angaben bleiben gültig.
  *
+ * `paceMinPerKm` ist ebenfalls optional und wird nur gesetzt, wenn jemand sie
+ * von Hand einträgt – etwa aus einer anderen Uhr. Fehlt sie, rechnet
+ * geo.js/runPaceMinPerKm sie aus Distanz und Dauer aus. Ältere Läufe ohne
+ * das Feld bleiben unverändert gültig.
+ *
  * `source` unterscheidet aufgezeichnete von handgetippten Läufen.
  *
  * @typedef {{
@@ -31,6 +36,7 @@ const EXERCISE_PLAN_KEY = 'laufapp.exercise-plan.v1';
  *   date: string,
  *   timeOfDay?: string,
  *   durationMinutes?: number,
+ *   paceMinPerKm?: number,
  *   source?: 'manual' | 'gps'
  * }} Run
  */
@@ -71,12 +77,13 @@ export function saveRuns(runs) {
  * @param {Run[]} runs
  * @returns {Run[]}
  */
-export function addRun(runs, { distanceKm, date, timeOfDay, durationMinutes, source, track }) {
+export function addRun(runs, { distanceKm, date, timeOfDay, durationMinutes, paceMinPerKm, source, track }) {
   const run = { id: createId(), distanceKm, date };
 
   // Optionale Felder nur setzen, wenn sie ausgefüllt wurden.
   if (timeOfDay) run.timeOfDay = timeOfDay;
   if (durationMinutes) run.durationMinutes = durationMinutes;
+  if (paceMinPerKm) run.paceMinPerKm = paceMinPerKm;
   if (source) run.source = source;
   if (track?.length) run.track = track;
 
@@ -97,13 +104,14 @@ export function addRun(runs, { distanceKm, date, timeOfDay, durationMinutes, sou
  * @param {Run[]} runs
  * @returns {Run[]} unverändert, falls es die id nicht gibt
  */
-export function updateRun(runs, id, { distanceKm, date, timeOfDay, durationMinutes }) {
+export function updateRun(runs, id, { distanceKm, date, timeOfDay, durationMinutes, paceMinPerKm }) {
   const existing = runs.find((run) => run.id === id);
   if (!existing) return runs;
 
   const updated = { id, distanceKm, date };
   if (timeOfDay) updated.timeOfDay = timeOfDay;
   if (durationMinutes) updated.durationMinutes = durationMinutes;
+  if (paceMinPerKm) updated.paceMinPerKm = paceMinPerKm;
   if (existing.source) updated.source = existing.source;
   if (existing.track?.length) updated.track = existing.track;
 

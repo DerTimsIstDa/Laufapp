@@ -227,9 +227,25 @@
               autocomplete="off"
             >
           </div>
+
+          <div class="field">
+            <label for="pace">Pace (min/km) <span class="optional">optional</span></label>
+            <!-- Für Läufe aus einer anderen Uhr: die Pace von dort ist genauer
+                 als die Rechnung aus zwei gerundeten Zahlen. Bleibt das Feld
+                 leer, wird sie wie bisher aus Distanz und Dauer berechnet. -->
+            <input
+              type="text"
+              id="pace"
+              name="pace"
+              inputmode="decimal"
+              placeholder="5:30"
+              autocomplete="off"
+            >
+          </div>
         </div>
 
         <p class="error" id="form-error" role="alert" hidden></p>
+        <p class="form-warning" id="form-warning" role="status" hidden></p>
 
         <div class="form-buttons">
           <button type="submit" id="form-submit">Lauf speichern</button>

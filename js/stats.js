@@ -8,6 +8,8 @@
  * Speicher liegen.
  */
 
+import { runPaceMinPerKm } from './geo.js';
+
 /** Wie viele Tage eine Serie überleben darf, ohne dass gelaufen wurde. */
 const STREAK_GRACE_DAYS = 1;
 
@@ -16,6 +18,7 @@ const STREAK_GRACE_DAYS = 1;
  * @property {number} runCount
  * @property {number} totalDistanceKm
  * @property {number} averageDistanceKm      0 bei keinen Läufen
+ * @property {?number} averagePaceMinPerKm   null, wenn kein Lauf eine Pace hat
  * @property {?{distanceKm: number, date: string}} longestRun
  * @property {?{date: string}} firstRun
  * @property {?{date: string}} lastRun
@@ -36,6 +39,7 @@ export function buildStats(runs, { todayIso = localIsoDate(new Date()) } = {}) {
     runCount: 0,
     totalDistanceKm: 0,
     averageDistanceKm: 0,
+    averagePaceMinPerKm: null,
     longestRun: null,
     firstRun: null,
     lastRun: null,
@@ -53,11 +57,22 @@ export function buildStats(runs, { todayIso = localIsoDate(new Date()) } = {}) {
   let totalDistanceKm = 0;
   let longestRun = null;
 
+  // Für die Ø-Pace: Strecke und daraus folgende Zeit, aber nur von Läufen,
+  // die überhaupt eine Pace haben.
+  let paceDistanceKm = 0;
+  let paceMinutes = 0;
+
   for (const run of chronological) {
     totalDistanceKm += run.distanceKm;
     // Bei gleicher Distanz gewinnt der frühere Lauf.
     if (longestRun === null || run.distanceKm > longestRun.distanceKm) {
       longestRun = { distanceKm: run.distanceKm, date: run.date };
+    }
+
+    const pace = runPaceMinPerKm(run);
+    if (pace !== null) {
+      paceDistanceKm += run.distanceKm;
+      paceMinutes += pace * run.distanceKm;
     }
   }
 
@@ -70,6 +85,10 @@ export function buildStats(runs, { todayIso = localIsoDate(new Date()) } = {}) {
     runCount: chronological.length,
     totalDistanceKm,
     averageDistanceKm: totalDistanceKm / chronological.length,
+    // Nach Strecke gewichtet, nicht der Mittelwert der Einzel-Paces: zwanzig
+    // Kilometer in 6:00 wiegen schwerer als zwei in 5:00, und der schlichte
+    // Mittelwert behauptete das Gegenteil.
+    averagePaceMinPerKm: paceDistanceKm > 0 ? paceMinutes / paceDistanceKm : null,
     longestRun,
     firstRun: { date: chronological[0].date },
     lastRun: { date: chronological.at(-1).date },

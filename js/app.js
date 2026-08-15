@@ -28,7 +28,7 @@ import {
   ACHIEVEMENT_CATEGORIES,
 } from './achievements.js';
 import { titleForLevel, nextTitle, badgeForLevel, badgeSrc } from './titles.js';
-import { paceMinPerKm, formatDuration, formatPace } from './geo.js';
+import { paceMinPerKm, runPaceMinPerKm, formatDuration, formatPace } from './geo.js';
 import { createTracker } from './tracker.js';
 import {
   validateRun,
@@ -237,7 +237,9 @@ const el = {
   date: document.getElementById('date'),
   time: document.getElementById('time'),
   duration: document.getElementById('duration'),
+  pace: document.getElementById('pace'),
   formError: document.getElementById('form-error'),
+  formWarning: document.getElementById('form-warning'),
   unlockNotice: document.getElementById('unlock-notice'),
 
   exportButton: document.getElementById('export-button'),
@@ -1742,12 +1744,21 @@ function renderProfileStats() {
       ['Gesamtdistanz', `${numberFormat.format(round(stats.totalDistanceKm))} km`],
       ['Läufe', String(stats.runCount)],
       ['Ø pro Lauf', `${numberFormat.format(round(stats.averageDistanceKm))} km`],
+      ['Ø Pace', formatAveragePace(stats.averagePaceMinPerKm)],
       ['Längster Lauf', `${numberFormat.format(stats.longestRun.distanceKm)} km`],
       ['Aktive Tage', String(stats.activeDays)],
       ['Aktuelle Serie', formatDays(stats.currentDayStreak)],
       ['Längste Serie', formatDays(stats.longestDayStreak)],
     ])
   );
+}
+
+/**
+ * Ø-Pace als "5:30 min/km". Ohne einen einzigen Lauf mit Pace steht dort ein
+ * Strich – "0:00" wäre eine Behauptung.
+ */
+function formatAveragePace(minPerKm) {
+  return minPerKm === null ? '–' : `${formatPace(minPerKm)} min/km`;
 }
 
 /** Kacheln fürs .stat-grid – dieselbe Form für Zeitraum und Gesamtstand. */
@@ -1840,6 +1851,7 @@ function handleSubmit(event) {
     date: el.date.value,
     timeOfDay: el.time.value,
     durationMinutes: el.duration.value,
+    paceMinPerKm: el.pace.value,
   });
 
   if (!result.ok) return showError(firstErrorMessage(result));
@@ -1857,7 +1869,19 @@ function handleSubmit(event) {
     el.distance.focus();
   }
 
+  // Nach dem Zurücksetzen des Formulars: sonst räumte reset() den Hinweis
+  // gleich wieder weg, den er erklären soll.
+  showWarnings(result.warnings);
+
   render({ announceUnlocks: true });
+}
+
+/** Auffälligkeiten, die den Lauf nicht ungültig machen – siehe validateRun. */
+function showWarnings(warnings) {
+  const text = (warnings ?? []).join(' ');
+
+  el.formWarning.textContent = text;
+  el.formWarning.hidden = text === '';
 }
 
 function handleListClick(event) {
@@ -1933,11 +1957,11 @@ function buildDetailFacts(run) {
   if (run.timeOfDay) facts.push(['Startzeit', `${run.timeOfDay} Uhr`]);
   if (run.durationMinutes) {
     facts.push(['Dauer', `${numberFormat.format(run.durationMinutes)} min`]);
-    facts.push([
-      'Pace',
-      `${formatPace(paceMinPerKm(run.distanceKm, run.durationMinutes * 60_000))} min/km`,
-    ]);
   }
+
+  // Auch ohne Dauer: eine von Hand eingetragene Pace steht für sich.
+  const pace = runPaceMinPerKm(run);
+  if (pace !== null) facts.push(['Pace', `${formatPace(pace)} min/km`]);
 
   facts.push(['Erfasst', run.source === 'gps' ? 'GPS-Aufzeichnung' : 'von Hand']);
   facts.push(['Verdient', `${numberFormat.format(xpForDistance(run.distanceKm))} XP`]);
@@ -2050,6 +2074,10 @@ function startEditing(id) {
   el.date.value = run.date;
   el.time.value = run.timeOfDay ?? '';
   el.duration.value = run.durationMinutes ?? '';
+  // Nur die selbst eingetragene Pace zurück ins Feld. Stünde dort die
+  // gerechnete, würde sie beim Speichern zur Angabe – und bliebe stehen,
+  // wenn die Distanz sich ändert.
+  el.pace.value = run.paceMinPerKm === undefined ? '' : formatPace(run.paceMinPerKm);
 
   clearError();
   renderFormMode();
@@ -2430,6 +2458,7 @@ function renderPeriodStats() {
         ['Distanz', `${numberFormat.format(round(stats.totalDistanceKm))} km`],
         ['Läufe', String(stats.runCount)],
         ['Ø pro Lauf', `${numberFormat.format(round(stats.averageDistanceKm))} km`],
+        ['Ø Pace', formatAveragePace(stats.averagePaceMinPerKm)],
         ['Längster Lauf', `${numberFormat.format(stats.longestRun.distanceKm)} km`],
       ])
     );
@@ -2740,6 +2769,10 @@ function formatRunMeta(run) {
   const parts = [formatDate(run.date)];
   if (run.timeOfDay) parts.push(`${run.timeOfDay} Uhr`);
   if (run.durationMinutes) parts.push(`${numberFormat.format(run.durationMinutes)} min`);
+
+  const pace = runPaceMinPerKm(run);
+  if (pace !== null) parts.push(`${formatPace(pace)} min/km`);
+
   if (run.source === 'gps') parts.push('GPS');
   return parts.join(' · ');
 }
@@ -2752,6 +2785,10 @@ function showError(message) {
 function clearError() {
   el.formError.textContent = '';
   el.formError.hidden = true;
+
+  // Der Hinweis gehört zur letzten Eingabe. Wird neu getippt oder ein anderer
+  // Lauf bearbeitet, wäre er von gestern.
+  showWarnings([]);
 }
 
 /* ----------------------------------------------------------------- Utils */

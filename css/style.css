@@ -1127,6 +1127,17 @@ textarea:focus {
   font-size: 0.8125rem;
 }
 
+/* Hinweis, der nichts blockiert: gedämpfter als ein Fehler, aber sichtbar. */
+.form-warning {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--sunken);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  color: var(--body);
+}
+
 /* Im Trophäen-Tab sitzt der Filter dicht unter der Punktzahl – dort steht
    keine Beschreibung dazwischen wie bei den Übungen. */
 #trophy-filter {

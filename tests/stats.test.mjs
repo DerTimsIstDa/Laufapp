@@ -315,3 +315,43 @@ describe('localIsoDate', () => {
     assert.equal(localIsoDate(new Date(2026, 11, 31, 23, 30)), '2026-12-31');
   });
 });
+
+describe('Durchschnitts-Pace', () => {
+  test('ohne Pace-Angaben gibt es keine', () => {
+    assert.equal(buildStats([]).averagePaceMinPerKm, null);
+    assert.equal(buildStats([{ id: 'a', date: HEUTE(0), distanceKm: 5 }]).averagePaceMinPerKm, null);
+  });
+
+  test('rechnet aus Distanz und Dauer', () => {
+    const runs = [{ id: 'a', date: HEUTE(0), distanceKm: 5, durationMinutes: 27.5 }];
+    assert.equal(buildStats(runs).averagePaceMinPerKm, 5.5);
+  });
+
+  test('die eingetragene Pace zählt genauso', () => {
+    const runs = [{ id: 'a', date: HEUTE(0), distanceKm: 5, paceMinPerKm: 6 }];
+    assert.equal(buildStats(runs).averagePaceMinPerKm, 6);
+  });
+
+  test('gewichtet nach Strecke, nicht je Lauf', () => {
+    // 2 km in 5:00 und 20 km in 6:00 – der lange Lauf muss schwerer wiegen.
+    const runs = [
+      { id: 'a', date: HEUTE(0), distanceKm: 2, paceMinPerKm: 5 },
+      { id: 'b', date: HEUTE(1), distanceKm: 20, paceMinPerKm: 6 },
+    ];
+
+    const schlichterMittelwert = 5.5;
+    const gewichtet = (2 * 5 + 20 * 6) / 22;
+
+    assert.equal(buildStats(runs).averagePaceMinPerKm, gewichtet);
+    assert.ok(gewichtet > schlichterMittelwert, 'näher an der langen Einheit');
+  });
+
+  test('Läufe ohne Pace ziehen den Schnitt nicht herunter', () => {
+    const mitUndOhne = [
+      { id: 'a', date: HEUTE(0), distanceKm: 5, paceMinPerKm: 5 },
+      { id: 'b', date: HEUTE(1), distanceKm: 100 },
+    ];
+
+    assert.equal(buildStats(mitUndOhne).averagePaceMinPerKm, 5, 'nur der Lauf mit Pace zählt');
+  });
+});

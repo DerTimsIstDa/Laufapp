@@ -17,6 +17,25 @@ export const MAX_NAME_LENGTH = 30;
 /** Zweimal am Tag ist reichlich; darüber ist es ein Vertipper. */
 export const MAX_WEEKLY_GOAL = 14;
 
+/**
+ * Grenzen der Pace in Minuten pro Kilometer. Unter 2:00 liefe man
+ * Weltrekord, über 30:00 ginge man spazieren – beides ist eher ein
+ * Zahlendreher als eine Angabe.
+ */
+export const MIN_PACE_MIN_PER_KM = 2;
+export const MAX_PACE_MIN_PER_KM = 30;
+
+/**
+ * Wie weit die eingetragene Pace von der gerechneten abweichen darf, bevor
+ * es einen Hinweis gibt: 15 Sekunden oder 10 %, je nachdem was grösser ist.
+ * Wer Distanz und Dauer gerundet einträgt, liegt schnell ein paar Sekunden
+ * daneben – das ist normal und keine Meldung wert.
+ */
+const PACE_TOLERANCE_MIN = 0.25;
+const PACE_TOLERANCE_RATIO = 0.1;
+
+const PACE_CLOCK = /^(\d{1,2}):([0-5]\d)$/;
+
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const TIME_OF_DAY = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -96,6 +115,32 @@ export function normalizeWeeklyGoal(value) {
   return ganz;
 }
 
+/**
+ * Pace aus einer Eingabe lesen.
+ *
+ * Zwei Schreibweisen, weil beide vorkommen: "5:30" steht so auf jeder Uhr,
+ * "5,5" tippt, wer das Feld für ein normales Zahlenfeld hält. Beides ergibt
+ * 5,5 Minuten pro Kilometer.
+ *
+ * @returns {?number} Minuten pro km; null, wenn nichts Brauchbares drinsteht
+ */
+export function parsePace(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value !== 'string') return null;
+
+  const text = value.trim();
+  if (text === '') return null;
+
+  const uhr = PACE_CLOCK.exec(text);
+  if (uhr) return Number(uhr[1]) + Number(uhr[2]) / 60;
+
+  // Ein Doppelpunkt, der die Prüfung oben nicht bestanden hat, ist ein
+  // Tippfehler – nicht als Dezimalzahl weiterreichen.
+  if (text.includes(':')) return null;
+
+  return parseNumber(text);
+}
+
 /** "HH:MM" von 00:00 bis 23:59. */
 export function isValidTimeOfDay(value) {
   return typeof value === 'string' && TIME_OF_DAY.test(value);
@@ -107,8 +152,14 @@ export function isValidTimeOfDay(value) {
  * Die `id` bleibt bewusst außen vor – beim Anlegen vergibt sie der Speicher,
  * beim Bearbeiten bleibt die alte, beim Import kommt sie aus der Datei.
  *
+ * `warnings` meldet Auffälligkeiten, die den Lauf nicht ungültig machen –
+ * derzeit nur eine Pace, die nicht zu Distanz und Dauer passt. Gespeichert
+ * wird trotzdem: wer die Pace von der Uhr abtippt, hat sie vermutlich
+ * richtiger als die Rechnung aus zwei gerundeten Zahlen.
+ *
  * @param {unknown} input
- * @returns {{ ok: true, run: object } | { ok: false, errors: {field: string, message: string}[] }}
+ * @returns {{ ok: true, run: object, warnings: string[] }
+ *          | { ok: false, errors: {field: string, message: string}[] }}
  */
 export function validateRun(input) {
   if (input === null || typeof input !== 'object') {
@@ -173,13 +224,45 @@ export function validateRun(input) {
     }
   }
 
+  let paceMinPerKm;
+  if (isFilled(input.paceMinPerKm)) {
+    const candidate = parsePace(input.paceMinPerKm);
+    if (candidate === null) {
+      errors.push({
+        field: 'paceMinPerKm',
+        message: 'Die Pace muss wie 5:30 aussehen – Minuten und Sekunden je Kilometer.',
+      });
+    } else if (candidate < MIN_PACE_MIN_PER_KM || candidate > MAX_PACE_MIN_PER_KM) {
+      errors.push({
+        field: 'paceMinPerKm',
+        message: `Die Pace muss zwischen ${MIN_PACE_MIN_PER_KM}:00 und ${MAX_PACE_MIN_PER_KM}:00 min/km liegen.`,
+      });
+    } else {
+      paceMinPerKm = candidate;
+    }
+  }
+
   if (errors.length > 0) return { ok: false, errors };
 
   // Unbekannte Felder fallen hier absichtlich weg.
   const run = { distanceKm, date };
   if (timeOfDay) run.timeOfDay = timeOfDay;
   if (durationMinutes) run.durationMinutes = durationMinutes;
+  if (paceMinPerKm) run.paceMinPerKm = paceMinPerKm;
   if (input.source === 'gps' || input.source === 'manual') run.source = input.source;
+
+  const warnings = [];
+  if (paceMinPerKm !== undefined && durationMinutes !== undefined) {
+    const gerechnet = durationMinutes / distanceKm;
+    const spanne = Math.max(PACE_TOLERANCE_MIN, gerechnet * PACE_TOLERANCE_RATIO);
+
+    if (Math.abs(paceMinPerKm - gerechnet) > spanne) {
+      warnings.push(
+        `Die eingetragene Pace passt nicht zu Distanz und Dauer – daraus ergäben sich ` +
+          `${formatMinutes(gerechnet)} min/km. Gespeichert wurde deine Angabe.`
+      );
+    }
+  }
 
   // Eine unbrauchbare Strecke macht den Lauf nicht ungültig – sie fällt
   // stillschweigend weg, dann zeigt die Detailansicht eben keine Route.
@@ -188,12 +271,21 @@ export function validateRun(input) {
     run.track = track.map((point) => [point.lat, point.lon]);
   }
 
-  return { ok: true, run };
+  return { ok: true, run, warnings };
 }
 
 /** Erste Fehlermeldung eines Ergebnisses – für die einzeilige Anzeige. */
 export function firstErrorMessage(result) {
   return result.ok ? null : result.errors[0].message;
+}
+
+/**
+ * Minuten als "5:30". Eigene kleine Fassung, damit validation.js pur bleibt
+ * und nicht wegen einer Meldung von geo.js abhängt.
+ */
+function formatMinutes(minutes) {
+  const gesamt = Math.round(minutes * 60);
+  return `${Math.floor(gesamt / 60)}:${String(gesamt % 60).padStart(2, '0')}`;
 }
 
 function isFilled(value) {

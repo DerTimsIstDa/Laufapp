@@ -110,6 +110,30 @@ export function paceMinPerKm(distanceKm, elapsedMs) {
   return elapsedMs / 60_000 / distanceKm;
 }
 
+/**
+ * Pace eines gespeicherten Laufs.
+ *
+ * Eine eingetragene Pace sticht die Rechnung: wer sie von der Uhr abtippt,
+ * hat sie genauer als das Ergebnis aus zwei gerundeten Zahlen. Ohne Angabe
+ * und ohne Dauer gibt es keine – geschätzt wird nichts.
+ *
+ * @param {{distanceKm?: number, durationMinutes?: number, paceMinPerKm?: number}} run
+ * @returns {?number} Minuten pro km
+ */
+export function runPaceMinPerKm(run) {
+  const eingetragen = run?.paceMinPerKm;
+  if (typeof eingetragen === 'number' && Number.isFinite(eingetragen) && eingetragen > 0) {
+    return eingetragen;
+  }
+
+  const dauer = run?.durationMinutes;
+  const distanz = run?.distanceKm;
+  if (typeof dauer !== 'number' || !Number.isFinite(dauer) || dauer <= 0) return null;
+  if (typeof distanz !== 'number' || !Number.isFinite(distanz) || distanz <= 0) return null;
+
+  return paceMinPerKm(distanz, dauer * 60_000);
+}
+
 /** Sekunden -> "M:SS" bzw. "H:MM:SS". */
 export function formatDuration(totalMs) {
   const totalSeconds = Math.max(0, Math.floor(totalMs / 1000));
