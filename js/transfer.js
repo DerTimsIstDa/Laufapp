@@ -9,8 +9,9 @@
  * einer Ausnahme.
  */
 
-import { validateRun, isValidIsoDate } from './validation.js';
+import { validateRun, isValidIsoDate, normalizeName } from './validation.js';
 import { validateSession } from './training.js';
+import { normalizePlan } from './exercise-plan.js';
 
 export const EXPORT_FORMAT = 'funrun-export';
 
@@ -21,23 +22,34 @@ export const EXPORT_FORMAT = 'funrun-export';
  */
 export const LEGACY_EXPORT_FORMATS = ['laufapp-export'];
 
+/**
+ * Bleibt bei 1, obwohl seither Felder dazugekommen sind. Neue Felder sind
+ * additiv: eine ältere App überliest sie, eine neuere ergänzt sie mit dem
+ * Leerwert. Eine höhere Zahl würde die Datei für ältere Fassungen dagegen
+ * rundheraus unlesbar machen – siehe die Prüfung in parseImport().
+ */
 export const EXPORT_VERSION = 1;
 
 /**
  * Baut das Export-Objekt.
  * @param {import('./storage.js').Run[]} runs
  */
-export function buildExport(runs, { exportedAt = new Date(), exerciseLog = [], sessions = [] } = {}) {
+export function buildExport(
+  runs,
+  { exportedAt = new Date(), exerciseLog = [], sessions = [], exercisePlan = [], profileName = '' } = {}
+) {
   return {
     format: EXPORT_FORMAT,
     version: EXPORT_VERSION,
     exportedAt: exportedAt.toISOString(),
     runCount: runs.length,
     runs,
-    // Erledigte Übungen und der Trainingsplan gehören mit in die Sicherung,
-    // sonst wäre der Export kein vollständiges Abbild mehr.
+    // Alles, was sonst nur in diesem Browser läge, gehört mit in die
+    // Sicherung – sonst wäre der Export kein vollständiges Abbild mehr.
     exerciseLog,
     sessions,
+    exercisePlan,
+    profileName,
   };
 }
 
@@ -130,7 +142,28 @@ export function parseImport(text) {
     skipped,
     exerciseLog: readExerciseLog(payload.exerciseLog),
     sessions: readSessions(payload.sessions),
+    exercisePlan: readExercisePlan(payload.exercisePlan),
+    profileName: normalizeName(payload.profileName),
   };
+}
+
+/**
+ * Geplante Übungen aus der Datei. Fehlen sie oder verweisen sie auf Übungen,
+ * die es nicht mehr gibt, bleibt der Plan eben leer – ein Vorhaben ist nichts,
+ * was sich verlieren liesse.
+ */
+function readExercisePlan(raw) {
+  const vergebeneIds = new Set();
+
+  return normalizePlan(raw).map((entry, index) => {
+    const kandidat = typeof entry.id === 'string' ? entry.id.trim() : '';
+
+    let id = kandidat !== '' && !vergebeneIds.has(kandidat) ? kandidat : `geplant-${index + 1}`;
+    while (vergebeneIds.has(id)) id = `${id}-x`;
+    vergebeneIds.add(id);
+
+    return { id, exerciseId: entry.exerciseId, date: entry.date };
+  });
 }
 
 /**

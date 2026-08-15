@@ -8,6 +8,7 @@ import {
   hasRoomOn,
   planExercise,
   unplanExercise,
+  upcomingPlan,
   MAX_PLANNED_PER_DAY,
 } from '../js/exercise-plan.js';
 import { EXERCISES } from '../js/exercises.js';
@@ -126,5 +127,52 @@ describe('unplanExercise', () => {
   test('was nicht drinsteht, lässt den Plan in Ruhe', () => {
     const plan = planExercise([], { exerciseId: ERSTE, date: HEUTE });
     assert.deepEqual(unplanExercise(plan, { exerciseId: ZWEITE, date: HEUTE }), plan);
+  });
+});
+
+describe('upcomingPlan', () => {
+  const GESTERN = '2026-08-14';
+
+  const plan = [
+    eintrag(ZWEITE, GESTERN),
+    eintrag(ZWEITE, MORGEN),
+    eintrag(DRITTE, HEUTE),
+    eintrag(ERSTE, HEUTE),
+  ];
+
+  test('gruppiert nach Tag, aufsteigend', () => {
+    assert.deepEqual(
+      upcomingPlan(plan, HEUTE).map((tag) => tag.date),
+      [HEUTE, MORGEN]
+    );
+  });
+
+  test('vergangene Tage bleiben draußen', () => {
+    assert.equal(
+      upcomingPlan(plan, HEUTE).some((tag) => tag.date === GESTERN),
+      false
+    );
+  });
+
+  test('ab einem früheren Tag ist der vergangene wieder dabei', () => {
+    assert.deepEqual(
+      upcomingPlan(plan, GESTERN).map((tag) => tag.date),
+      [GESTERN, HEUTE, MORGEN]
+    );
+  });
+
+  test('innerhalb eines Tages gilt die Reihenfolge der Bibliothek', () => {
+    const [heute] = upcomingPlan(plan, HEUTE);
+    assert.deepEqual(heute.entries.map((e) => e.exerciseId), [ERSTE, DRITTE]);
+  });
+
+  test('leerer Plan ergibt eine leere Übersicht', () => {
+    assert.deepEqual(upcomingPlan([], HEUTE), []);
+  });
+
+  test('unbrauchbares Datum ergibt eine leere Übersicht', () => {
+    for (const value of [null, undefined, 42, 'morgen', '']) {
+      assert.deepEqual(upcomingPlan(plan, value), []);
+    }
   });
 });

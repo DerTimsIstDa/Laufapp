@@ -1249,6 +1249,80 @@ textarea:focus {
   border-top: 1px solid var(--line);
 }
 
+/* Plan-Übersicht: ein Block je Tag, nicht je Übung. */
+
+.planned-day {
+  padding: var(--space-3);
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.planned-day.today {
+  border-color: var(--accent-line);
+}
+
+.planned-day-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.planned-date {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--body);
+}
+
+.planned-day.today .planned-date {
+  color: var(--accent);
+}
+
+.planned-count {
+  font-size: 0.75rem;
+}
+
+.planned-entries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.planned-entry {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--line);
+}
+
+.planned-entry:first-child {
+  border-top: none;
+}
+
+.planned-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Erledigtes bleibt stehen, tritt aber zurück – der Tag ist noch nicht um. */
+.planned-entry.done .planned-name {
+  color: var(--muted);
+}
+
+.planned-dose {
+  flex: none;
+  font-size: 0.75rem;
+}
+
 /* -------------------------------------------------- Übungen heute (Start) */
 
 .today-list {

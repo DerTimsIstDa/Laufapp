@@ -356,3 +356,74 @@ describe('Trainingsplan in der Sicherung', () => {
     assert.equal(importiert.status, undefined);
   });
 });
+
+describe('Übungsplan und Name in der Sicherung', () => {
+  const lauf = { id: 'a', distanceKm: 5, date: '2026-08-14' };
+  const vorhaben = { id: 'p1', exerciseId: 'warm-traben', date: '2026-08-20' };
+
+  test('beide landen im Export', () => {
+    const payload = buildExport([lauf], {
+      exercisePlan: [vorhaben],
+      profileName: 'Tim',
+    });
+
+    assert.deepEqual(payload.exercisePlan, [vorhaben]);
+    assert.equal(payload.profileName, 'Tim');
+  });
+
+  test('Roundtrip hält beides', () => {
+    const text = serializeExport([lauf], { exercisePlan: [vorhaben], profileName: 'Tim' });
+    const ergebnis = parseImport(text);
+
+    assert.deepEqual(ergebnis.exercisePlan, [vorhaben]);
+    assert.equal(ergebnis.profileName, 'Tim');
+  });
+
+  test('alte Sicherungen ohne die Felder sind kein Fehler', () => {
+    const ergebnis = parseImport(JSON.stringify({ runs: [lauf] }));
+
+    assert.equal(ergebnis.ok, true);
+    assert.deepEqual(ergebnis.exercisePlan, []);
+    assert.equal(ergebnis.profileName, '');
+  });
+
+  test('der Name wird beim Einlesen aufgeräumt', () => {
+    const text = JSON.stringify({ runs: [lauf], profileName: '   Tim   Berger  ' });
+    assert.equal(parseImport(text).profileName, 'Tim Berger');
+  });
+
+  test('unbrauchbare Namen ergeben keinen', () => {
+    for (const value of [42, null, { name: 'Tim' }, '   ']) {
+      const text = JSON.stringify({ runs: [lauf], profileName: value });
+      assert.equal(parseImport(text).profileName, '');
+    }
+  });
+
+  test('Vorhaben zu unbekannten Übungen fallen weg', () => {
+    const text = JSON.stringify({
+      runs: [lauf],
+      exercisePlan: [vorhaben, { id: 'p2', exerciseId: 'gibt-es-nicht', date: '2026-08-20' }],
+    });
+
+    assert.deepEqual(parseImport(text).exercisePlan.map((e) => e.exerciseId), ['warm-traben']);
+  });
+
+  test('doppelte IDs werden auseinandergezogen', () => {
+    const text = JSON.stringify({
+      runs: [lauf],
+      exercisePlan: [vorhaben, { ...vorhaben, date: '2026-08-21' }],
+    });
+
+    const ids = parseImport(text).exercisePlan.map((e) => e.id);
+    assert.equal(new Set(ids).size, 2);
+  });
+
+  test('geschmuggelte Felder überstehen den Import nicht', () => {
+    const text = JSON.stringify({
+      runs: [lauf],
+      exercisePlan: [{ ...vorhaben, xp: 9999 }],
+    });
+
+    assert.equal(parseImport(text).exercisePlan[0].xp, undefined);
+  });
+});

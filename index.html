@@ -110,17 +110,21 @@
       </p>
     </section>
 
-    <!-- Heute geplante Übungen. Zeigt nur an; eingeplant und abgehakt wird
-         im Übungen-Tab. -->
+    <!-- Was für heute ansteht. Zeigt nur an; geplant und abgehakt wird in
+         den Tabs Training und Übungen. -->
     <section class="card" aria-labelledby="today-title">
-      <h2 id="today-title">Übungen heute</h2>
+      <h2 id="today-title">Heute geplant</h2>
 
       <p class="muted" id="today-empty">
-        Heute keine Übungen geplant – im Übungen-Tab lässt sich etwas
-        vornehmen.
+        Für heute steht nichts an – Einheiten legst du im Training-Tab an,
+        Übungen im Übungen-Tab.
       </p>
 
-      <ul class="today-list" id="today-list"></ul>
+      <h3 class="group-title" id="today-sessions-title" hidden>Training</h3>
+      <ul class="today-list" id="today-sessions"></ul>
+
+      <h3 class="group-title" id="today-exercises-title" hidden>Übungen</h3>
+      <ul class="today-list" id="today-exercises"></ul>
     </section>
 
     <!-- Live-Tracking -->

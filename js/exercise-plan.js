@@ -59,6 +59,30 @@ export function plannedOn(entries, date) {
     .sort((a, b) => reihenfolge.get(a.exerciseId) - reihenfolge.get(b.exerciseId));
 }
 
+/**
+ * Der Plan ab einem Tag, nach Tagen gruppiert und aufsteigend – die Übersicht
+ * über das, was noch kommt.
+ *
+ * Vergangene Tage bleiben draußen: was gestern vorgenommen war, ist entweder
+ * gemacht oder vorbei, und beides steht woanders. Gespeichert bleiben sie
+ * trotzdem, damit ein Blick zurück später möglich ist.
+ *
+ * @returns {{ date: string, entries: PlannedExercise[] }[]}
+ */
+export function upcomingPlan(entries, fromDate) {
+  if (typeof fromDate !== 'string' || !ISO_DATE.test(fromDate)) return [];
+
+  const tage = [
+    ...new Set(
+      normalizePlan(entries)
+        .filter((entry) => entry.date >= fromDate)
+        .map((entry) => entry.date)
+    ),
+  ].sort();
+
+  return tage.map((date) => ({ date, entries: plannedOn(entries, date) }));
+}
+
 /** Steht diese Übung an diesem Tag schon im Plan? */
 export function isPlanned(entries, exerciseId, date) {
   return plannedOn(entries, date).some((entry) => entry.exerciseId === exerciseId);

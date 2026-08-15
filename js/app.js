@@ -86,6 +86,7 @@ import {
   hasRoomOn,
   planExercise,
   unplanExercise,
+  upcomingPlan,
   MAX_PLANNED_PER_DAY,
 } from './exercise-plan.js';
 import {
@@ -155,7 +156,14 @@ let activeView = 'start';
 /** Eine neuere Fassung liegt bereit und wartet auf ein Neuladen. */
 let updateReady = false;
 
-/** Gewählte Übungskategorie; ALL_CATEGORIES zeigt alles. */
+/**
+ * Eigener Wert für den Filter "Geplant". Keine Kategorie in exercises.js:
+ * die Bibliothek weiß nichts von Terminen, und der Filter zeigt auch keine
+ * Übungen, sondern Tage.
+ */
+const PLANNED_VIEW = 'geplant';
+
+/** Gewählte Übungskategorie; ALL_CATEGORIES zeigt alles, PLANNED_VIEW den Plan. */
 let exerciseCategory = ALL_CATEGORIES;
 
 /** id der Übung, deren Zähler gerade von Hand korrigiert wird. */
@@ -242,7 +250,10 @@ const el = {
   },
 
   todayEmpty: document.getElementById('today-empty'),
-  todayList: document.getElementById('today-list'),
+  todaySessionsTitle: document.getElementById('today-sessions-title'),
+  todaySessions: document.getElementById('today-sessions'),
+  todayExercisesTitle: document.getElementById('today-exercises-title'),
+  todayExercises: document.getElementById('today-exercises'),
 
   exerciseFilter: document.getElementById('exercise-filter'),
   exerciseList: document.getElementById('exercise-list'),
@@ -823,30 +834,56 @@ function fillSessionDeleteConfirm(item, session) {
   return item;
 }
 
-/* ------------------------------------------------------- Übungen heute */
+/* --------------------------------------------------------- Heute geplant */
 
 /**
- * Was für heute vorgenommen ist – reine Anzeige. Eingeplant und abgehakt wird
- * im Übungen-Tab; ein zweiter Weg zum Abhaken wäre ein zweiter Weg, sich zu
- * verzählen.
+ * Was für heute ansteht: Trainingseinheiten und vorgemerkte Übungen. Reine
+ * Anzeige – geplant und abgehakt wird in den jeweiligen Tabs; ein zweiter Weg
+ * zum Abhaken wäre ein zweiter Weg, sich zu verzählen.
  *
- * Der Bereich bleibt auch ohne Eintrag stehen und zeigt einen Hinweis. Ihn
- * auszublenden würde den Tab an jedem übungsfreien Tag anders hoch machen.
+ * Der Bereich bleibt auch an leeren Tagen stehen und zeigt einen Hinweis. Ihn
+ * auszublenden würde den Tab je nach Tag anders hoch machen.
  */
 function renderToday() {
   const heute = todayIso();
-  const geplant = plannedOn(exercisePlan, heute);
 
-  el.todayEmpty.hidden = geplant.length > 0;
-  el.todayList.replaceChildren(
-    ...geplant.map((eintrag) => {
+  const einheiten = matchPlan(sessions, runs, { today: heute }).filter(
+    (eintrag) => eintrag.session.date === heute
+  );
+  const uebungen = plannedOn(exercisePlan, heute);
+
+  el.todayEmpty.hidden = einheiten.length + uebungen.length > 0;
+
+  // Die Überschriften erscheinen nur, wenn darunter auch etwas steht – sonst
+  // stünde "Training" über einer leeren Liste.
+  el.todaySessionsTitle.hidden = einheiten.length === 0;
+  el.todayExercisesTitle.hidden = uebungen.length === 0;
+
+  el.todaySessions.replaceChildren(...einheiten.map(createTodaySession));
+  el.todayExercises.replaceChildren(
+    ...uebungen.map((eintrag) => {
       const uebung = EXERCISES.find((e) => e.id === eintrag.exerciseId);
-      return createTodayItem(uebung, doneOnDay(exerciseLog, eintrag.exerciseId, heute));
+      return createTodayItem({
+        name: uebung.name,
+        detail: uebung.dose,
+        erledigt: doneOnDay(exerciseLog, eintrag.exerciseId, heute),
+        stand: doneOnDay(exerciseLog, eintrag.exerciseId, heute) ? 'erledigt' : 'offen',
+      });
     })
   );
 }
 
-function createTodayItem(exercise, erledigt) {
+function createTodaySession({ session, status }) {
+  return createTodayItem({
+    name: typeLabel(session.type),
+    detail: session.note ? `${describeSession(session)} · ${session.note}` : describeSession(session),
+    // "teilweise" ist angefangen, nicht erledigt – nur das Erfüllte wird grün.
+    erledigt: status === 'erfuellt',
+    stand: STATUS_TEXT[status] ?? status,
+  });
+}
+
+function createTodayItem({ name, detail, erledigt, stand }) {
   const zeile = document.createElement('li');
   zeile.className = erledigt ? 'today-item done' : 'today-item';
 
@@ -858,22 +895,22 @@ function createTodayItem(exercise, erledigt) {
   const text = document.createElement('span');
   text.className = 'today-text';
 
-  const name = document.createElement('span');
-  name.className = 'today-name';
-  name.textContent = exercise.name;
+  const titel = document.createElement('span');
+  titel.className = 'today-name';
+  titel.textContent = name;
 
-  const dosis = document.createElement('span');
-  dosis.className = 'today-dose muted';
-  dosis.textContent = exercise.dose;
+  const zusatz = document.createElement('span');
+  zusatz.className = 'today-dose muted';
+  zusatz.textContent = detail;
 
-  text.append(name, dosis);
+  text.append(titel, zusatz);
 
-  const marke2 = document.createElement('span');
-  marke2.className = 'today-state';
-  marke2.textContent = erledigt ? 'erledigt' : 'offen';
+  const zustand = document.createElement('span');
+  zustand.className = 'today-state';
+  zustand.textContent = stand;
 
-  zeile.append(marke, text, marke2);
-  zeile.setAttribute('aria-label', `${exercise.name}: ${erledigt ? 'erledigt' : 'offen'}`);
+  zeile.append(marke, text, zustand);
+  zeile.setAttribute('aria-label', `${name}: ${stand}`);
 
   return zeile;
 }
@@ -882,6 +919,8 @@ function createTodayItem(exercise, erledigt) {
 
 function renderExercises() {
   renderExerciseFilter();
+
+  if (exerciseCategory === PLANNED_VIEW) return renderPlannedAgenda();
 
   const kategorie = findCategory(exerciseCategory);
   el.exerciseNote.hidden = !kategorie;
@@ -906,6 +945,81 @@ function renderExercises() {
       })
     )
   );
+}
+
+/**
+ * Der Plan nach Tagen – was in den nächsten Tagen ansteht, auf einen Blick.
+ *
+ * Andere Bauform als die Übungsliste daneben: hier ist der Tag die Einheit,
+ * nicht die Übung. Eine Übung an drei Tagen wäre in Kartenform ein Eintrag
+ * mit drei Daten daran; als Tagesliste liest sie sich wie ein Kalender.
+ */
+function renderPlannedAgenda() {
+  const heute = todayIso();
+  const tage = upcomingPlan(exercisePlan, heute);
+
+  el.exerciseNote.hidden = false;
+  el.exerciseNote.textContent =
+    tage.length === 0
+      ? 'Noch nichts vorgemerkt. Über den Kalenderknopf einer Übung lässt sich ein Tag wählen.'
+      : 'Was in den nächsten Tagen ansteht. Vergangene Tage stehen nicht mehr hier.';
+
+  el.exerciseList.classList.remove('ordered');
+  el.exerciseList.replaceChildren(...tage.map((tag) => createPlannedDay(tag, heute)));
+}
+
+function createPlannedDay({ date, entries }, heute) {
+  const block = document.createElement('li');
+  block.className = date === heute ? 'planned-day today' : 'planned-day';
+
+  const kopf = document.createElement('div');
+  kopf.className = 'planned-day-head';
+
+  const datum = document.createElement('span');
+  datum.className = 'planned-date';
+  datum.textContent = date === heute ? `Heute, ${formatDate(date)}` : formatDate(date);
+
+  const anzahl = document.createElement('span');
+  anzahl.className = 'planned-count muted';
+  anzahl.textContent = `${entries.length} ${entries.length === 1 ? 'Übung' : 'Übungen'}`;
+
+  kopf.append(datum, anzahl);
+
+  const liste = document.createElement('ul');
+  liste.className = 'planned-entries';
+  liste.replaceChildren(...entries.map((eintrag) => createPlannedEntry(eintrag, date, heute)));
+
+  block.append(kopf, liste);
+  return block;
+}
+
+function createPlannedEntry(eintrag, date, heute) {
+  const uebung = EXERCISES.find((e) => e.id === eintrag.exerciseId);
+
+  // Nur für heute lässt sich sagen, ob es schon gemacht ist – für morgen
+  // wäre die Frage sinnlos.
+  const erledigt = date === heute && doneOnDay(exerciseLog, eintrag.exerciseId, heute);
+
+  const zeile = document.createElement('li');
+  zeile.className = erledigt ? 'planned-entry done' : 'planned-entry';
+
+  const name = document.createElement('span');
+  name.className = 'planned-name';
+  name.textContent = uebung.name;
+
+  const dosis = document.createElement('span');
+  dosis.className = 'planned-dose muted';
+  dosis.textContent = erledigt ? `${uebung.dose} · erledigt` : uebung.dose;
+
+  const entfernen = document.createElement('button');
+  entfernen.type = 'button';
+  entfernen.className = 'icon-button';
+  entfernen.textContent = '×';
+  entfernen.setAttribute('aria-label', `${uebung.name} am ${formatDate(date)} austragen`);
+  entfernen.addEventListener('click', () => handleUnplan(uebung, date));
+
+  zeile.append(name, dosis, entfernen);
+  return zeile;
 }
 
 /**
@@ -939,13 +1053,22 @@ function renderExerciseFilter() {
   const zaehler = countByCategory();
   const gesamt = [...zaehler.values()].reduce((a, b) => a + b, 0);
 
-  const knoepfe = [{ id: ALL_CATEGORIES, label: 'Alle', anzahl: gesamt }].concat(
-    CATEGORIES.map((kategorie) => ({
-      id: kategorie.id,
-      label: kategorie.label,
-      anzahl: zaehler.get(kategorie.id) ?? 0,
-    }))
+  // Der Plan zählt Termine, nicht Übungen – dieselbe Übung an drei Tagen
+  // sind drei Einträge.
+  const vorgemerkt = upcomingPlan(exercisePlan, todayIso()).reduce(
+    (summe, tag) => summe + tag.entries.length,
+    0
   );
+
+  const knoepfe = [{ id: ALL_CATEGORIES, label: 'Alle', anzahl: gesamt }]
+    .concat(
+      CATEGORIES.map((kategorie) => ({
+        id: kategorie.id,
+        label: kategorie.label,
+        anzahl: zaehler.get(kategorie.id) ?? 0,
+      }))
+    )
+    .concat([{ id: PLANNED_VIEW, label: 'Geplant', anzahl: vorgemerkt }]);
 
   el.exerciseFilter.replaceChildren(
     ...knoepfe.map(({ id, label, anzahl }) => {
@@ -1777,7 +1900,7 @@ function handleExport() {
     return showDataError('Es gibt noch keine Läufe zum Exportieren.');
   }
 
-  const blob = new Blob([serializeExport(runs, { exerciseLog, sessions })], {
+  const blob = new Blob([serializeExport(runs, { exerciseLog, sessions, exercisePlan, profileName })], {
     type: 'application/json',
   });
   const url = URL.createObjectURL(blob);
@@ -1817,10 +1940,13 @@ async function handleImportFile(event) {
 function buildImportSummary(result) {
   const uebungen = result.exerciseLog?.length ?? 0;
   const einheiten = result.sessions?.length ?? 0;
+  const vorhaben = result.exercisePlan?.length ?? 0;
 
   const anhang = [
     uebungen > 0 ? `${uebungen} erledigte Übungen` : null,
     einheiten > 0 ? `${einheiten} geplante ${einheiten === 1 ? 'Einheit' : 'Einheiten'}` : null,
+    vorhaben > 0 ? `${vorhaben} vorgemerkte ${vorhaben === 1 ? 'Übung' : 'Übungen'}` : null,
+    result.profileName ? `der Name ${result.profileName}` : null,
   ].filter(Boolean);
 
   const mitAnhang = anhang.length > 0 ? ` und ${anhang.join(', ')}` : '';
@@ -1843,13 +1969,23 @@ function handleImportApply() {
   const imported = pendingImport.runs;
   const importierteUebungen = pendingImport.exerciseLog ?? [];
   const importierterPlan = pendingImport.sessions ?? [];
+  const importierteVorhaben = pendingImport.exercisePlan ?? [];
+  const importierterName = pendingImport.profileName ?? '';
   cancelImport();
   stopEditing();
   resetSessionForm();
+  editingExerciseId = null;
+  planningExerciseId = null;
 
   runs = replaceRuns(imported);
   exerciseLog = replaceExerciseLog(importierteUebungen);
   sessions = replaceSessions(importierterPlan);
+  exercisePlan = saveExercisePlan(importierteVorhaben);
+
+  // Der Name wird mit ersetzt, auch durch einen leeren: der Import bildet die
+  // Datei ab, und ein stehengebliebener Name wäre der des alten Geräts.
+  profileName = saveProfileName(importierterName);
+  el.profileNameInput.value = profileName;
 
   // Ohne Freischalt-Meldung: nach einem Import wäre sie eine Aufzählung
   // sämtlicher Achievements statt einer Neuigkeit.
