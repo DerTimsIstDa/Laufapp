@@ -357,26 +357,24 @@ describe('Trainingsplan in der Sicherung', () => {
   });
 });
 
-describe('Übungsplan und Name in der Sicherung', () => {
+describe('Übungsplan und Profil in der Sicherung', () => {
   const lauf = { id: 'a', distanceKm: 5, date: '2026-08-14' };
   const vorhaben = { id: 'p1', exerciseId: 'warm-traben', date: '2026-08-20' };
+  const profil = { name: 'Tim', weeklyGoal: 3 };
 
   test('beide landen im Export', () => {
-    const payload = buildExport([lauf], {
-      exercisePlan: [vorhaben],
-      profileName: 'Tim',
-    });
+    const payload = buildExport([lauf], { exercisePlan: [vorhaben], profile: profil });
 
     assert.deepEqual(payload.exercisePlan, [vorhaben]);
-    assert.equal(payload.profileName, 'Tim');
+    assert.deepEqual(payload.profile, profil);
   });
 
   test('Roundtrip hält beides', () => {
-    const text = serializeExport([lauf], { exercisePlan: [vorhaben], profileName: 'Tim' });
+    const text = serializeExport([lauf], { exercisePlan: [vorhaben], profile: profil });
     const ergebnis = parseImport(text);
 
     assert.deepEqual(ergebnis.exercisePlan, [vorhaben]);
-    assert.equal(ergebnis.profileName, 'Tim');
+    assert.deepEqual(ergebnis.profile, profil);
   });
 
   test('alte Sicherungen ohne die Felder sind kein Fehler', () => {
@@ -384,18 +382,41 @@ describe('Übungsplan und Name in der Sicherung', () => {
 
     assert.equal(ergebnis.ok, true);
     assert.deepEqual(ergebnis.exercisePlan, []);
-    assert.equal(ergebnis.profileName, '');
+    assert.deepEqual(ergebnis.profile, { name: '', weeklyGoal: 0 });
+  });
+
+  test('die erste Schreibweise mit profileName wird weiter gelesen', () => {
+    // Sicherungen aus der Fassung, in der es nur einen Namen gab.
+    const text = JSON.stringify({ runs: [lauf], profileName: 'Tim' });
+    assert.deepEqual(parseImport(text).profile, { name: 'Tim', weeklyGoal: 0 });
   });
 
   test('der Name wird beim Einlesen aufgeräumt', () => {
-    const text = JSON.stringify({ runs: [lauf], profileName: '   Tim   Berger  ' });
-    assert.equal(parseImport(text).profileName, 'Tim Berger');
+    const text = JSON.stringify({ runs: [lauf], profile: { name: '   Tim   Berger  ' } });
+    assert.equal(parseImport(text).profile.name, 'Tim Berger');
   });
 
   test('unbrauchbare Namen ergeben keinen', () => {
     for (const value of [42, null, { name: 'Tim' }, '   ']) {
-      const text = JSON.stringify({ runs: [lauf], profileName: value });
-      assert.equal(parseImport(text).profileName, '');
+      const text = JSON.stringify({ runs: [lauf], profile: { name: value } });
+      assert.equal(parseImport(text).profile.name, '');
+    }
+  });
+
+  test('unbrauchbare Wochenziele ergeben keines', () => {
+    for (const value of ['viel', -1, 99, null, 2.7, {}]) {
+      const text = JSON.stringify({ runs: [lauf], profile: { weeklyGoal: value } });
+      const ziel = parseImport(text).profile.weeklyGoal;
+      // 2,7 wird auf 2 gestutzt – eine Zahl ist es ja.
+      assert.equal(ziel, value === 2.7 ? 2 : 0, `${JSON.stringify(value)}`);
+    }
+  });
+
+  test('ein kaputtes Profil-Feld wirft nicht', () => {
+    for (const value of ['text', 42, null, []]) {
+      const text = JSON.stringify({ runs: [lauf], profile: value });
+      assert.doesNotThrow(() => parseImport(text));
+      assert.deepEqual(parseImport(text).profile, { name: '', weeklyGoal: 0 });
     }
   });
 

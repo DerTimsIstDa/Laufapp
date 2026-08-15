@@ -29,7 +29,9 @@ import {
   firstErrorMessage,
   parseNumber,
   normalizeName,
+  normalizeWeeklyGoal,
   isValidIsoDate,
+  MAX_WEEKLY_GOAL,
 } from './validation.js';
 import { serializeExport, exportFileName, parseImport } from './transfer.js';
 import { buildStats, distanceByWeek, distanceByMonth, runsInPeriod } from './stats.js';
@@ -77,7 +79,7 @@ import {
   loadExerciseLog, addExerciseEntry, replaceExerciseLog,
   loadSessions, addSession, updateSession, removeSession, replaceSessions,
   loadExercisePlan, saveExercisePlan,
-  loadProfileName, saveProfileName,
+  loadProfile, saveProfile,
 } from './storage.js';
 import {
   normalizePlan,
@@ -114,8 +116,12 @@ let exercisePlan = [];
 /** id der Übung, für die gerade ein Termin gewählt wird; null = keine. */
 let planningExerciseId = null;
 
-/** Selbst eingetragener Name; leer heißt "nur den Titel zeigen". */
-let profileName = '';
+/**
+ * Selbst eingetragene Angaben: Name (leer = nur den Titel zeigen) und
+ * Wochenziel (0 = kein Ziel, dann bleibt der Ring weg).
+ * @type {import('./storage.js').Profile}
+ */
+let profile = { name: '', weeklyGoal: 0 };
 
 /** id der Einheit, die gerade im Formular liegt – null heißt "neu anlegen". */
 let editingSessionId = null;
@@ -274,6 +280,11 @@ const el = {
   profileNameForm: document.getElementById('profile-name-form'),
   profileNameInput: document.getElementById('profile-name-input'),
   profileNameStatus: document.getElementById('profile-name-status'),
+  profileGoalInput: document.getElementById('profile-goal-input'),
+  goal: document.getElementById('goal'),
+  goalBar: document.getElementById('goal-bar'),
+  goalCount: document.getElementById('goal-count'),
+  goalCaption: document.getElementById('goal-caption'),
   profileTitleName: document.getElementById('profile-title-name'),
   profileBadge: document.getElementById('profile-badge'),
   profileLevel: document.getElementById('profile-level'),
@@ -341,6 +352,12 @@ const STATUS_TEXT = {
   verpasst: 'Verpasst',
 };
 
+/**
+ * Umfang des Zielrings, 2·π·52 – der Radius steht im Markup. Muss mit der
+ * stroke-dasharray im Stylesheet übereinstimmen, sonst füllt der Bogen falsch.
+ */
+const RING_UMFANG = 2 * Math.PI * 52;
+
 const numberFormat = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 });
 const distanceFormat = new Intl.NumberFormat('de-DE', {
   minimumFractionDigits: 2,
@@ -365,10 +382,10 @@ function init() {
   exerciseLog = loadExerciseLog();
   sessions = loadSessions();
   exercisePlan = normalizePlan(loadExercisePlan());
-  profileName = normalizeName(loadProfileName());
+  profile = readProfile(loadProfile());
   el.date.value = todayIso();
-  el.profileNameInput.value = profileName;
-  el.profileNameForm.addEventListener('submit', handleProfileNameSubmit);
+  fillProfileForm();
+  el.profileNameForm.addEventListener('submit', handleProfileSubmit);
 
   el.form.addEventListener('submit', handleSubmit);
   el.formCancel.addEventListener('click', stopEditing);
@@ -1483,8 +1500,8 @@ function renderProfile() {
   const progress = getProgress(gesamtXp);
   const upcoming = nextTitle(progress.level);
 
-  el.profileName.hidden = profileName === '';
-  el.profileName.textContent = profileName;
+  el.profileName.hidden = profile.name === '';
+  el.profileName.textContent = profile.name;
   el.profileTitleName.textContent = titleForLevel(progress.level);
   el.profileBadge.src = badgeSrc(badgeForLevel(progress.level));
   el.profileLevel.textContent = progress.level;
@@ -1499,28 +1516,92 @@ function renderProfile() {
     `noch ${numberFormat.format(progress.xpToNextLevel)} XP bis Level ${progress.level + 1}`;
 
   renderTrophySummary(achievements);
+  renderGoal();
   renderPeriodStats();
   renderProfileStats();
 }
 
+/** Rohwerte aus Speicher oder Datei auf gültige Angaben bringen. */
+function readProfile(roh) {
+  return {
+    name: normalizeName(roh?.name),
+    weeklyGoal: normalizeWeeklyGoal(roh?.weeklyGoal),
+  };
+}
+
+/** Zeigt im Formular, was tatsächlich gespeichert ist. */
+function fillProfileForm() {
+  el.profileNameInput.value = profile.name;
+  el.profileGoalInput.value = profile.weeklyGoal === 0 ? '' : String(profile.weeklyGoal);
+}
+
 /**
- * Namen übernehmen. Es gibt nichts, was hier fehlschlagen könnte – der Name
- * wird aufgeräumt, nicht abgelehnt (siehe normalizeName). Ein leeres Feld ist
- * eine gültige Angabe: dann steht wieder nur der Titel im Kopf.
+ * Name und Ziel übernehmen. Es gibt nichts, was hier fehlschlagen könnte –
+ * beides wird aufgeräumt, nicht abgelehnt. Leere Felder sind gültige Angaben:
+ * dann steht wieder nur der Titel im Kopf und es gibt kein Wochenziel.
  */
-function handleProfileNameSubmit(event) {
+function handleProfileSubmit(event) {
   event.preventDefault();
 
-  profileName = saveProfileName(normalizeName(el.profileNameInput.value));
+  profile = saveProfile({
+    name: normalizeName(el.profileNameInput.value),
+    weeklyGoal: normalizeWeeklyGoal(el.profileGoalInput.value),
+  });
 
   // Zurückschreiben, damit sichtbar wird, was tatsächlich gespeichert wurde.
-  el.profileNameInput.value = profileName;
+  fillProfileForm();
 
-  el.profileNameStatus.textContent =
-    profileName === '' ? 'Name entfernt.' : `Gespeichert: ${profileName}`;
+  el.profileNameStatus.textContent = describeProfileSaved();
   el.profileNameStatus.hidden = false;
 
   renderProfile();
+}
+
+function describeProfileSaved() {
+  const teile = [
+    profile.name === '' ? 'kein Name' : profile.name,
+    profile.weeklyGoal === 0
+      ? 'kein Wochenziel'
+      : `${profile.weeklyGoal}× pro Woche`,
+  ];
+
+  return `Gespeichert: ${teile.join(' · ')}`;
+}
+
+/**
+ * Fortschrittsring für die laufende Woche.
+ *
+ * Gezählt werden die Läufe der Woche, nicht die Tage: wer zweimal an einem
+ * Tag läuft, ist zweimal gelaufen. Die Woche beginnt montags, wie überall
+ * sonst in der App auch (siehe runsInPeriod).
+ *
+ * Über dem Ziel bleibt der Ring voll, die Zahl läuft weiter – "4/3" ist eine
+ * bessere Nachricht als ein abgeschnittener Zähler.
+ */
+function renderGoal() {
+  el.goal.hidden = profile.weeklyGoal === 0;
+  if (profile.weeklyGoal === 0) return;
+
+  const gelaufen = runsInPeriod(runs, { period: 'week', todayIso: todayIso() }).length;
+  const ziel = profile.weeklyGoal;
+  const erreicht = gelaufen >= ziel;
+  const anteil = Math.min(1, gelaufen / ziel);
+
+  el.goal.classList.toggle('reached', erreicht);
+  el.goalCount.textContent = `${gelaufen}/${ziel}`;
+  el.goalBar.style.strokeDashoffset = RING_UMFANG * (1 - anteil);
+
+  const fehlend = ziel - gelaufen;
+  el.goalCaption.textContent = erreicht
+    ? gelaufen === ziel
+      ? 'Wochenziel erreicht.'
+      : `Wochenziel erreicht, ${gelaufen - ziel} ${gelaufen - ziel === 1 ? 'Lauf' : 'Läufe'} darüber.`
+    : `Diese Woche – noch ${fehlend} ${fehlend === 1 ? 'Lauf' : 'Läufe'} bis zum Ziel.`;
+
+  el.goal.setAttribute(
+    'aria-label',
+    `Wochenziel: ${gelaufen} von ${ziel} Läufen`
+  );
 }
 
 /** Kompakte Übersicht: wie viele Achievements je Gruppe. */
@@ -1865,6 +1946,10 @@ function startEditing(id) {
   editingId = id;
   pendingDeleteId = null;
 
+  // Die Liste steht im Profil, das Formular im Start-Bereich. Ohne den
+  // Wechsel scrollte die Seite zu einer Karte, die gerade gar nicht da ist.
+  setView('start');
+
   el.distance.value = run.distanceKm;
   el.date.value = run.date;
   el.time.value = run.timeOfDay ?? '';
@@ -1907,9 +1992,10 @@ function handleExport() {
     return showDataError('Es gibt noch keine Läufe zum Exportieren.');
   }
 
-  const blob = new Blob([serializeExport(runs, { exerciseLog, sessions, exercisePlan, profileName })], {
-    type: 'application/json',
-  });
+  const blob = new Blob(
+    [serializeExport(runs, { exerciseLog, sessions, exercisePlan, profile })],
+    { type: 'application/json' }
+  );
   const url = URL.createObjectURL(blob);
 
   const link = document.createElement('a');
@@ -1953,7 +2039,8 @@ function buildImportSummary(result) {
     uebungen > 0 ? `${uebungen} erledigte Übungen` : null,
     einheiten > 0 ? `${einheiten} geplante ${einheiten === 1 ? 'Einheit' : 'Einheiten'}` : null,
     vorhaben > 0 ? `${vorhaben} vorgemerkte ${vorhaben === 1 ? 'Übung' : 'Übungen'}` : null,
-    result.profileName ? `der Name ${result.profileName}` : null,
+    result.profile?.name ? `der Name ${result.profile.name}` : null,
+    result.profile?.weeklyGoal ? `ein Wochenziel von ${result.profile.weeklyGoal}` : null,
   ].filter(Boolean);
 
   const mitAnhang = anhang.length > 0 ? ` und ${anhang.join(', ')}` : '';
@@ -1977,7 +2064,7 @@ function handleImportApply() {
   const importierteUebungen = pendingImport.exerciseLog ?? [];
   const importierterPlan = pendingImport.sessions ?? [];
   const importierteVorhaben = pendingImport.exercisePlan ?? [];
-  const importierterName = pendingImport.profileName ?? '';
+  const importiertesProfil = pendingImport.profile ?? { name: '', weeklyGoal: 0 };
   cancelImport();
   stopEditing();
   resetSessionForm();
@@ -1989,10 +2076,10 @@ function handleImportApply() {
   sessions = replaceSessions(importierterPlan);
   exercisePlan = saveExercisePlan(importierteVorhaben);
 
-  // Der Name wird mit ersetzt, auch durch einen leeren: der Import bildet die
+  // Das Profil wird mit ersetzt, auch durch ein leeres: der Import bildet die
   // Datei ab, und ein stehengebliebener Name wäre der des alten Geräts.
-  profileName = saveProfileName(importierterName);
-  el.profileNameInput.value = profileName;
+  profile = saveProfile(importiertesProfil);
+  fillProfileForm();
 
   // Ohne Freischalt-Meldung: nach einem Import wäre sie eine Aufzählung
   // sämtlicher Achievements statt einer Neuigkeit.

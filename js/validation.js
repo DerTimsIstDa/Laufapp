@@ -14,6 +14,9 @@ export const MAX_DURATION_MINUTES = 1440;
 /** Reicht für jeden Namen und für jede Kopfzeile, in die er passen muss. */
 export const MAX_NAME_LENGTH = 30;
 
+/** Zweimal am Tag ist reichlich; darüber ist es ein Vertipper. */
+export const MAX_WEEKLY_GOAL = 14;
+
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const TIME_OF_DAY = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -72,6 +75,25 @@ export function normalizeName(value) {
     .trim()
     .slice(0, MAX_NAME_LENGTH)
     .trim();
+}
+
+/**
+ * Wochenziel: wie oft in der Woche gelaufen werden soll.
+ *
+ * 0 heißt "kein Ziel" und ist eine gültige Angabe – nicht jeder will sich
+ * eine Vorgabe machen. Unbrauchbares ergibt ebenfalls 0: ein Ziel, das
+ * niemand lesen kann, ist keines.
+ *
+ * @returns {number} ganze Zahl von 0 bis MAX_WEEKLY_GOAL
+ */
+export function normalizeWeeklyGoal(value) {
+  const zahl = parseNumber(value);
+  if (zahl === null) return 0;
+
+  const ganz = Math.trunc(zahl);
+  if (ganz < 0 || ganz > MAX_WEEKLY_GOAL) return 0;
+
+  return ganz;
 }
 
 /** "HH:MM" von 00:00 bis 23:59. */

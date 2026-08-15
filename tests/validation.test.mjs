@@ -8,9 +8,11 @@ import {
   isValidTimeOfDay,
   firstErrorMessage,
   normalizeName,
+  normalizeWeeklyGoal,
   MAX_DISTANCE_KM,
   MAX_DURATION_MINUTES,
   MAX_NAME_LENGTH,
+  MAX_WEEKLY_GOAL,
 } from '../js/validation.js';
 
 /** Kurzform: gültige Basis, einzelne Felder überschreibbar. */
@@ -235,5 +237,36 @@ describe('validateRun – aufgezeichnete Strecke', () => {
   test('einzelne kaputte Punkte fallen raus, der Rest bleibt', () => {
     const result = validateRun(input({ track: [[52.5, 13.4], [NaN, 13.4], [52.51, 13.41]] }));
     assert.deepEqual(result.run.track, track);
+  });
+});
+
+describe('normalizeWeeklyGoal', () => {
+  test('nimmt ganze Zahlen im erlaubten Bereich', () => {
+    assert.equal(normalizeWeeklyGoal(3), 3);
+    assert.equal(normalizeWeeklyGoal('3'), 3);
+    assert.equal(normalizeWeeklyGoal(' 3 '), 3);
+    assert.equal(normalizeWeeklyGoal(MAX_WEEKLY_GOAL), MAX_WEEKLY_GOAL);
+  });
+
+  test('0 heisst "kein Ziel" und ist gültig', () => {
+    assert.equal(normalizeWeeklyGoal(0), 0);
+    assert.equal(normalizeWeeklyGoal('0'), 0);
+  });
+
+  test('Nachkommastellen werden abgeschnitten', () => {
+    // "2,5 Läufe" gibt es nicht; 2 ist die ehrlichere Lesart als 3.
+    assert.equal(normalizeWeeklyGoal('2,5'), 2);
+    assert.equal(normalizeWeeklyGoal(2.9), 2);
+  });
+
+  test('ausserhalb des Bereichs gibt es kein Ziel', () => {
+    assert.equal(normalizeWeeklyGoal(-1), 0);
+    assert.equal(normalizeWeeklyGoal(MAX_WEEKLY_GOAL + 1), 0);
+  });
+
+  test('Unbrauchbares ergibt kein Ziel', () => {
+    for (const value of ['', '   ', 'viel', null, undefined, {}, [], NaN, Infinity]) {
+      assert.equal(normalizeWeeklyGoal(value), 0, `${JSON.stringify(value)}`);
+    }
   });
 });

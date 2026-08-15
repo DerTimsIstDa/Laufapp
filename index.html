@@ -236,26 +236,6 @@
       <p class="unlock-notice" id="unlock-notice" role="status" hidden></p>
     </section>
 
-    <!-- Detailansicht eines Laufs -->
-    <section class="card" id="detail-card" aria-labelledby="detail-title" hidden>
-      <div class="detail-header">
-        <h2 id="detail-title">Lauf-Details</h2>
-        <button type="button" id="detail-close" class="ghost small">Schließen</button>
-      </div>
-
-      <dl class="stat-grid" id="detail-facts"></dl>
-
-      <h3 class="group-title">Strecke</h3>
-      <div class="route" id="route-container"></div>
-    </section>
-
-    <!-- Läufe -->
-    <section class="card" aria-labelledby="runs-title">
-      <h2 id="runs-title">Läufe (<span id="run-count">0</span>)</h2>
-      <p class="muted" id="runs-empty">Noch keine Läufe eingetragen.</p>
-      <ul class="runs" id="runs-list"></ul>
-    </section>
-
     <!-- Sicherung -->
     <section class="card" aria-labelledby="data-title">
       <h2 id="data-title">Daten sichern</h2>
@@ -450,27 +430,54 @@
       </section>
 
       <section class="card" aria-labelledby="profile-name-title">
-        <h2 id="profile-name-title">Name</h2>
+        <h2 id="profile-name-title">Name und Wochenziel</h2>
 
         <form id="profile-name-form" novalidate>
-          <div class="field">
-            <label for="profile-name-input">Dein Name <span class="optional">optional</span></label>
-            <input
-              type="text"
-              id="profile-name-input"
-              name="profile-name"
-              maxlength="30"
-              placeholder="Bleibt leer, dann steht nur der Titel da"
-              autocomplete="off"
-            >
+          <div class="fields">
+            <div class="field">
+              <label for="profile-name-input">Dein Name <span class="optional">optional</span></label>
+              <input
+                type="text"
+                id="profile-name-input"
+                name="profile-name"
+                maxlength="30"
+                placeholder="Bleibt leer, dann steht nur der Titel da"
+                autocomplete="off"
+              >
+            </div>
+
+            <div class="field">
+              <label for="profile-goal-input">Läufe pro Woche <span class="optional">optional</span></label>
+              <!-- type="text" wie überall sonst; geprüft wird in validation.js. -->
+              <input
+                type="text"
+                id="profile-goal-input"
+                name="profile-goal"
+                inputmode="numeric"
+                placeholder="3"
+                autocomplete="off"
+              >
+            </div>
           </div>
 
           <div class="form-buttons">
-            <button type="submit" id="profile-name-submit">Namen speichern</button>
+            <button type="submit" id="profile-name-submit">Speichern</button>
           </div>
         </form>
 
         <p class="data-status muted" id="profile-name-status" role="status" hidden></p>
+
+        <!-- Fortschritt der laufenden Woche. Ohne Ziel gibt es nichts zu füllen. -->
+        <div class="goal" id="goal" hidden>
+          <div class="goal-ring">
+            <svg viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="goal-track" cx="60" cy="60" r="52"></circle>
+              <circle class="goal-bar" id="goal-bar" cx="60" cy="60" r="52"></circle>
+            </svg>
+            <span class="goal-count" id="goal-count">0/0</span>
+          </div>
+          <p class="muted goal-caption" id="goal-caption"></p>
+        </div>
       </section>
 
       <section class="card" aria-labelledby="profile-trophies-title">
@@ -502,6 +509,26 @@
         <h2 id="profile-stats-title">Gesamtstatistik</h2>
         <p class="muted" id="profile-stats-empty">Noch keine Läufe eingetragen.</p>
         <dl class="stat-grid" id="profile-stats" hidden></dl>
+      </section>
+
+      <!-- Detailansicht eines Laufs. Steht über der Liste, damit sie beim
+           Öffnen nicht unter den Weg nach unten rutscht. -->
+      <section class="card" id="detail-card" aria-labelledby="detail-title" hidden>
+        <div class="detail-header">
+          <h2 id="detail-title">Lauf-Details</h2>
+          <button type="button" id="detail-close" class="ghost small">Schließen</button>
+        </div>
+
+        <dl class="stat-grid" id="detail-facts"></dl>
+
+        <h3 class="group-title">Strecke</h3>
+        <div class="route" id="route-container"></div>
+      </section>
+
+      <section class="card" aria-labelledby="runs-title">
+        <h2 id="runs-title">Läufe (<span id="run-count">0</span>)</h2>
+        <p class="muted" id="runs-empty">Noch keine Läufe eingetragen.</p>
+        <ul class="runs" id="runs-list"></ul>
       </section>
     </div>
 

@@ -343,38 +343,52 @@ function isValidPlanned(entry) {
 /* -------------------------------------------------------------- Profil ---- */
 
 /**
- * Der Name liegt in einem eigenen Schlüssel, nicht bei den Läufen: er ist
- * Einstellung, keine Aufzeichnung. Als Objekt gespeichert, damit später noch
- * etwas dazukommen kann, ohne das Format zu brechen.
+ * Name und Wochenziel liegen in einem eigenen Schlüssel, nicht bei den Läufen:
+ * beides ist Einstellung, keine Aufzeichnung. Als Objekt gespeichert, damit
+ * weitere Angaben dazukommen können, ohne das Format zu brechen.
  *
- * @returns {string} leer, wenn nichts hinterlegt ist
+ * @typedef {{ name: string, weeklyGoal: number }} Profile
+ * @returns {Profile} Leerwerte, wenn nichts hinterlegt ist
  */
-export function loadProfileName() {
+export function loadProfile() {
+  const leer = { name: '', weeklyGoal: 0 };
+
   let raw;
   try {
     raw = localStorage.getItem(PROFILE_KEY);
   } catch {
-    return '';
+    return leer;
   }
-  if (!raw) return '';
+  if (!raw) return leer;
 
   try {
     const parsed = JSON.parse(raw);
-    return typeof parsed?.name === 'string' ? parsed.name : '';
+    return {
+      name: typeof parsed?.name === 'string' ? parsed.name : '',
+      weeklyGoal: typeof parsed?.weeklyGoal === 'number' ? parsed.weeklyGoal : 0,
+    };
   } catch {
-    return '';
+    return leer;
   }
 }
 
-/** @param {string} name bereits normalisiert; leer löscht den Eintrag */
-export function saveProfileName(name) {
+/**
+ * @param {Profile} profile bereits geprüfte Werte
+ * @returns {Profile} dieselben Werte, zum Weiterreichen
+ */
+export function saveProfile({ name, weeklyGoal }) {
+  const profil = { name, weeklyGoal };
+
   try {
-    if (name === '') localStorage.removeItem(PROFILE_KEY);
-    else localStorage.setItem(PROFILE_KEY, JSON.stringify({ name }));
+    // Ohne Name und ohne Ziel gibt es nichts zu merken – dann weg damit,
+    // statt eine leere Hülle liegen zu lassen.
+    if (name === '' && weeklyGoal === 0) localStorage.removeItem(PROFILE_KEY);
+    else localStorage.setItem(PROFILE_KEY, JSON.stringify(profil));
   } catch (err) {
-    console.error('Name konnte nicht gespeichert werden:', err);
+    console.error('Profil konnte nicht gespeichert werden:', err);
   }
-  return name;
+
+  return profil;
 }
 
 function isValidSession(session) {

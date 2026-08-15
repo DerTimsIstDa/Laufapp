@@ -9,7 +9,7 @@
  * einer Ausnahme.
  */
 
-import { validateRun, isValidIsoDate, normalizeName } from './validation.js';
+import { validateRun, isValidIsoDate, normalizeName, normalizeWeeklyGoal } from './validation.js';
 import { validateSession } from './training.js';
 import { normalizePlan } from './exercise-plan.js';
 
@@ -36,7 +36,13 @@ export const EXPORT_VERSION = 1;
  */
 export function buildExport(
   runs,
-  { exportedAt = new Date(), exerciseLog = [], sessions = [], exercisePlan = [], profileName = '' } = {}
+  {
+    exportedAt = new Date(),
+    exerciseLog = [],
+    sessions = [],
+    exercisePlan = [],
+    profile = { name: '', weeklyGoal: 0 },
+  } = {}
 ) {
   return {
     format: EXPORT_FORMAT,
@@ -49,7 +55,7 @@ export function buildExport(
     exerciseLog,
     sessions,
     exercisePlan,
-    profileName,
+    profile,
   };
 }
 
@@ -143,7 +149,23 @@ export function parseImport(text) {
     exerciseLog: readExerciseLog(payload.exerciseLog),
     sessions: readSessions(payload.sessions),
     exercisePlan: readExercisePlan(payload.exercisePlan),
-    profileName: normalizeName(payload.profileName),
+    profile: readProfile(payload),
+  };
+}
+
+/**
+ * Name und Wochenziel aus der Datei.
+ *
+ * `profileName` auf oberster Ebene ist die Schreibweise der ersten Fassung, in
+ * der es nur einen Namen gab. Sie wird weiter gelesen: eine Datei, die die App
+ * selbst geschrieben hat, darf sie nicht stillschweigend um den Namen bringen.
+ */
+function readProfile(payload) {
+  const roh = payload?.profile !== null && typeof payload?.profile === 'object' ? payload.profile : {};
+
+  return {
+    name: normalizeName(roh.name ?? payload?.profileName),
+    weeklyGoal: normalizeWeeklyGoal(roh.weeklyGoal),
   };
 }
 
