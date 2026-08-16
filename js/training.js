@@ -24,12 +24,25 @@
  *   date: string,
  *   type: string,
  *   segments: Segment[],
+ *   interval?: Interval,
  *   note?: string,
  *   createdAt?: string
  * }} Session
+ *
+ * @typedef {{
+ *   workSeconds: number,
+ *   restSeconds: number,
+ *   repeats: number
+ * }} Interval
  */
 
-import { parseNumber, isValidIsoDate, MAX_DISTANCE_KM, MAX_DURATION_MINUTES } from './validation.js';
+import {
+  parseNumber,
+  parseDurationSeconds,
+  isValidIsoDate,
+  MAX_DISTANCE_KM,
+  MAX_DURATION_MINUTES,
+} from './validation.js';
 
 /** XP für eine eingehaltene Einheit. */
 export const XP_PER_SESSION = 15;
@@ -62,9 +75,102 @@ export const SEGMENT_KINDS = [
 const TYPE_IDS = new Set(SESSION_TYPES.map((type) => type.id));
 const KIND_IDS = new Set(SEGMENT_KINDS.map((kind) => kind.id));
 
+/* ----------------------------------------------------------- Intervalle ---- */
+
+/**
+ * Grenzen einer Intervall-Vorgabe.
+ *
+ * Unter fünf Sekunden wäre keine Phase, sondern ein Piepen; über eine Stunde
+ * je Phase ist es kein Intervall mehr. Die Obergrenze der Wiederholungen
+ * teilt sie sich mit den Abschnitten – fünfzig ist überall reichlich.
+ */
+export const MIN_PHASE_SECONDS = 5;
+export const MAX_PHASE_SECONDS = 3600;
+
+/** Vorbelegung des Formulars: 1 Minute Belastung, 1 Minute Pause, 8 Runden. */
+export const DEFAULT_INTERVAL = { workSeconds: 60, restSeconds: 60, repeats: 8 };
+
+export function isIntervalType(type) {
+  return type === 'interval';
+}
+
 /** Ruhetage haben keine Segmente – ein Ruhetag mit Belastung wäre keiner. */
 export function isRestType(type) {
   return type === 'rest';
+}
+
+/**
+ * Prüft eine Intervall-Vorgabe.
+ *
+ * @param {unknown} raw
+ * @returns {{ ok: true, interval: {workSeconds: number, restSeconds: number, repeats: number} }
+ *          | { ok: false, errors: {field: string, message: string}[] }}
+ */
+export function validateInterval(raw) {
+  if (raw === null || typeof raw !== 'object') {
+    return { ok: false, errors: [{ field: 'interval', message: 'Das ist keine Intervall-Vorgabe.' }] };
+  }
+
+  const errors = [];
+
+  const workSeconds = phase(raw.workSeconds, 'interval.workSeconds', 'Die Belastungszeit', errors);
+  const restSeconds = phase(raw.restSeconds, 'interval.restSeconds', 'Die Pausenzeit', errors);
+
+  const repeats = parseNumber(raw.repeats);
+  const runden = repeats === null ? null : Math.trunc(repeats);
+  if (runden === null) {
+    errors.push({ field: 'interval.repeats', message: 'Bitte eine Anzahl Wiederholungen eintragen.' });
+  } else if (runden < 1 || runden > MAX_REPEATS) {
+    errors.push({
+      field: 'interval.repeats',
+      message: `Die Wiederholungen müssen zwischen 1 und ${MAX_REPEATS} liegen.`,
+    });
+  }
+
+  if (errors.length > 0) return { ok: false, errors };
+
+  return { ok: true, interval: { workSeconds, restSeconds, repeats: runden } };
+}
+
+function phase(value, field, name, errors) {
+  const sekunden = parseDurationSeconds(value);
+
+  if (sekunden === null) {
+    errors.push({ field, message: `${name} muss wie 1:30 aussehen – Minuten und Sekunden.` });
+    return null;
+  }
+
+  if (sekunden < MIN_PHASE_SECONDS || sekunden > MAX_PHASE_SECONDS) {
+    errors.push({
+      field,
+      message: `${name} muss zwischen ${MIN_PHASE_SECONDS} Sekunden und ${MAX_PHASE_SECONDS / 60} Minuten liegen.`,
+    });
+    return null;
+  }
+
+  return sekunden;
+}
+
+/** Gesamtdauer einer Intervall-Vorgabe in Sekunden. */
+export function intervalTotalSeconds(interval) {
+  if (!interval) return 0;
+  return (interval.workSeconds + interval.restSeconds) * interval.repeats;
+}
+
+/** "8 × 1:00 Belastung / 1:00 Pause" – die Vorgabe in einer Zeile. */
+export function describeInterval(interval) {
+  if (!interval) return '';
+
+  return (
+    `${interval.repeats} × ${clock(interval.workSeconds)} Belastung / ` +
+    `${clock(interval.restSeconds)} Pause`
+  );
+}
+
+/** Sekunden als "m:ss". */
+export function clock(seconds) {
+  const gesamt = Math.max(0, Math.round(seconds));
+  return `${Math.floor(gesamt / 60)}:${String(gesamt % 60).padStart(2, '0')}`;
 }
 
 export function typeLabel(type) {
@@ -129,6 +235,17 @@ export function validateSession(input) {
     });
   }
 
+  // Die Vorgabe wird geprüft, wenn sie da ist, aber nicht verlangt: Einheiten
+  // aus einer Sicherung von vor diesem Feature haben keine, und eine
+  // Sicherung soll nicht beim Einlesen Einträge verlieren. Das Formular füllt
+  // sie immer aus, dort ist sie Pflicht.
+  let interval;
+  if (isIntervalType(type) && input.interval !== undefined && input.interval !== null) {
+    const geprueft = validateInterval(input.interval);
+    if (geprueft.ok) interval = geprueft.interval;
+    else errors.push(...geprueft.errors);
+  }
+
   let note;
   if (typeof input.note === 'string' && input.note.trim() !== '') {
     const candidate = input.note.trim();
@@ -146,6 +263,7 @@ export function validateSession(input) {
 
   // Unbekannte Felder fallen hier absichtlich weg.
   const session = { date, type, segments };
+  if (interval) session.interval = interval;
   if (note) session.note = note;
   if (typeof input.createdAt === 'string' && input.createdAt.trim() !== '') {
     session.createdAt = input.createdAt.trim();
@@ -275,6 +393,7 @@ export function sessionDistanceKm(session) {
 /** Geplante Gesamtdauer in Minuten. 0 heißt "kein Zeitziel". */
 export function sessionDurationMinutes(session) {
   if (isRestType(session?.type)) return 0;
+  if (session?.interval) return intervalTotalSeconds(session.interval) / 60;
 
   return (session?.segments ?? []).reduce(
     (summe, segment) => summe + (segment?.durationMinutes ?? 0) * (segment?.repeats ?? 1),
@@ -288,6 +407,10 @@ export function sessionDurationMinutes(session) {
  */
 export function describeSession(session) {
   if (isRestType(session?.type)) return 'Kein Lauf geplant';
+
+  // Die Intervall-Vorgabe sagt alles Nötige und ist kürzer als jede Auflistung
+  // von Abschnitten.
+  if (session?.interval) return describeInterval(session.interval);
 
   const teile = (session?.segments ?? []).map((segment) => {
     const menge =

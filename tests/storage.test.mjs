@@ -334,3 +334,37 @@ describe('Trainingsplan im Speicher', () => {
     assert.deepEqual(store.read('laufapp.training.v1'), next);
   });
 });
+
+describe('Intervall-Vorgabe im Speicher', () => {
+  const vorgabe = { workSeconds: 90, restSeconds: 45, repeats: 6 };
+
+  test('bleibt beim Anlegen erhalten', () => {
+    const [einheit] = addSession([], {
+      date: '2026-08-19',
+      type: 'interval',
+      segments: [],
+      interval: vorgabe,
+    });
+
+    assert.deepEqual(einheit.interval, vorgabe);
+  });
+
+  test('bleibt beim Ändern erhalten', () => {
+    let einheiten = addSession([], { date: '2026-08-19', type: 'interval', segments: [], interval: vorgabe });
+    const geaendert = { ...vorgabe, repeats: 10 };
+
+    einheiten = updateSession(einheiten, einheiten[0].id, {
+      date: '2026-08-20',
+      type: 'interval',
+      segments: [],
+      interval: geaendert,
+    });
+
+    assert.deepEqual(einheiten[0].interval, geaendert);
+  });
+
+  test('ohne Vorgabe steht das Feld nicht im Datensatz', () => {
+    const [einheit] = addSession([], { date: '2026-08-19', type: 'easy', segments: [] });
+    assert.equal('interval' in einheit, false);
+  });
+});

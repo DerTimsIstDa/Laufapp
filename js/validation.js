@@ -36,6 +36,9 @@ const PACE_TOLERANCE_RATIO = 0.1;
 
 const PACE_CLOCK = /^(\d{1,2}):([0-5]\d)$/;
 
+/** "m:ss" bis "mmm:ss" – für Belastungs- und Pausenzeiten. */
+const CLOCK = /^(\d{1,3}):([0-5]\d)$/;
+
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const TIME_OF_DAY = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -139,6 +142,35 @@ export function parsePace(value) {
   if (text.includes(':')) return null;
 
   return parseNumber(text);
+}
+
+/**
+ * Zeitspanne als Sekunden lesen.
+ *
+ * "1:30" sind neunzig Sekunden, "45" sind fünfundvierzig. Die zweite Form ist
+ * kein Zugeständnis, sondern der häufige Fall: eine Belastung unter einer
+ * Minute tippt niemand als "0:45".
+ *
+ * @returns {?number} ganze Sekunden; null, wenn nichts Brauchbares drinsteht
+ */
+export function parseDurationSeconds(value) {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) && value >= 0 ? Math.round(value) : null;
+  }
+  if (typeof value !== 'string') return null;
+
+  const text = value.trim();
+  if (text === '') return null;
+
+  const uhr = CLOCK.exec(text);
+  if (uhr) return Number(uhr[1]) * 60 + Number(uhr[2]);
+
+  // Ein Doppelpunkt, der die Prüfung oben nicht bestanden hat, ist ein
+  // Tippfehler – nicht als blosse Zahl weiterreichen.
+  if (text.includes(':')) return null;
+
+  const zahl = parseNumber(text);
+  return zahl === null || zahl < 0 ? null : Math.round(zahl);
 }
 
 /** "HH:MM" von 00:00 bis 23:59. */

@@ -79,9 +79,15 @@ import {
   planXp,
   buildPlanStats,
   describeSession,
+  describeInterval,
+  intervalTotalSeconds,
+  clock,
   typeLabel,
   isRestType,
+  isIntervalType,
+  validateInterval,
   plannedInAdvance,
+  DEFAULT_INTERVAL,
 } from './training.js';
 import {
   loadRuns, addRun, updateRun, removeRun, replaceRuns,
@@ -348,6 +354,11 @@ const el = {
   sessionError: document.getElementById('session-error'),
   sessionSubmit: document.getElementById('session-submit'),
   sessionCancel: document.getElementById('session-cancel'),
+  sessionIntervalBox: document.getElementById('session-interval-box'),
+  sessionWork: document.getElementById('session-work'),
+  sessionRest: document.getElementById('session-rest'),
+  sessionRepeats: document.getElementById('session-repeats'),
+  sessionIntervalTotal: document.getElementById('session-interval-total'),
   sessionSegmentsBox: document.getElementById('session-segments-box'),
   sessionSegments: document.getElementById('session-segments'),
   sessionSegmentsEmpty: document.getElementById('session-segments-empty'),
@@ -530,6 +541,9 @@ function setupSessionForm() {
   el.sessionCancel.addEventListener('click', stopEditingSession);
   el.sessionAddSegment.addEventListener('click', () => addDraftSegment());
   el.sessionType.addEventListener('change', renderSessionTypeHint);
+  for (const feld of [el.sessionWork, el.sessionRest, el.sessionRepeats]) {
+    feld.addEventListener('input', renderIntervalTotal);
+  }
   el.sessionSegments.addEventListener('click', handleSegmentClick);
   el.planList.addEventListener('click', handlePlanClick);
 
@@ -548,6 +562,7 @@ function resetSessionForm() {
   el.sessionCancel.hidden = true;
   el.sessionError.hidden = true;
 
+  fillIntervalForm();
   renderSessionTypeHint();
   renderDraftSegments();
 }
@@ -558,14 +573,46 @@ function stopEditingSession() {
 }
 
 /**
- * Ein Ruhetag hat keine Abschnitte – der ganze Block verschwindet, statt
- * Eingaben anzubieten, die beim Speichern stillschweigend wegfallen.
+ * Was zur Art der Einheit passt, wird gezeigt – der Rest verschwindet.
+ *
+ * Ein Ruhetag hat weder Abschnitte noch Intervalle. Intervalle haben ihre
+ * eigenen drei Werte statt der generischen Abschnitte: beides nebeneinander
+ * hiesse, dieselbe Einheit zweimal zu beschreiben.
  */
 function renderSessionTypeHint() {
-  const type = SESSION_TYPES.find((entry) => entry.id === el.sessionType.value);
+  const gewaehlt = el.sessionType.value;
+  const type = SESSION_TYPES.find((entry) => entry.id === gewaehlt);
 
   el.sessionTypeHint.textContent = type?.hint ?? '';
-  el.sessionSegmentsBox.hidden = isRestType(el.sessionType.value);
+  el.sessionIntervalBox.hidden = !isIntervalType(gewaehlt);
+  el.sessionSegmentsBox.hidden = isRestType(gewaehlt) || isIntervalType(gewaehlt);
+
+  renderIntervalTotal();
+}
+
+/** Was die Vorgabe insgesamt dauert – direkt beim Tippen. */
+function renderIntervalTotal() {
+  if (el.sessionIntervalBox.hidden) return;
+
+  const geprueft = validateInterval(readIntervalForm());
+
+  el.sessionIntervalTotal.textContent = geprueft.ok
+    ? `Macht ${clock(intervalTotalSeconds(geprueft.interval))} insgesamt.`
+    : 'Belastung, Pause und Wiederholungen ausfüllen.';
+}
+
+function readIntervalForm() {
+  return {
+    workSeconds: el.sessionWork.value,
+    restSeconds: el.sessionRest.value,
+    repeats: el.sessionRepeats.value,
+  };
+}
+
+function fillIntervalForm(interval = DEFAULT_INTERVAL) {
+  el.sessionWork.value = clock(interval.workSeconds);
+  el.sessionRest.value = clock(interval.restSeconds);
+  el.sessionRepeats.value = String(interval.repeats);
 }
 
 function addDraftSegment(segment = { kind: 'main', repeats: '1', distanceKm: '', durationMinutes: '' }) {
@@ -676,12 +723,22 @@ function createSegmentInput(segment, field, { label, area, placeholder, suffix }
 function handleSessionSubmit(event) {
   event.preventDefault();
 
+  const art = el.sessionType.value;
   const eingabe = {
     date: el.sessionDate.value,
-    type: el.sessionType.value,
-    segments: isRestType(el.sessionType.value) ? [] : sessionDraft,
+    type: art,
+    segments: isRestType(art) || isIntervalType(art) ? [] : sessionDraft,
     note: el.sessionNote.value,
   };
+
+  // Im Formular ist die Vorgabe Pflicht – eine Intervall-Einheit ohne Werte
+  // liesse sich später nicht starten. Beim Import bleibt sie freiwillig,
+  // damit ältere Sicherungen nichts verlieren.
+  if (isIntervalType(art)) {
+    const vorgabe = validateInterval(readIntervalForm());
+    if (!vorgabe.ok) return showSessionError(firstErrorMessage(vorgabe));
+    eingabe.interval = vorgabe.interval;
+  }
 
   const geprueft = validateSession(eingabe);
   if (!geprueft.ok) return showSessionError(firstErrorMessage(geprueft));
@@ -707,6 +764,7 @@ function startEditingSession(id) {
   el.sessionType.value = session.type;
   el.sessionNote.value = session.note ?? '';
   el.sessionError.hidden = true;
+  fillIntervalForm(session.interval ?? DEFAULT_INTERVAL);
 
   // Zahlen als Text ins Formular: die Felder arbeiten mit Rohwerten, geprüft
   // wird erst beim Speichern.

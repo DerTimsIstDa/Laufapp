@@ -613,6 +613,12 @@ button:disabled {
   column-gap: var(--field-gap-x);
 }
 
+/* Drei Werte, die zusammengehören – auf schmalen Schirmen zweispaltig, damit
+   die Felder nicht zu Streifen werden. */
+.fields-three {
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+}
+
 .field {
   display: flex;
   flex-direction: column;

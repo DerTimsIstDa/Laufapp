@@ -330,6 +330,31 @@
 
           <p class="muted session-type-hint" id="session-type-hint"></p>
 
+          <!-- Nur bei "Intervalle": drei feste Werte statt der generischen
+               Abschnitte. Das Umschalten macht renderSessionTypeHint(). -->
+          <div id="session-interval-box" hidden>
+            <h3 class="group-title">Intervalle</h3>
+
+            <div class="fields fields-three">
+              <div class="field">
+                <label for="session-work">Belastung (mm:ss)</label>
+                <input type="text" id="session-work" name="session-work" inputmode="numeric" placeholder="1:00" autocomplete="off">
+              </div>
+
+              <div class="field">
+                <label for="session-rest">Pause (mm:ss)</label>
+                <input type="text" id="session-rest" name="session-rest" inputmode="numeric" placeholder="1:00" autocomplete="off">
+              </div>
+
+              <div class="field">
+                <label for="session-repeats">Wiederholungen</label>
+                <input type="text" id="session-repeats" name="session-repeats" inputmode="numeric" placeholder="8" autocomplete="off">
+              </div>
+            </div>
+
+            <p class="muted session-type-hint" id="session-interval-total"></p>
+          </div>
+
           <div id="session-segments-box">
             <div class="segments-head">
               <h3 class="group-title">Abschnitte <span class="optional">optional</span></h3>

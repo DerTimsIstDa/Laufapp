@@ -13,6 +13,9 @@ import {
   buildPlanStats,
   typeLabel,
   isRestType,
+  validateInterval,
+  intervalTotalSeconds,
+  describeInterval,
   XP_PER_SESSION,
   FULFILL_RATIO,
   MAX_SEGMENTS,
@@ -458,5 +461,110 @@ describe('typeLabel', () => {
 
   test('gibt Unbekanntes unverändert zurück, statt leer zu bleiben', () => {
     assert.equal(typeLabel('schwimmen'), 'schwimmen');
+  });
+});
+
+describe('Intervall-Vorgabe', () => {
+  const gut = { workSeconds: '1:00', restSeconds: '0:45', repeats: '8' };
+
+  test('liest mm:ss und blanke Sekunden', () => {
+    const a = validateInterval(gut);
+    assert.equal(a.ok, true);
+    assert.deepEqual(a.interval, { workSeconds: 60, restSeconds: 45, repeats: 8 });
+
+    const b = validateInterval({ workSeconds: '90', restSeconds: '30', repeats: 4 });
+    assert.deepEqual(b.interval, { workSeconds: 90, restSeconds: 30, repeats: 4 });
+  });
+
+  test('Wiederholungen werden auf ganze Zahlen gestutzt', () => {
+    assert.equal(validateInterval({ ...gut, repeats: '8,7' }).interval.repeats, 8);
+  });
+
+  test('unbrauchbare Zeiten werden abgelehnt', () => {
+    for (const wert of ['', 'gleich', '1:70', '1:', ':30', -5]) {
+      const ergebnis = validateInterval({ ...gut, workSeconds: wert });
+      assert.equal(ergebnis.ok, false, `${JSON.stringify(wert)} sollte scheitern`);
+      assert.equal(ergebnis.errors[0].field, 'interval.workSeconds');
+    }
+  });
+
+  test('zu kurze und zu lange Phasen werden abgelehnt', () => {
+    assert.equal(validateInterval({ ...gut, workSeconds: '4' }).ok, false);
+    assert.equal(validateInterval({ ...gut, workSeconds: '5' }).ok, true);
+    assert.equal(validateInterval({ ...gut, restSeconds: '61:00' }).ok, false);
+  });
+
+  test('Wiederholungen brauchen eine sinnvolle Zahl', () => {
+    for (const wert of ['', '0', '-1', '999', 'viele']) {
+      assert.equal(validateInterval({ ...gut, repeats: wert }).ok, false, `${wert}`);
+    }
+  });
+
+  test('kaputte Eingaben werfen nicht', () => {
+    for (const wert of [null, undefined, 'text', 42, []]) {
+      assert.doesNotThrow(() => validateInterval(wert));
+      assert.equal(validateInterval(wert).ok, false);
+    }
+  });
+
+  test('Gesamtdauer und Beschreibung', () => {
+    const { interval } = validateInterval(gut);
+
+    assert.equal(intervalTotalSeconds(interval), (60 + 45) * 8);
+    assert.equal(describeInterval(interval), '8 × 1:00 Belastung / 0:45 Pause');
+  });
+
+  test('ohne Vorgabe kein Ergebnis statt Absturz', () => {
+    assert.equal(intervalTotalSeconds(null), 0);
+    assert.equal(describeInterval(undefined), '');
+  });
+});
+
+describe('Intervalle an der Einheit', () => {
+  const basis = { date: '2026-08-19', type: 'interval', segments: [] };
+
+  test('die Vorgabe landet an der Einheit', () => {
+    const ergebnis = validateSession({
+      ...basis,
+      interval: { workSeconds: '1:30', restSeconds: '1:00', repeats: 6 },
+    });
+
+    assert.equal(ergebnis.ok, true);
+    assert.deepEqual(ergebnis.session.interval, { workSeconds: 90, restSeconds: 60, repeats: 6 });
+  });
+
+  test('eine Einheit ohne Vorgabe bleibt gültig', () => {
+    // Sicherungen von vor diesem Feature sollen nichts verlieren.
+    const ergebnis = validateSession(basis);
+
+    assert.equal(ergebnis.ok, true);
+    assert.equal(ergebnis.session.interval, undefined);
+  });
+
+  test('eine kaputte Vorgabe macht die Einheit ungültig', () => {
+    const ergebnis = validateSession({ ...basis, interval: { workSeconds: 'x', restSeconds: 'y', repeats: 'z' } });
+    assert.equal(ergebnis.ok, false);
+  });
+
+  test('andere Arten bekommen keine Vorgabe angehängt', () => {
+    const ergebnis = validateSession({
+      date: '2026-08-19',
+      type: 'easy',
+      segments: [],
+      interval: { workSeconds: '1:00', restSeconds: '1:00', repeats: 8 },
+    });
+
+    assert.equal(ergebnis.ok, true);
+    assert.equal(ergebnis.session.interval, undefined, 'ein Dauerlauf hat keine Intervalle');
+  });
+
+  test('die Vorgabe beschreibt die Einheit und liefert ihre Dauer', () => {
+    const { session } = validateSession({
+      ...basis,
+      interval: { workSeconds: '1:00', restSeconds: '1:00', repeats: 10 },
+    });
+
+    assert.equal(describeSession(session), '10 × 1:00 Belastung / 1:00 Pause');
+    assert.equal(sessionDurationMinutes(session), 20);
   });
 });

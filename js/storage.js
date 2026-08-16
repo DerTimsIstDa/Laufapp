@@ -245,7 +245,7 @@ export function saveSessions(sessions) {
  * @param {Session[]} sessions
  * @returns {Session[]}
  */
-export function addSession(sessions, { date, type, segments, note, createdAt }) {
+export function addSession(sessions, { date, type, segments, interval, note, createdAt }) {
   const session = {
     id: createId(),
     date,
@@ -253,6 +253,7 @@ export function addSession(sessions, { date, type, segments, note, createdAt }) 
     segments: segments ?? [],
     createdAt: createdAt ?? new Date().toISOString(),
   };
+  if (interval) session.interval = interval;
   if (note) session.note = note;
 
   const next = [...sessions, session].sort(bySessionDate);
@@ -270,11 +271,12 @@ export function addSession(sessions, { date, type, segments, note, createdAt }) 
  * @param {Session[]} sessions
  * @returns {Session[]} unverändert, falls es die id nicht gibt
  */
-export function updateSession(sessions, id, { date, type, segments, note }) {
+export function updateSession(sessions, id, { date, type, segments, interval, note }) {
   const existing = sessions.find((session) => session.id === id);
   if (!existing) return sessions;
 
   const updated = { id, date, type, segments: segments ?? [] };
+  if (interval) updated.interval = interval;
   if (note) updated.note = note;
   if (existing.createdAt) updated.createdAt = existing.createdAt;
 
