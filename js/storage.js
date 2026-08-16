@@ -77,7 +77,10 @@ export function saveRuns(runs) {
  * @param {Run[]} runs
  * @returns {Run[]}
  */
-export function addRun(runs, { distanceKm, date, timeOfDay, durationMinutes, paceMinPerKm, source, track }) {
+export function addRun(
+  runs,
+  { distanceKm, date, timeOfDay, durationMinutes, paceMinPerKm, source, track, interval }
+) {
   const run = { id: createId(), distanceKm, date };
 
   // Optionale Felder nur setzen, wenn sie ausgefüllt wurden.
@@ -85,6 +88,7 @@ export function addRun(runs, { distanceKm, date, timeOfDay, durationMinutes, pac
   if (durationMinutes) run.durationMinutes = durationMinutes;
   if (paceMinPerKm) run.paceMinPerKm = paceMinPerKm;
   if (source) run.source = source;
+  if (interval) run.interval = interval;
   if (track?.length) run.track = track;
 
   const next = [run, ...runs].sort(byDateDesc);
@@ -113,6 +117,9 @@ export function updateRun(runs, id, { distanceKm, date, timeOfDay, durationMinut
   if (durationMinutes) updated.durationMinutes = durationMinutes;
   if (paceMinPerKm) updated.paceMinPerKm = paceMinPerKm;
   if (existing.source) updated.source = existing.source;
+  // Wie die Route: das Formular kennt das Intervall-Merkmal nicht und darf es
+  // deshalb auch nicht wegwerfen.
+  if (existing.interval) updated.interval = existing.interval;
   if (existing.track?.length) updated.track = existing.track;
 
   const next = runs.map((run) => (run.id === id ? updated : run)).sort(byDateDesc);

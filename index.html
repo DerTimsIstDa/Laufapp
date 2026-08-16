@@ -28,6 +28,44 @@
     <code>http://localhost:…</code>-Adresse.
   </div>
 
+  <!-- Symbole der Stoppuhr, einmal definiert und per <use> geholt. -->
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+    <defs>
+      <g id="icon-run">
+        <circle cx="15.5" cy="4.5" r="2"/>
+        <path d="M13.5 9 9.5 11l-1.5 4"/>
+        <path d="m13.5 9 4 2 .5 4"/>
+        <path d="M13.5 9 11 14l3 2.5.5 4.5"/>
+        <path d="M11 14 7 17l-3 1"/>
+      </g>
+      <g id="icon-walk">
+        <circle cx="13" cy="4.5" r="2"/>
+        <path d="M11 9.5 9 13l-2 2"/>
+        <path d="m11 9.5 3.5 2 1 3.5"/>
+        <path d="m11 9.5-.5 5 3 2.5v4"/>
+        <path d="m13.5 17-3.5 4"/>
+      </g>
+      <!-- Zahnkranz: kurze, dicke Zähne, sonst liest es sich als Sonne. -->
+      <g id="icon-gear">
+        <circle cx="12" cy="12" r="3.4"/>
+        <circle cx="12" cy="12" r="6.6"/>
+        <path
+          stroke-width="3.2"
+          d="M12 4.2v1.2M12 18.6v1.2M19.8 12h-1.2M5.4 12H4.2M17.51 6.49l-.85.85M7.34 16.66l-.85.85M17.51 17.51l-.85-.85M7.34 7.34l-.85-.85"
+        />
+      </g>
+      <g id="icon-pause">
+        <path d="M9.5 5.5v13M14.5 5.5v13"/>
+      </g>
+      <g id="icon-play">
+        <path d="M8 5.5 18.5 12 8 18.5Z"/>
+      </g>
+      <g id="icon-stop">
+        <rect x="6.5" y="6.5" width="11" height="11" rx="1.5"/>
+      </g>
+    </defs>
+  </svg>
+
   <main class="app">
     <header class="app-header">
       <h1>FunRun</h1>
@@ -181,6 +219,38 @@
       </div>
 
       <p class="error" id="track-error" role="alert" hidden></p>
+
+      <!-- Spontanes Intervall-Training, ohne es vorher zu planen. -->
+      <div class="interval-start">
+        <h3 class="group-title">Intervall-Training</h3>
+
+        <div class="fields fields-three">
+          <div class="field">
+            <label for="quick-work">Belastung (mm:ss)</label>
+            <input type="text" id="quick-work" inputmode="numeric" placeholder="1:00" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="quick-rest">Pause (mm:ss)</label>
+            <input type="text" id="quick-rest" inputmode="numeric" placeholder="1:00" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="quick-repeats">Wiederholungen</label>
+            <input type="text" id="quick-repeats" inputmode="numeric" placeholder="8" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="filter-row" role="group" aria-label="Aufzeichnung">
+          <button type="button" class="chip active" id="quick-gps-on" aria-pressed="true">Mit GPS</button>
+          <button type="button" class="chip" id="quick-gps-off" aria-pressed="false">Ohne GPS</button>
+        </div>
+
+        <p class="muted" id="quick-total"></p>
+        <p class="error" id="quick-error" role="alert" hidden></p>
+
+        <div class="form-buttons">
+          <button type="button" id="quick-start">Intervall-Training starten</button>
+        </div>
+      </div>
     </section>
 
     <!-- Lauf eintragen / bearbeiten -->
@@ -622,6 +692,74 @@
         <p class="muted" id="runs-empty">Noch keine Läufe eingetragen.</p>
         <ul class="runs" id="runs-list"></ul>
       </section>
+    </div>
+
+    <!-- Intervall-Stoppuhr. Liegt über allem, weil während des Trainings
+         nichts anderes zu tun ist. -->
+    <div class="interval-screen" id="interval-screen" role="dialog" aria-modal="true" aria-labelledby="interval-phase" hidden>
+      <div class="interval-dial">
+        <svg class="interval-ring" viewBox="0 0 240 240" aria-hidden="true">
+          <circle class="interval-track" cx="120" cy="120" r="110"></circle>
+          <!-- Skalenstriche, in buildIntervalTicks() erzeugt. -->
+          <g class="interval-ticks" id="interval-ticks"></g>
+          <circle class="interval-bar" id="interval-bar" cx="120" cy="120" r="110"></circle>
+        </svg>
+
+        <div class="interval-face">
+          <span class="interval-icon" id="interval-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><use href="#icon-run"></use></svg>
+          </span>
+
+          <p class="interval-caption">Intervall</p>
+          <p class="interval-count"><span id="interval-repeat">1</span> / <span id="interval-repeats">8</span></p>
+
+          <p class="interval-time" id="interval-time">01:00</p>
+
+          <p class="interval-caption">Aktuell</p>
+          <p class="interval-phase" id="interval-phase">Intervall</p>
+
+          <div class="interval-next">
+            <p class="interval-caption">Nächstes</p>
+            <p class="interval-next-phase" id="interval-next-phase">Pause</p>
+            <p class="interval-next-time" id="interval-next-time">01:00</p>
+          </div>
+        </div>
+      </div>
+
+      <p class="interval-status muted" id="interval-status" role="status"></p>
+
+      <div class="interval-controls">
+        <button type="button" id="interval-settings" class="interval-button" aria-label="Einstellungen" aria-expanded="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-gear"></use></svg>
+        </button>
+
+        <button type="button" id="interval-pause" class="interval-button primary" aria-label="Pausieren">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-pause"></use></svg>
+        </button>
+
+        <button type="button" id="interval-stop" class="interval-button" aria-label="Beenden">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-stop"></use></svg>
+        </button>
+      </div>
+
+      <div class="interval-panel" id="interval-panel" hidden>
+        <label class="interval-toggle">
+          <input type="checkbox" id="interval-sound" checked>
+          <span>Ton beim Phasenwechsel</span>
+        </label>
+        <p class="muted interval-hint">
+          Bei gesperrtem Bildschirm kann das Betriebssystem die Töne
+          zurückhalten – dagegen hilft nur, das Gerät wach zu lassen.
+        </p>
+      </div>
+
+      <div class="interval-confirm" id="interval-confirm" hidden>
+        <p>Training wirklich beenden?</p>
+        <div class="interval-confirm-buttons">
+          <button type="button" id="interval-stop-confirm" class="danger small">Beenden</button>
+          <button type="button" id="interval-stop-cancel" class="secondary small">Weiterlaufen</button>
+        </div>
+      </div>
     </div>
 
     <nav class="tabbar" id="tabbar" role="tablist" aria-label="Bereiche">

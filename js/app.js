@@ -44,6 +44,8 @@ import { serializeExport, exportFileName, parseImport } from './transfer.js';
 import { buildStats, distanceByWeek, distanceByMonth, runsInPeriod } from './stats.js';
 import { goalXp, reachedGoalWeeks, XP_PER_GOAL_WEEK } from './goal.js';
 import { drawShareCard } from './share-card.js';
+import { phaseAt, summarize, WORK, REST, PHASE_LABEL } from './interval.js';
+import { unlock, isSoundOn, setSoundOn, beepWork, beepRest, beepFinish } from './beep.js';
 import { projectTrack, hasDrawableRoute, toStorageTrack, DEFAULT_VIEWPORT } from './route.js';
 import {
   isStandalone,
@@ -330,6 +332,34 @@ const el = {
   shareCancel: document.getElementById('share-cancel'),
   shareStatus: document.getElementById('share-status'),
   shareError: document.getElementById('share-error'),
+
+  intervalScreen: document.getElementById('interval-screen'),
+  intervalBar: document.getElementById('interval-bar'),
+  intervalIcon: document.getElementById('interval-icon'),
+  intervalRepeat: document.getElementById('interval-repeat'),
+  intervalRepeats: document.getElementById('interval-repeats'),
+  intervalTime: document.getElementById('interval-time'),
+  intervalPhase: document.getElementById('interval-phase'),
+  intervalNextPhase: document.getElementById('interval-next-phase'),
+  intervalNextTime: document.getElementById('interval-next-time'),
+  intervalStatus: document.getElementById('interval-status'),
+  intervalPauseButton: document.getElementById('interval-pause'),
+  intervalStopButton: document.getElementById('interval-stop'),
+  intervalSettingsButton: document.getElementById('interval-settings'),
+  intervalPanel: document.getElementById('interval-panel'),
+  intervalSound: document.getElementById('interval-sound'),
+  intervalConfirm: document.getElementById('interval-confirm'),
+  intervalStopConfirm: document.getElementById('interval-stop-confirm'),
+  intervalStopCancel: document.getElementById('interval-stop-cancel'),
+
+  quickWork: document.getElementById('quick-work'),
+  quickRest: document.getElementById('quick-rest'),
+  quickRepeats: document.getElementById('quick-repeats'),
+  quickGpsOn: document.getElementById('quick-gps-on'),
+  quickGpsOff: document.getElementById('quick-gps-off'),
+  quickTotal: document.getElementById('quick-total'),
+  quickError: document.getElementById('quick-error'),
+  quickStart: document.getElementById('quick-start'),
   profileStats: document.getElementById('profile-stats'),
   profileStatsEmpty: document.getElementById('profile-stats-empty'),
 
@@ -379,6 +409,9 @@ const el = {
 };
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/** Umfang des Stoppuhr-Rings, 2·π·110 – der Radius steht im Markup. */
+const INTERVAL_RING = 2 * Math.PI * 110;
 
 /**
  * Beschriftung der Plan-Zustände aus matchPlan().
@@ -457,6 +490,9 @@ function init() {
   el.trackDiscard.addEventListener('click', handleTrackDiscard);
   bindUnlockHold();
   el.trackLock.addEventListener('click', () => setLocked(true));
+
+  setupIntervalScreen();
+  setupQuickInterval();
 
   if (!tracker.isSupported()) {
     el.trackStart.disabled = true;
@@ -1010,13 +1046,30 @@ function renderToday() {
 }
 
 function createTodaySession({ session, status }) {
-  return createTodayItem({
+  const zeile = createTodayItem({
     name: typeLabel(session.type),
     detail: session.note ? `${describeSession(session)} · ${session.note}` : describeSession(session),
     // "teilweise" ist angefangen, nicht erledigt – nur das Erfüllte wird grün.
     erledigt: status === 'erfuellt',
     stand: STATUS_TEXT[status] ?? status,
   });
+
+  // Eine geplante Intervall-Einheit lässt sich von hier aus starten – das ist
+  // die Stelle, an der man am Trainingstag ohnehin nachsieht.
+  if (session.interval) {
+    const starten = document.createElement('button');
+    starten.type = 'button';
+    starten.className = 'small today-start';
+    starten.textContent = 'Starten';
+    starten.setAttribute('aria-label', `Intervall-Training vom ${formatDate(session.date)} starten`);
+    starten.addEventListener('click', () =>
+      startIntervalRun(session.interval, { sessionId: session.id, gps: intervalGpsPreferred })
+    );
+
+    zeile.append(starten);
+  }
+
+  return zeile;
 }
 
 function createTodayItem({ name, detail, erledigt, stand }) {
@@ -1770,6 +1823,373 @@ function renderGoal() {
     'aria-label',
     `Wochenziel: ${gelaufen} von ${ziel} Läufen`
   );
+}
+
+/* ----------------------------------------------- Intervall-Stoppuhr */
+
+/**
+ * Das laufende Intervall-Training.
+ *
+ * `elapsedMs` sammelt die Zeit abgeschlossener Abschnitte, `startedAt` ist
+ * der Beginn des laufenden. Pausieren heisst: das eine ins andere schieben.
+ * Ohne diese Trennung müsste bei jeder Pause die Startzeit verbogen werden,
+ * und ein zweites Pausieren rechnete auf einem verbogenen Wert weiter.
+ *
+ * @type {?{
+ *   interval: import('./training.js').Interval,
+ *   sessionId: ?string,
+ *   gps: boolean,
+ *   startedAt: ?number,
+ *   elapsedMs: number,
+ *   lastPhase: ?string,
+ *   beganAt: Date,
+ * }}
+ */
+let intervalRun = null;
+
+/** Laufender Takt der Stoppuhr. */
+let intervalTick = null;
+
+/** Zuletzt gewählt: mit oder ohne GPS. Gilt als Vorschlag beim nächsten Mal. */
+let intervalGpsPreferred = true;
+
+/** Spontanstart: dieselben drei Werte wie im Plan, plus die GPS-Wahl. */
+function setupQuickInterval() {
+  fillQuickForm();
+
+  for (const feld of [el.quickWork, el.quickRest, el.quickRepeats]) {
+    feld.addEventListener('input', renderQuickTotal);
+  }
+
+  el.quickGpsOn.addEventListener('click', () => setQuickGps(true));
+  el.quickGpsOff.addEventListener('click', () => setQuickGps(false));
+  el.quickStart.addEventListener('click', handleQuickStart);
+
+  renderQuickTotal();
+}
+
+function fillQuickForm(interval = DEFAULT_INTERVAL) {
+  el.quickWork.value = clock(interval.workSeconds);
+  el.quickRest.value = clock(interval.restSeconds);
+  el.quickRepeats.value = String(interval.repeats);
+}
+
+function setQuickGps(an) {
+  intervalGpsPreferred = an;
+
+  el.quickGpsOn.className = an ? 'chip active' : 'chip';
+  el.quickGpsOff.className = an ? 'chip' : 'chip active';
+  el.quickGpsOn.setAttribute('aria-pressed', String(an));
+  el.quickGpsOff.setAttribute('aria-pressed', String(!an));
+}
+
+function renderQuickTotal() {
+  const geprueft = validateInterval({
+    workSeconds: el.quickWork.value,
+    restSeconds: el.quickRest.value,
+    repeats: el.quickRepeats.value,
+  });
+
+  el.quickTotal.textContent = geprueft.ok
+    ? `Macht ${clock(intervalTotalSeconds(geprueft.interval))} insgesamt.`
+    : 'Belastung, Pause und Wiederholungen ausfüllen.';
+
+  return geprueft;
+}
+
+function handleQuickStart() {
+  const geprueft = renderQuickTotal();
+
+  if (!geprueft.ok) {
+    el.quickError.textContent = firstErrorMessage(geprueft);
+    el.quickError.hidden = false;
+    return;
+  }
+
+  el.quickError.hidden = true;
+  // Ohne sessionId: spontan geplant heisst keine Bonus-XP, nur der Lauf.
+  startIntervalRun(geprueft.interval, { gps: intervalGpsPreferred });
+}
+
+/**
+ * Skalenstriche innerhalb des Rings – sechzig Stück, jeder fünfte länger.
+ *
+ * In JS erzeugt statt sechzigmal im Markup: das Muster ist eine Rechnung, und
+ * als Rechnung bleibt es lesbar.
+ */
+function buildIntervalTicks() {
+  const striche = [];
+
+  for (let i = 0; i < 60; i++) {
+    const winkel = (i / 60) * Math.PI * 2 - Math.PI / 2;
+    const lang = i % 5 === 0;
+    const aussen = 96;
+    const innen = aussen - (lang ? 9 : 5);
+
+    const strich = document.createElementNS(SVG_NS, 'line');
+    strich.setAttribute('x1', r1(120 + Math.cos(winkel) * innen));
+    strich.setAttribute('y1', r1(120 + Math.sin(winkel) * innen));
+    strich.setAttribute('x2', r1(120 + Math.cos(winkel) * aussen));
+    strich.setAttribute('y2', r1(120 + Math.sin(winkel) * aussen));
+    if (lang) strich.setAttribute('class', 'long');
+
+    striche.push(strich);
+  }
+
+  document.getElementById('interval-ticks').replaceChildren(...striche);
+}
+
+function setupIntervalScreen() {
+  buildIntervalTicks();
+  el.intervalPauseButton.addEventListener('click', toggleIntervalPause);
+  el.intervalStopButton.addEventListener('click', askStopInterval);
+  el.intervalStopCancel.addEventListener('click', cancelStopInterval);
+  el.intervalStopConfirm.addEventListener('click', () => finishIntervalRun({ abgebrochen: true }));
+
+  el.intervalSettingsButton.addEventListener('click', () => {
+    const offen = el.intervalPanel.hidden;
+    el.intervalPanel.hidden = !offen;
+    el.intervalSettingsButton.setAttribute('aria-expanded', String(offen));
+  });
+
+  el.intervalSound.addEventListener('change', () => {
+    setSoundOn(el.intervalSound.checked);
+    if (el.intervalSound.checked) unlock();
+  });
+}
+
+/**
+ * Startet ein Intervall-Training.
+ *
+ * Beide Wege – geplante Einheit und Spontanstart – münden hier. `sessionId`
+ * unterscheidet sie nur für die Rückmeldung am Ende; die Bonus-XP holt sich
+ * der Plan ohnehin selbst aus dem gespeicherten Lauf.
+ */
+function startIntervalRun(interval, { sessionId = null, gps = intervalGpsPreferred } = {}) {
+  if (intervalRun !== null) return;
+
+  intervalGpsPreferred = gps;
+
+  // Aus dem Klick heraus, sonst bleibt der Ton auf iOS für immer stumm.
+  unlock();
+
+  intervalRun = {
+    interval,
+    sessionId,
+    gps,
+    startedAt: performance.now(),
+    elapsedMs: 0,
+    lastPhase: null,
+    beganAt: new Date(),
+  };
+
+  if (gps && tracker.isSupported() && window.isSecureContext) tracker.start();
+
+  el.intervalSound.checked = isSoundOn();
+  el.intervalPanel.hidden = true;
+  el.intervalSettingsButton.setAttribute('aria-expanded', 'false');
+  el.intervalConfirm.hidden = true;
+  el.intervalScreen.hidden = false;
+  el.intervalRepeats.textContent = interval.repeats;
+
+  // Der Rest der Seite ist während des Trainings nicht zu bedienen.
+  setAppInert(true);
+
+  intervalTick = setInterval(renderIntervalScreen, 200);
+  renderIntervalScreen();
+}
+
+/** Verstrichene Zeit ohne die Zeit in der Pause. */
+function intervalElapsedMs() {
+  if (intervalRun === null) return 0;
+  if (intervalRun.startedAt === null) return intervalRun.elapsedMs;
+
+  return intervalRun.elapsedMs + (performance.now() - intervalRun.startedAt);
+}
+
+function toggleIntervalPause() {
+  if (intervalRun === null) return;
+
+  if (intervalRun.startedAt === null) {
+    intervalRun.startedAt = performance.now();
+    unlock();
+  } else {
+    intervalRun.elapsedMs = intervalElapsedMs();
+    intervalRun.startedAt = null;
+  }
+
+  renderIntervalScreen();
+}
+
+function askStopInterval() {
+  el.intervalConfirm.hidden = false;
+}
+
+function cancelStopInterval() {
+  el.intervalConfirm.hidden = true;
+}
+
+/**
+ * Zeichnet die Stoppuhr und schaltet die Phasen weiter.
+ *
+ * Der Phasenwechsel hängt am Rendern statt an eigenen Zeitgebern: ein Takt,
+ * der ohnehin läuft, holt auch dann auf, wenn das Betriebssystem die App
+ * zwischendurch angehalten hat. Ein Wecker je Phase wäre in dem Moment
+ * verfallen.
+ */
+function renderIntervalScreen() {
+  if (intervalRun === null) return;
+
+  const stand = phaseAt(intervalRun.interval, intervalElapsedMs());
+  const pausiert = intervalRun.startedAt === null;
+
+  if (stand.done) return finishIntervalRun({ abgebrochen: false });
+
+  // Ton nur beim tatsächlichen Wechsel, nicht bei jedem Takt.
+  const marke = `${stand.kind}-${stand.repeat}`;
+  if (intervalRun.lastPhase !== null && intervalRun.lastPhase !== marke) {
+    if (stand.kind === WORK) beepWork();
+    else beepRest();
+  }
+  intervalRun.lastPhase = marke;
+
+  el.intervalScreen.classList.toggle('rest', stand.kind === REST);
+  el.intervalIcon.firstElementChild.firstElementChild.setAttribute(
+    'href',
+    stand.kind === WORK ? '#icon-run' : '#icon-walk'
+  );
+
+  el.intervalRepeat.textContent = stand.repeat;
+  el.intervalTime.textContent = clock(stand.remainingSeconds);
+  el.intervalPhase.textContent = PHASE_LABEL[stand.kind];
+
+  // Der Ring leert sich: voll zu Beginn der Phase, leer an ihrem Ende.
+  el.intervalBar.style.strokeDashoffset = INTERVAL_RING * stand.phaseProgress;
+
+  if (stand.nextKind === null) {
+    el.intervalNextPhase.textContent = 'Fertig';
+    el.intervalNextTime.textContent = '';
+  } else {
+    el.intervalNextPhase.textContent = PHASE_LABEL[stand.nextKind];
+    el.intervalNextTime.textContent = clock(stand.nextSeconds);
+  }
+
+  el.intervalPauseButton.setAttribute('aria-label', pausiert ? 'Fortsetzen' : 'Pausieren');
+  el.intervalPauseButton.firstElementChild.firstElementChild.setAttribute(
+    'href',
+    pausiert ? '#icon-play' : '#icon-pause'
+  );
+
+  el.intervalStatus.textContent = pausiert
+    ? 'Pausiert'
+    : intervalRun.gps
+      ? gpsIntervalStatus()
+      : 'Ohne GPS – nur Zeit';
+}
+
+function gpsIntervalStatus() {
+  const zustand = tracker.getState();
+  if (zustand.status === 'idle') return 'GPS nicht verfügbar – nur Zeit';
+
+  return zustand.lastAccuracyM === null
+    ? 'Warte auf das erste GPS-Signal …'
+    : `${distanceFormat.format(zustand.distanceKm)} km aufgezeichnet`;
+}
+
+/**
+ * Beendet das Training und legt es als Lauf ab.
+ *
+ * Auch ein Abbruch wird gespeichert: gelaufen ist gelaufen. Ohne GPS gibt es
+ * keine Distanz – dann ist es kein Lauf im Sinne der Lauf-Liste, sondern nur
+ * eine Zeit, und wird nicht abgelegt.
+ */
+function finishIntervalRun({ abgebrochen }) {
+  if (intervalRun === null) return;
+
+  const { interval, gps, beganAt } = intervalRun;
+  const bilanz = summarize(interval, intervalElapsedMs());
+
+  clearInterval(intervalTick);
+  intervalTick = null;
+
+  const aufzeichnung = gps ? tracker.stop() : null;
+
+  intervalRun = null;
+  el.intervalScreen.hidden = true;
+  el.intervalConfirm.hidden = true;
+  setAppInert(false);
+
+  if (!abgebrochen) beepFinish();
+
+  const gespeichert = saveIntervalRun({ interval, bilanz, aufzeichnung, beganAt, gps });
+
+  // Ohne Strecke fehlt dem Lauf die Distanz, und ohne Distanz ist er keiner.
+  // Statt das Training wegzuwerfen, steht es vorbereitet im Formular: Datum,
+  // Uhrzeit und Dauer sind schon da, es fehlt nur die Distanz.
+  if (!gespeichert && bilanz.completedRepeats > 0) {
+    prefillFromInterval(bilanz, beganAt);
+  }
+
+  el.trackStatus.textContent = describeIntervalResult(bilanz, gespeichert, abgebrochen);
+  render({ announceUnlocks: true });
+}
+
+function prefillFromInterval(bilanz, beganAt) {
+  stopEditing();
+
+  el.date.value = toIsoDate(beganAt);
+  el.time.value = toTimeOfDay(beganAt);
+  el.duration.value = String(round(bilanz.elapsedSeconds / 60));
+  el.distance.focus();
+}
+
+function saveIntervalRun({ interval, bilanz, aufzeichnung, beganAt, gps }) {
+  // Unter einer vollen Runde ist es kein Training, sondern ein Fehlstart.
+  if (bilanz.completedRepeats === 0) return false;
+
+  const distanceKm = aufzeichnung?.distanceKm ?? 0;
+  const durationMinutes = bilanz.elapsedSeconds / 60;
+
+  if (!(distanceKm > 0)) return false;
+
+  runs = addRun(runs, {
+    distanceKm,
+    date: toIsoDate(beganAt),
+    timeOfDay: toTimeOfDay(beganAt),
+    durationMinutes: round(durationMinutes),
+    source: 'gps',
+    track: aufzeichnung ? toStorageTrack(aufzeichnung.track) : undefined,
+    interval: {
+      workSeconds: interval.workSeconds,
+      restSeconds: interval.restSeconds,
+      repeats: interval.repeats,
+      completedRepeats: bilanz.completedRepeats,
+      gps,
+    },
+  });
+
+  return true;
+}
+
+function describeIntervalResult(bilanz, gespeichert, abgebrochen) {
+  const runden = `${bilanz.completedRepeats} ${bilanz.completedRepeats === 1 ? 'Runde' : 'Runden'}`;
+  const zeit = clock(bilanz.elapsedSeconds);
+  const kopf = abgebrochen ? 'Abgebrochen' : 'Training fertig';
+
+  if (gespeichert) return `${kopf}: ${runden} in ${zeit} – als Lauf gespeichert.`;
+  if (bilanz.completedRepeats === 0) return `${kopf} vor der ersten Runde – nichts gespeichert.`;
+
+  return (
+    `${kopf}: ${runden} in ${zeit}. Ohne GPS fehlt die Distanz – ` +
+    'sie steht unten im Formular schon vorbereitet, trag sie nach.'
+  );
+}
+
+/** Sperrt alles ausser der Stoppuhr – wie die Tastensperre beim Aufzeichnen. */
+function setAppInert(inert) {
+  for (const bereich of document.querySelectorAll('.app > *')) {
+    bereich.inert = inert;
+  }
 }
 
 /* ----------------------------------------------------------------- Teilen */

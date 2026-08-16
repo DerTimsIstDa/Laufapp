@@ -2306,3 +2306,301 @@ textarea:focus {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* ------------------------------------------------- Intervall-Stoppuhr */
+
+/**
+ * Vollbild über allem: während des Trainings gibt es nichts anderes zu tun,
+ * und ein versehentlicher Tab-Wechsel mitten in der Belastung wäre ärgerlich.
+ */
+.interval-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+  background: var(--bg);
+  overflow-y: auto;
+}
+
+.interval-dial {
+  position: relative;
+  width: min(82vw, 22rem);
+  aspect-ratio: 1;
+  flex: none;
+}
+
+.interval-ring {
+  width: 100%;
+  height: 100%;
+  /* Der Bogen beginnt oben, nicht rechts. */
+  transform: rotate(-90deg);
+}
+
+.interval-track,
+.interval-bar {
+  fill: none;
+  stroke-width: 12;
+  stroke-linecap: round;
+}
+
+.interval-track {
+  stroke: var(--surface);
+}
+
+/* Skala im Ring – da, aber leise. Sie gibt dem Zifferblatt Tiefe, ohne
+   abzulenken; die Zeit liest man aus der Zahl, nicht von den Strichen. */
+.interval-ticks line {
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.interval-ticks line.long {
+  stroke: var(--muted);
+  stroke-width: 2;
+}
+
+.interval-bar {
+  stroke: var(--accent);
+  /* Umfang bei r=110; den Versatz setzt app.js. */
+  stroke-dasharray: 691.15;
+  stroke-dashoffset: 0;
+  filter: drop-shadow(0 0 6px var(--accent-glow));
+}
+
+/* Die Pause tritt zurück: dieselbe Anzeige, aber ohne Signalwirkung. */
+.interval-screen.rest .interval-bar {
+  stroke: var(--muted);
+  filter: none;
+}
+
+/* Zifferblatt in der Mitte des Rings. */
+.interval-face {
+  position: absolute;
+  inset: 12%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.interval-icon svg {
+  width: 1.75rem;
+  height: 1.75rem;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.interval-screen.rest .interval-icon svg {
+  stroke: var(--muted);
+}
+
+.interval-caption {
+  margin: var(--space-2) 0 0;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+
+.interval-count {
+  margin: 0.1rem 0 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Die Zeit ist das Einzige, was man im Laufen aus dem Augenwinkel liest. */
+.interval-time {
+  margin: 0.2rem 0 0;
+  font-size: clamp(3rem, 17vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.interval-phase {
+  margin: 0.1rem 0 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.interval-screen.rest .interval-phase {
+  color: var(--muted);
+}
+
+.interval-next {
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--line);
+  width: 62%;
+}
+
+.interval-next .interval-caption {
+  margin-top: 0;
+}
+
+.interval-next-phase {
+  margin: 0.1rem 0 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--body);
+}
+
+.interval-next-time {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.interval-status {
+  margin: 0;
+  min-height: 1.25rem;
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
+.interval-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+}
+
+.interval-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--body);
+}
+
+.interval-button:hover {
+  background: var(--surface-hover);
+  border-color: var(--line-strong);
+}
+
+/* Der mittlere Knopf ist der, den man im Laufen trifft. */
+.interval-button.primary {
+  width: 4.5rem;
+  height: 4.5rem;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.interval-button.primary:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.interval-button svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.interval-button.primary svg {
+  width: 1.875rem;
+  height: 1.875rem;
+}
+
+/* Das Wiedergabe-Dreieck und das Stopp-Quadrat sind Flächen, keine Striche. */
+.interval-button svg use[href="#icon-play"],
+.interval-button svg use[href="#icon-stop"] {
+  fill: currentColor;
+}
+
+.interval-panel,
+.interval-confirm {
+  width: min(100%, 22rem);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.interval-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--body);
+}
+
+.interval-toggle input {
+  width: 1.125rem;
+  height: 1.125rem;
+  min-height: 0;
+  padding: 0;
+  accent-color: var(--accent);
+}
+
+.interval-hint {
+  margin: var(--space-2) 0 0;
+  font-size: 0.75rem;
+}
+
+.interval-confirm p {
+  margin: 0 0 var(--space-3);
+  font-size: 0.9375rem;
+  color: var(--text);
+}
+
+.interval-confirm-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* Spontanstart im Aufzeichnen-Bereich – abgesetzt vom Live-Tracking darüber. */
+.interval-start {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.interval-start .filter-row {
+  margin: var(--space-3) 0 var(--space-2);
+}
+
+/* Startknopf an der geplanten Einheit im Start-Bereich. */
+.today-start {
+  flex: none;
+  margin-left: var(--space-2);
+}
