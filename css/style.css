@@ -58,9 +58,11 @@
   --field-pad-x: 0.75rem;
   --field-pad-y: 0.55rem;
 
-  /* Abstand Beschriftung zu Feld und zwischen zwei Feldern nebeneinander */
+  /* Abstand Beschriftung zu Feld, zwischen zwei Reihen und zwischen zwei
+     Feldern nebeneinander */
   --label-gap: var(--space-2);
   --field-gap: var(--space-4);
+  --field-gap-x: var(--space-5);
 
   /* Rundungen, angelehnt an die Ecken des App-Icons */
   --radius-sm: 0.5rem;
@@ -599,10 +601,16 @@ button:disabled {
 
 /* ------------------------------------------------------------- Formular */
 
+/**
+ * Zwei Felder je Reihe. Seitlich mehr Luft als untereinander: nebeneinander
+ * grenzen zwei Rahmen direkt aneinander und verschmelzen optisch, während
+ * untereinander schon die Beschriftung trennt.
+ */
 .fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--field-gap);
+  row-gap: var(--field-gap);
+  column-gap: var(--field-gap-x);
 }
 
 .field {
@@ -639,6 +647,9 @@ input,
 select,
 textarea {
   width: 100%;
+  /* Ohne das sprengt ein Datumsfeld seine Rasterspalte: WebKit gibt ihm eine
+     Mindestbreite aus dem Inhalt, die breiter ist als die Spalte. */
+  min-width: 0;
   min-height: var(--field-height);
   padding: var(--field-pad-y) var(--field-pad-x);
   background: var(--sunken);
@@ -651,6 +662,47 @@ textarea {
      Datumsfeld, das seine eigene Innenhöhe mitbringt. */
   line-height: 1.25;
   transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
+}
+
+/**
+ * Eine Höhe für alles Einzeilige – und zwar fest, nicht nur als Mindestmass.
+ *
+ * `min-height` allein reicht nicht: Datum, Uhrzeit und Auswahl bringen in
+ * WebKit eigene Innenteile mit und werden damit höher als ein Textfeld
+ * daneben. Auf dem iPhone stehen sonst zwei Felder derselben Reihe
+ * unterschiedlich hoch nebeneinander. Nur die Textfläche darf wachsen.
+ */
+input,
+select {
+  height: var(--field-height);
+}
+
+/**
+ * WebKit zeichnet Datum und Uhrzeit als eigenes Bedienelement: der Wert steht
+ * mittig statt links, mit eigenen Abständen und eigener Höhe. Ohne das
+ * Zurücksetzen sieht ein Datumsfeld neben einem Textfeld aus wie aus einer
+ * anderen App.
+ */
+input[type="date"],
+input[type="time"] {
+  appearance: none;
+  text-align: left;
+}
+
+input::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+  min-height: 0;
+}
+
+input::-webkit-datetime-edit {
+  padding: 0;
+  line-height: 1.25;
+}
+
+/* Das Kalendersymbol bleibt, soll aber nicht heller sein als der Text. */
+input::-webkit-calendar-picker-indicator {
+  opacity: 0.55;
 }
 
 /* Ohne das Zurücksetzen zeichnet der Browser sein eigenes helles Feld. */
@@ -1586,9 +1638,11 @@ textarea:focus {
    kleinere. */
 .segment select,
 .segment input {
+  /* Nur die Token neu setzen – Höhe und Innenabstand kommen weiterhin aus
+     der gemeinsamen Regel oben. */
+  --field-height: var(--field-height-sm);
   --field-pad-x: 0.5rem;
   --field-pad-y: 0.3rem;
-  min-height: var(--field-height-sm);
   font-size: 0.875rem;
 }
 

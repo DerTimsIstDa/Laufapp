@@ -31,7 +31,14 @@ describe('[hidden] sticht jede eigene display-Regel', () => {
 
 describe('Eingabefelder sind zentral bemasst', () => {
   test('die Masse stehen als Token, nicht in den Regeln', () => {
-    for (const token of ['--field-height', '--field-pad-x', '--field-pad-y', '--label-gap']) {
+    for (const token of [
+      '--field-height',
+      '--field-pad-x',
+      '--field-pad-y',
+      '--label-gap',
+      '--field-gap',
+      '--field-gap-x',
+    ]) {
       assert.match(css, new RegExp(`${token}:\\s*[^;]+;`), `${token} fehlt`);
     }
   });
@@ -43,6 +50,27 @@ describe('Eingabefelder sind zentral bemasst', () => {
     assert.ok(regel, 'input/select/textarea haben keine gemeinsame Regel');
     assert.match(regel[1], /min-height:\s*var\(--field-height\)/);
     assert.match(regel[1], /padding:\s*var\(--field-pad-y\)\s+var\(--field-pad-x\)/);
+  });
+
+  test('einzeilige Felder haben eine feste Höhe, die Textfläche nicht', () => {
+    // min-height allein reicht nicht: Datum, Uhrzeit und Auswahl werden in
+    // WebKit sonst höher als ein Textfeld daneben.
+    const regel = /input,\s*select\s*\{([^}]*)\}/.exec(css);
+    assert.ok(regel, 'input/select haben keine gemeinsame Höhenregel');
+    assert.match(regel[1], /height:\s*var\(--field-height\)/);
+  });
+
+  test('Datum und Uhrzeit werden auf das Aussehen der Textfelder gebracht', () => {
+    // WebKit stellt den Wert sonst mittig dar und bringt eigene Abstände mit.
+    assert.match(css, /input\[type="date"\][^{]*\{[^}]*appearance:\s*none/);
+    assert.match(css, /::-webkit-date-and-time-value\s*\{[^}]*text-align:\s*left/);
+  });
+
+  test('nebeneinander stehende Felder bekommen mehr Luft als übereinander', () => {
+    const regel = /\.fields\s*\{([^}]*)\}/.exec(css);
+    assert.ok(regel, '.fields fehlt');
+    assert.match(regel[1], /row-gap:\s*var\(--field-gap\)/);
+    assert.match(regel[1], /column-gap:\s*var\(--field-gap-x\)/);
   });
 
   test('kein Formular bemasst seine Felder selbst', () => {
