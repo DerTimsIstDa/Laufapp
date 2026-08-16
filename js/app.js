@@ -1981,6 +1981,14 @@ function startIntervalRun(interval, { sessionId = null, gps = intervalGpsPreferr
     elapsedMs: 0,
     lastPhase: null,
     beganAt: new Date(),
+    // Strecke und Zeit allein aus den Belastungsphasen. Die Gesamt-Pace eines
+    // Intervall-Trainings enthält die Gehpausen und sagt über das Tempo in
+    // der Belastung nichts aus.
+    workDistanceKm: 0,
+    workMs: 0,
+    lastDistanceKm: 0,
+    lastSampleAt: performance.now(),
+    lastKind: WORK,
   };
 
   if (gps && tracker.isSupported() && window.isSecureContext) tracker.start();
@@ -2012,10 +2020,14 @@ function toggleIntervalPause() {
 
   if (intervalRun.startedAt === null) {
     intervalRun.startedAt = performance.now();
+    intervalRun.lastSampleAt = performance.now();
     unlock();
+    if (intervalRun.gps) tracker.resume();
   } else {
     intervalRun.elapsedMs = intervalElapsedMs();
     intervalRun.startedAt = null;
+    // Sonst zählte Herumstehen als aufgezeichnete Strecke.
+    if (intervalRun.gps) tracker.pause();
   }
 
   renderIntervalScreen();
@@ -2042,6 +2054,8 @@ function renderIntervalScreen() {
 
   const stand = phaseAt(intervalRun.interval, intervalElapsedMs());
   const pausiert = intervalRun.startedAt === null;
+
+  sampleWorkPhase(stand, pausiert);
 
   if (stand.done) return finishIntervalRun({ abgebrochen: false });
 
@@ -2087,6 +2101,27 @@ function renderIntervalScreen() {
       : 'Ohne GPS – nur Zeit';
 }
 
+/**
+ * Schreibt Strecke und Zeit der Belastungsphasen fort.
+ *
+ * Zugeordnet wird rückwirkend: was seit dem letzten Takt dazugekommen ist,
+ * gehört zu der Phase, die damals lief. Beim Wechsel landet der letzte
+ * Bruchteil dadurch noch auf der richtigen Seite.
+ */
+function sampleWorkPhase(stand, pausiert) {
+  const jetzt = performance.now();
+  const distanz = intervalRun.gps ? tracker.getState().distanceKm : 0;
+
+  if (!pausiert && intervalRun.lastKind === WORK) {
+    intervalRun.workMs += jetzt - intervalRun.lastSampleAt;
+    intervalRun.workDistanceKm += Math.max(0, distanz - intervalRun.lastDistanceKm);
+  }
+
+  intervalRun.lastSampleAt = jetzt;
+  intervalRun.lastDistanceKm = distanz;
+  intervalRun.lastKind = stand.kind;
+}
+
 function gpsIntervalStatus() {
   const zustand = tracker.getState();
   if (zustand.status === 'idle') return 'GPS nicht verfügbar – nur Zeit';
@@ -2106,8 +2141,13 @@ function gpsIntervalStatus() {
 function finishIntervalRun({ abgebrochen }) {
   if (intervalRun === null) return;
 
-  const { interval, gps, beganAt } = intervalRun;
+  const { interval, gps, beganAt, workDistanceKm, workMs } = intervalRun;
   const bilanz = summarize(interval, intervalElapsedMs());
+
+  // Nur wenn wirklich gemessen wurde: eine Pace aus null Kilometern wäre
+  // keine Zahl, sondern eine Division.
+  const workPaceMinPerKm =
+    gps && workDistanceKm > 0 && workMs > 0 ? workMs / 60_000 / workDistanceKm : null;
 
   clearInterval(intervalTick);
   intervalTick = null;
@@ -2121,7 +2161,14 @@ function finishIntervalRun({ abgebrochen }) {
 
   if (!abgebrochen) beepFinish();
 
-  const gespeichert = saveIntervalRun({ interval, bilanz, aufzeichnung, beganAt, gps });
+  const gespeichert = saveIntervalRun({
+    interval,
+    bilanz,
+    aufzeichnung,
+    beganAt,
+    gps,
+    workPaceMinPerKm,
+  });
 
   // Ohne Strecke fehlt dem Lauf die Distanz, und ohne Distanz ist er keiner.
   // Statt das Training wegzuwerfen, steht es vorbereitet im Formular: Datum,
@@ -2143,7 +2190,7 @@ function prefillFromInterval(bilanz, beganAt) {
   el.distance.focus();
 }
 
-function saveIntervalRun({ interval, bilanz, aufzeichnung, beganAt, gps }) {
+function saveIntervalRun({ interval, bilanz, aufzeichnung, beganAt, gps, workPaceMinPerKm }) {
   // Unter einer vollen Runde ist es kein Training, sondern ein Fehlstart.
   if (bilanz.completedRepeats === 0) return false;
 
@@ -2165,6 +2212,7 @@ function saveIntervalRun({ interval, bilanz, aufzeichnung, beganAt, gps }) {
       repeats: interval.repeats,
       completedRepeats: bilanz.completedRepeats,
       gps,
+      ...(workPaceMinPerKm === null ? {} : { workPaceMinPerKm }),
     },
   });
 

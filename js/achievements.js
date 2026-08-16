@@ -297,6 +297,33 @@ export const ACHIEVEMENTS = [
     }),
   },
   {
+    id: 'intervall-einsteiger',
+    name: 'Intervall-Einsteiger',
+    description: '3 Intervall-Trainings vollständig durchgezogen.',
+    xp: 40,
+    category: 'meilenstein',
+    check: (s) => s.intervalSessions >= 3,
+    progress: (s) => ({ current: s.intervalSessions, target: 3, unit: 'Trainings' }),
+  },
+  {
+    id: 'intervall-routine',
+    name: 'Intervall-Routine',
+    description: '10 Intervall-Trainings vollständig durchgezogen.',
+    xp: 90,
+    category: 'meilenstein',
+    check: (s) => s.intervalSessions >= 10,
+    progress: (s) => ({ current: s.intervalSessions, target: 10, unit: 'Trainings' }),
+  },
+  {
+    id: 'hundert-runden',
+    name: 'Hundert Runden',
+    description: '100 Intervall-Wiederholungen insgesamt geschafft.',
+    xp: 120,
+    category: 'meilenstein',
+    check: (s) => s.intervalRepeatsTotal >= 100,
+    progress: (s) => ({ current: s.intervalRepeatsTotal, target: 100, unit: 'Runden' }),
+  },
+  {
     id: 'fuenf-stunden',
     name: 'Fünf Stunden unterwegs',
     description: '5 Stunden Laufzeit gesammelt (Dauer eintragen).',
@@ -422,6 +449,26 @@ export const ACHIEVEMENTS = [
     category: 'herausforderung',
     check: (s) => s.maxRunsPerWeek >= 3,
     progress: (s) => ({ current: s.maxRunsPerWeek, target: 3, unit: 'Läufe' }),
+  },
+  {
+    id: 'zehn-am-stueck',
+    name: 'Zehn am Stück',
+    description: 'Ein Intervall-Training mit 10 Wiederholungen geschafft.',
+    xp: 45,
+    category: 'herausforderung',
+    check: (s) => s.maxIntervalRepeats >= 10,
+    progress: (s) => ({ current: s.maxIntervalRepeats, target: 10, unit: 'Runden' }),
+  },
+  {
+    id: 'tempo-im-intervall',
+    name: 'Tempo im Intervall',
+    description: 'Belastungsphasen schneller als 5:00 min/km (mit GPS aufgezeichnet).',
+    xp: 60,
+    category: 'herausforderung',
+    // Gemessen wird nur die Belastung, nicht das Training: die Gehpausen
+    // gehören nicht in eine Pace, die etwas über das Tempo aussagen soll.
+    check: (s) =>
+      s.bestIntervalWorkPace !== null && s.bestIntervalWorkPace < PACE_FAST_MIN_PER_KM,
   },
   {
     id: 'neue-bestzeit',
@@ -602,6 +649,10 @@ export const ACHIEVEMENTS = [
  * @property {number} totalDurationMinutes      nur Läufe mit eingetragener Dauer
  * @property {number} maxRunsPerDay
  * @property {number} maxRunsPerWeek
+ * @property {number} intervalSessions          zu Ende gebrachte Intervall-Trainings
+ * @property {number} intervalRepeatsTotal      geschaffte Wiederholungen insgesamt
+ * @property {number} maxIntervalRepeats        meiste Wiederholungen in einem Training
+ * @property {?number} bestIntervalWorkPace     beste Pace in den Belastungsphasen
  * @property {?number} bestPaceMinPerKm         beste Pace ab PACE_MIN_DISTANCE_KM
  * @property {?number} firstPaceMinPerKm        Pace des ersten gewerteten Laufs
  * @property {number} paceImprovementMin        um wie viel die Bestpace sank
@@ -633,6 +684,10 @@ export function buildRunStats(runs) {
     totalDurationMinutes: 0,
     maxRunsPerDay: 0,
     maxRunsPerWeek: 0,
+    intervalSessions: 0,
+    intervalRepeatsTotal: 0,
+    maxIntervalRepeats: 0,
+    bestIntervalWorkPace: null,
     bestPaceMinPerKm: null,
     firstPaceMinPerKm: null,
     paceImprovementMin: 0,
@@ -687,6 +742,24 @@ export function buildRunStats(runs) {
     if (minutes !== null) {
       if (minutes < 7 * 60) stats.earlyRunCount++;
       if (minutes >= 21 * 60) stats.lateRunCount++;
+    }
+
+    // Intervall-Training. Angebrochene Runden zählen nicht mit; ein Training
+    // gilt als absolviert, wenn alle geplanten Runden durch sind. Wer
+    // abbricht, behält die geschafften Runden, aber nicht das Training.
+    const intervall = run.interval;
+    if (intervall && intervall.completedRepeats > 0) {
+      stats.intervalRepeatsTotal += intervall.completedRepeats;
+      stats.maxIntervalRepeats = Math.max(stats.maxIntervalRepeats, intervall.completedRepeats);
+
+      if (intervall.completedRepeats >= intervall.repeats) stats.intervalSessions++;
+
+      const tempo = intervall.workPaceMinPerKm;
+      if (typeof tempo === 'number' && Number.isFinite(tempo) && tempo > 0) {
+        if (stats.bestIntervalWorkPace === null || tempo < stats.bestIntervalWorkPace) {
+          stats.bestIntervalWorkPace = tempo;
+        }
+      }
     }
 
     // Längster Lauf um 20 % übertroffen

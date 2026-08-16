@@ -452,6 +452,22 @@ describe('Vollständigkeit', () => {
     // Weit auseinander und ohne Uhrzeit-Nachbarn: die frühen Läufe sollen die
     // Zähler füllen, aber keine Serie und keine Pause verfälschen.
     ...Array.from({ length: 14 }, (_, i) => makeRun(30_000 + i * 100, 6, { timeOfDay: '06:00' })),
+    // Zehn vollständige Intervall-Trainings mit je zehn Runden: deckt
+    // Trainings, Runden insgesamt und die zehn am Stück ab.
+    ...Array.from({ length: 10 }, (_, i) =>
+      makeRun(40_000 + i * 100, 8, {
+        durationMinutes: 40,
+        interval: {
+          workSeconds: 60,
+          restSeconds: 60,
+          repeats: 10,
+          completedRepeats: 10,
+          gps: true,
+          // Nur beim ersten schnell genug – eines reicht für die Trophäe.
+          workPaceMinPerKm: i === 0 ? 4.6 : 6.2,
+        },
+      })
+    ),
   ];
 
   /**
@@ -702,5 +718,86 @@ describe('Pace-Trophäen', () => {
     test('ein einziger Lauf ergibt keine Verbesserung', () => {
       assert.equal(buildRunStats(mitPace(1, 4)).paceImprovementMin, 0);
     });
+  });
+});
+
+describe('Intervall-Trophäen', () => {
+  /** n Trainings mit je `runden` geschafften von `geplant` Runden. */
+  const trainings = (n, { runden = 10, geplant = runden, pace = null } = {}) =>
+    Array.from({ length: n }, (_, i) =>
+      makeRun(i * 100, 8, {
+        durationMinutes: 40,
+        interval: {
+          workSeconds: 60,
+          restSeconds: 60,
+          repeats: geplant,
+          completedRepeats: runden,
+          gps: pace !== null,
+          ...(pace === null ? {} : { workPaceMinPerKm: pace }),
+        },
+      })
+    );
+
+  test('nur vollständig durchgezogene Trainings zählen als Training', () => {
+    const abgebrochen = trainings(5, { runden: 6, geplant: 10 });
+    const stats = buildRunStats(abgebrochen);
+
+    assert.equal(stats.intervalSessions, 0, 'sechs von zehn ist kein Training');
+    assert.equal(stats.intervalRepeatsTotal, 30, 'die Runden zählen trotzdem');
+    assert.equal(has(abgebrochen, 'intervall-einsteiger'), false);
+  });
+
+  test('die Stufen der Trainings greifen an ihrer Schwelle', () => {
+    for (const [id, schwelle] of [
+      ['intervall-einsteiger', 3],
+      ['intervall-routine', 10],
+    ]) {
+      assert.equal(has(trainings(schwelle - 1), id), false, `${id} knapp darunter`);
+      assert.equal(has(trainings(schwelle), id), true, `${id} auf der Schwelle`);
+    }
+  });
+
+  test('hundert Runden zählen über alle Trainings', () => {
+    assert.equal(has(trainings(9, { runden: 11 }), 'hundert-runden'), false, '99 Runden');
+    assert.equal(has(trainings(10, { runden: 10 }), 'hundert-runden'), true);
+  });
+
+  test('zehn am Stück misst das einzelne Training', () => {
+    // Zwanzig Trainings zu fünf Runden sind hundert Runden, aber nie zehn
+    // am Stück.
+    const viele = trainings(20, { runden: 5 });
+
+    assert.equal(has(viele, 'hundert-runden'), true);
+    assert.equal(has(viele, 'zehn-am-stueck'), false);
+    assert.equal(has(trainings(1, { runden: 10 }), 'zehn-am-stueck'), true);
+  });
+
+  test('das Tempo zählt nur aus den Belastungsphasen', () => {
+    assert.equal(has(trainings(1, { pace: 5 }), 'tempo-im-intervall'), false, 'genau 5:00');
+    assert.equal(has(trainings(1, { pace: 4.9 }), 'tempo-im-intervall'), true);
+  });
+
+  test('ohne GPS gibt es kein Tempo, aber auch keinen Fehler', () => {
+    const ohne = trainings(3, { pace: null });
+
+    assert.doesNotThrow(() => buildRunStats(ohne));
+    assert.equal(buildRunStats(ohne).bestIntervalWorkPace, null);
+    assert.equal(has(ohne, 'tempo-im-intervall'), false);
+    assert.equal(has(ohne, 'intervall-einsteiger'), true, 'gelaufen ist gelaufen');
+  });
+
+  test('gewöhnliche Läufe stören die Zähler nicht', () => {
+    const gemischt = [...trainings(3), makeRun(9000, 10), makeRun(9100, 5)];
+    const stats = buildRunStats(gemischt);
+
+    assert.equal(stats.intervalSessions, 3);
+    assert.equal(stats.maxIntervalRepeats, 10);
+  });
+
+  test('ein kaputtes Intervall-Feld wirft nicht', () => {
+    for (const wert of [null, 'text', 42, {}, { completedRepeats: 'viele' }]) {
+      const runs = [makeRun(0, 5, { interval: wert })];
+      assert.doesNotThrow(() => buildRunStats(runs), `${JSON.stringify(wert)}`);
+    }
   });
 });
