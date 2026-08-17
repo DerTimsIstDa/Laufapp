@@ -17,6 +17,7 @@ const EXERCISE_KEY = 'laufapp.exercises.v1';
 const TRAINING_KEY = 'laufapp.training.v1';
 const PROFILE_KEY = 'laufapp.profile.v1';
 const EXERCISE_PLAN_KEY = 'laufapp.exercise-plan.v1';
+const RECORDING_KEY = 'laufapp.recording.v1';
 
 /**
  * `timeOfDay` ("HH:MM") und `durationMinutes` sind optional. Sie werden nur
@@ -411,6 +412,49 @@ export function saveProfile({ name, weeklyGoal, goalSince }) {
   }
 
   return profil;
+}
+
+/* ------------------------------------------------- Aufzeichnungsart ---- */
+
+/**
+ * Mit oder ohne GPS – die zuletzt getroffene Wahl.
+ *
+ * Beim allerersten Mal ist die Antwort auf jedem Gerät "ohne": erst wer sie
+ * aktiv umstellt, löst die Standortabfrage des Betriebssystems aus. Ein
+ * voreingestelltes "mit GPS" fragte danach schon beim blossen Aufmachen.
+ *
+ * @returns {boolean}
+ */
+export function loadGpsPreference() {
+  let raw;
+  try {
+    raw = localStorage.getItem(RECORDING_KEY);
+  } catch {
+    return false;
+  }
+  if (!raw) return false;
+
+  try {
+    return JSON.parse(raw)?.gps === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * @param {boolean} gps
+ * @returns {boolean} derselbe Wert, zum Weiterreichen
+ */
+export function saveGpsPreference(gps) {
+  const wert = gps === true;
+
+  try {
+    localStorage.setItem(RECORDING_KEY, JSON.stringify({ gps: wert }));
+  } catch (err) {
+    console.error('Aufzeichnungsart konnte nicht gespeichert werden:', err);
+  }
+
+  return wert;
 }
 
 function isValidSession(session) {

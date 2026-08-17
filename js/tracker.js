@@ -10,12 +10,14 @@
  */
 
 import { evaluateSegment, DEFAULT_FILTER } from './geo.js';
+import { createWakeLock } from './wake-lock.js';
 
 /** Position gilt nach so vielen ms ohne Fix als "kein Signal". */
 const POSITION_TIMEOUT_MS = 20_000;
 
 /**
  * @typedef {Object} TrackerState
+ * @property {boolean} gps           unterscheidet Tracking von der Stoppuhr
  * @property {'idle'|'tracking'|'paused'} status
  * @property {number} distanceKm
  * @property {number} elapsedMs
@@ -30,7 +32,7 @@ export function createTracker({ onUpdate, onError, filter = DEFAULT_FILTER } = {
   let status = 'idle';
   let watchId = null;
   let tickId = null;
-  let wakeLock = null;
+  const wakeLock = createWakeLock(() => status === 'tracking');
 
   let startedAt = null;
   let segmentStartMs = 0; // Beginn des laufenden (nicht pausierten) Abschnitts
@@ -135,6 +137,7 @@ export function createTracker({ onUpdate, onError, filter = DEFAULT_FILTER } = {
   /** @returns {TrackerState} */
   function getState() {
     return {
+      gps: true,
       status,
       distanceKm,
       elapsedMs: getElapsedMs(),
@@ -156,7 +159,7 @@ export function createTracker({ onUpdate, onError, filter = DEFAULT_FILTER } = {
     });
 
     tickId = setInterval(emit, 1000); // Uhr läuft auch ohne neuen Fix weiter
-    requestWakeLock();
+    wakeLock.request();
   }
 
   function stopWatching() {
@@ -168,7 +171,7 @@ export function createTracker({ onUpdate, onError, filter = DEFAULT_FILTER } = {
       clearInterval(tickId);
       tickId = null;
     }
-    releaseWakeLock();
+    wakeLock.release();
   }
 
   function reset() {
@@ -240,31 +243,6 @@ export function createTracker({ onUpdate, onError, filter = DEFAULT_FILTER } = {
 
   function emit() {
     onUpdate?.(getState());
-  }
-
-  /* Bildschirm wach halten – sonst schläft das GPS auf dem Handy ein. */
-
-  async function requestWakeLock() {
-    if (!('wakeLock' in navigator)) return;
-    try {
-      wakeLock = await navigator.wakeLock.request('screen');
-    } catch {
-      wakeLock = null; // z.B. Akkusparmodus – kein Grund abzubrechen
-    }
-  }
-
-  function releaseWakeLock() {
-    wakeLock?.release().catch(() => {});
-    wakeLock = null;
-  }
-
-  // Nach dem Zurückschalten in den Tab ist der Wake Lock weg.
-  if (typeof document !== 'undefined') {
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible' && status === 'tracking') {
-        requestWakeLock();
-      }
-    });
   }
 
   return { start, pause, resume, stop, discard, getState, isSupported };

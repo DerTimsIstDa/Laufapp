@@ -161,6 +161,100 @@ export function runsInPeriod(runs, { period, todayIso = localIsoDate(new Date())
   return runs.filter((run) => typeof run?.date === 'string' && inSelbem(run.date));
 }
 
+/** Die Distanzen, für die eine Bestzeit geführt wird. */
+export const BEST_TIME_DISTANCES = [5, 8, 10, 12, 15, 21.1];
+
+/**
+ * Wie weit ein Lauf von der Zielmarke abweichen darf.
+ *
+ * Gespeicherte Strecken sind reine Punktlisten ohne Zeitstempel (siehe
+ * route.js) – Kilometer-Splits lassen sich daraus nicht rekonstruieren. Eine
+ * Bestzeit kann deshalb nur aus der Gesamtzeit eines Laufs kommen, der ohnehin
+ * fast genau so lang war. Hundert Meter sind der Spielraum, den eine
+ * GPS-Aufzeichnung von 5,00 km üblicherweise streut; wer 5,3 km gelaufen ist,
+ * hat keine 5-km-Zeit gestellt, sondern eine über 5,3 km.
+ */
+export const BEST_TIME_TOLERANCE_KM = 0.1;
+
+/**
+ * @typedef {Object} BestTime
+ * @property {number} targetKm            die Zielmarke
+ * @property {?number} durationMinutes    null, wenn es noch keine Zeit gibt
+ * @property {?string} date               Tag des Laufs
+ * @property {?number} distanceKm         tatsächlich gelaufene Strecke
+ * @property {?number} paceMinPerKm
+ */
+
+/**
+ * Schnellste Zeit je Zielmarke.
+ *
+ * Gewertet wird nur, was auch gemessen wurde: ein Lauf ohne Dauer und ohne
+ * Pace bringt keine Zeit ein. Bei gleicher Zeit gewinnt der frühere Lauf – die
+ * Bestzeit ist dann dort gefallen und wird nicht später noch einmal vergeben.
+ *
+ * @param {import('./storage.js').Run[]} runs
+ * @param {{ distances?: number[], toleranceKm?: number }} [options]
+ * @returns {BestTime[]} eine Zeile je Zielmarke, in der Reihenfolge der Marken
+ */
+export function bestTimes(
+  runs,
+  { distances = BEST_TIME_DISTANCES, toleranceKm = BEST_TIME_TOLERANCE_KM } = {}
+) {
+  // Älteste zuerst, damit bei Gleichstand wirklich der frühere Lauf gewinnt.
+  const liste = (Array.isArray(runs) ? [...runs] : []).sort((a, b) =>
+    String(a?.date) < String(b?.date) ? -1 : String(a?.date) > String(b?.date) ? 1 : 0
+  );
+
+  return distances.map((targetKm) => {
+    const leer = {
+      targetKm,
+      durationMinutes: null,
+      date: null,
+      distanceKm: null,
+      paceMinPerKm: null,
+    };
+
+    let bester = null;
+
+    for (const run of liste) {
+      if (typeof run?.distanceKm !== 'number') continue;
+      if (Math.abs(run.distanceKm - targetKm) > toleranceKm) continue;
+
+      const dauer = runDurationMinutes(run);
+      if (dauer === null) continue;
+
+      if (bester !== null && dauer >= bester.durationMinutes) continue;
+
+      bester = {
+        targetKm,
+        durationMinutes: dauer,
+        date: run.date,
+        distanceKm: run.distanceKm,
+        paceMinPerKm: runPaceMinPerKm(run),
+      };
+    }
+
+    return bester ?? leer;
+  });
+}
+
+/**
+ * Gelaufene Zeit in Minuten.
+ *
+ * Die eingetragene Dauer zählt zuerst – sie ist gemessen. Fehlt sie, aber es
+ * steht eine Pace da (etwa aus einer anderen Uhr), ergibt sich die Zeit aus
+ * Pace und Strecke.
+ */
+function runDurationMinutes(run) {
+  const dauer = run?.durationMinutes;
+  if (typeof dauer === 'number' && Number.isFinite(dauer) && dauer > 0) return dauer;
+
+  const pace = runPaceMinPerKm(run);
+  if (pace === null) return null;
+
+  return pace * run.distanceKm;
+}
+
 /**
  * Montag der Woche, in der dieser Tag liegt.
  *

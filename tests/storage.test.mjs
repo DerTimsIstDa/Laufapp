@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   loadRuns, addRun, updateRun, removeRun, replaceRuns,
   loadSessions, addSession, updateSession, removeSession, replaceSessions,
+  loadGpsPreference, saveGpsPreference,
 } from '../js/storage.js';
 import { getProgress, totalXpFromRuns } from '../js/xp.js';
 import { evaluateAchievements, achievementXp } from '../js/achievements.js';
@@ -366,5 +367,31 @@ describe('Intervall-Vorgabe im Speicher', () => {
   test('ohne Vorgabe steht das Feld nicht im Datensatz', () => {
     const [einheit] = addSession([], { date: '2026-08-19', type: 'easy', segments: [] });
     assert.equal('interval' in einheit, false);
+  });
+});
+
+describe('Gemerkte Aufzeichnungsart', () => {
+  test('beim allerersten Mal ohne GPS', () => {
+    // Wichtig auf jedem Gerät: ein voreingestelltes "mit GPS" liesse das
+    // Betriebssystem schon beim Aufmachen nach dem Standort fragen.
+    assert.equal(loadGpsPreference(), false);
+  });
+
+  test('die letzte Wahl kommt zurück', () => {
+    saveGpsPreference(true);
+    assert.equal(loadGpsPreference(), true);
+
+    saveGpsPreference(false);
+    assert.equal(loadGpsPreference(), false);
+  });
+
+  test('kaputter Eintrag gilt als "ohne GPS"', () => {
+    localStorage.setItem('laufapp.recording.v1', '{kein json');
+    assert.equal(loadGpsPreference(), false);
+  });
+
+  test('nur ein echtes true zählt', () => {
+    localStorage.setItem('laufapp.recording.v1', JSON.stringify({ gps: 'ja' }));
+    assert.equal(loadGpsPreference(), false);
   });
 });

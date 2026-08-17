@@ -7,6 +7,8 @@
  *   titles.js       Titel zum Level
  *   geo.js          Streckenberechnung und Formatierung
  *   tracker.js      Live-Aufzeichnung über die Geolocation-API
+ *   stopwatch.js    Aufzeichnung ohne GPS, dieselbe Form wie tracker.js
+ *   wake-lock.js    Bildschirm wach halten, für beide Aufzeichnungsarten
  *   validation.js   Prüfung der Eingaben
  *   transfer.js     Export-/Importformat
  *   stats.js        Summen, Durchschnitte, Serien, Zeitreihen
@@ -31,6 +33,7 @@ import {
 import { titleForLevel, nextTitle, badgeForLevel, badgeSrc } from './titles.js';
 import { paceMinPerKm, runPaceMinPerKm, formatDuration, formatPace } from './geo.js';
 import { createTracker } from './tracker.js';
+import { createStopwatch } from './stopwatch.js';
 import {
   validateRun,
   firstErrorMessage,
@@ -41,7 +44,13 @@ import {
   MAX_WEEKLY_GOAL,
 } from './validation.js';
 import { serializeExport, exportFileName, parseImport } from './transfer.js';
-import { buildStats, distanceByWeek, distanceByMonth, runsInPeriod } from './stats.js';
+import {
+  buildStats,
+  distanceByWeek,
+  distanceByMonth,
+  runsInPeriod,
+  bestTimes,
+} from './stats.js';
 import { goalXp, reachedGoalWeeks, XP_PER_GOAL_WEEK } from './goal.js';
 import { drawShareCard } from './share-card.js';
 import { phaseAt, summarize, WORK, REST, PHASE_LABEL } from './interval.js';
@@ -97,6 +106,7 @@ import {
   loadSessions, addSession, updateSession, removeSession, replaceSessions,
   loadExercisePlan, saveExercisePlan,
   loadProfile, saveProfile,
+  loadGpsPreference, saveGpsPreference,
 } from './storage.js';
 import {
   normalizePlan,
@@ -226,6 +236,9 @@ const el = {
   trackDistance: document.getElementById('track-distance'),
   trackDuration: document.getElementById('track-duration'),
   trackPace: document.getElementById('track-pace'),
+  trackGpsChoice: document.getElementById('track-gps-choice'),
+  trackGpsOn: document.getElementById('track-gps-on'),
+  trackGpsOff: document.getElementById('track-gps-off'),
   trackStatus: document.getElementById('track-status'),
   trackError: document.getElementById('track-error'),
   trackStart: document.getElementById('track-start'),
@@ -360,6 +373,7 @@ const el = {
   quickTotal: document.getElementById('quick-total'),
   quickError: document.getElementById('quick-error'),
   quickStart: document.getElementById('quick-start'),
+  bestTimes: document.getElementById('best-times'),
   profileStats: document.getElementById('profile-stats'),
   profileStatsEmpty: document.getElementById('profile-stats-empty'),
 
@@ -450,6 +464,28 @@ const tracker = createTracker({
   onError: showTrackError,
 });
 
+/** Aufzeichnung ohne Standort – dieselbe Bedienung, nur die Uhr. */
+const stopwatch = createStopwatch({ onUpdate: renderTracking });
+
+/**
+ * Mit oder ohne GPS bei der normalen Aufzeichnung.
+ *
+ * Beim allerersten Mal steht es auf "ohne": das Öffnen der Ansicht soll keine
+ * Standortabfrage des Betriebssystems auslösen, die kommt erst mit dem Tippen
+ * auf "Mit GPS". Danach gilt die zuletzt getroffene Wahl.
+ */
+let trackGps = false;
+
+/** Das Gerät, das gerade aufzeichnet – oder das bei einem Start drankäme. */
+function recorder() {
+  return trackGps ? tracker : stopwatch;
+}
+
+/** Läuft gerade irgendeine Aufzeichnung? */
+function isRecording() {
+  return tracker.getState().status !== 'idle' || stopwatch.getState().status !== 'idle';
+}
+
 init();
 
 function init() {
@@ -494,15 +530,9 @@ function init() {
   setupIntervalScreen();
   setupQuickInterval();
 
-  if (!tracker.isSupported()) {
-    el.trackStart.disabled = true;
-    el.trackStatus.textContent =
-      'Dieser Browser kann den Standort nicht bestimmen – trag Läufe von Hand ein.';
-  } else if (!window.isSecureContext) {
-    el.trackStart.disabled = true;
-    el.trackStatus.textContent =
-      'Standortzugriff braucht HTTPS oder localhost. Über diese Adresse geht kein Tracking.';
-  }
+  el.trackGpsOn.addEventListener('click', () => setTrackGps(true));
+  el.trackGpsOff.addEventListener('click', () => setTrackGps(false));
+  setTrackGps(loadGpsPreference(), { merken: false });
 
   maybeShowInstallHint();
   render({ announceUnlocks: false });
@@ -1713,6 +1743,7 @@ function renderProfile() {
   renderGoal();
   renderPeriodStats();
   renderProfileStats();
+  renderBestTimes();
 }
 
 /** Rohwerte aus Speicher oder Datei auf gültige Angaben bringen. */
@@ -2002,6 +2033,8 @@ function startIntervalRun(interval, { sessionId = null, gps = intervalGpsPreferr
 
   // Der Rest der Seite ist während des Trainings nicht zu bedienen.
   setAppInert(true);
+  setBodyScrollLocked(true);
+  el.intervalScreen.scrollTop = 0;
 
   intervalTick = setInterval(renderIntervalScreen, 200);
   renderIntervalScreen();
@@ -2158,6 +2191,7 @@ function finishIntervalRun({ abgebrochen }) {
   el.intervalScreen.hidden = true;
   el.intervalConfirm.hidden = true;
   setAppInert(false);
+  setBodyScrollLocked(false);
 
   if (!abgebrochen) beepFinish();
 
@@ -2182,11 +2216,22 @@ function finishIntervalRun({ abgebrochen }) {
 }
 
 function prefillFromInterval(bilanz, beganAt) {
+  prefillManualRun(beganAt, bilanz.elapsedSeconds / 60);
+}
+
+/**
+ * Legt einen gestoppten Lauf im Handformular bereit.
+ *
+ * Datum, Uhrzeit und Dauer sind gemessen, nur die Distanz fehlt – deshalb
+ * steht der Cursor gleich in ihrem Feld. Gemeinsamer Weg für die Aufzeichnung
+ * ohne GPS und für ein Intervall-Training ohne Strecke.
+ */
+function prefillManualRun(beganAt, durationMinutes) {
   stopEditing();
 
   el.date.value = toIsoDate(beganAt);
   el.time.value = toTimeOfDay(beganAt);
-  el.duration.value = String(round(bilanz.elapsedSeconds / 60));
+  el.duration.value = String(round(durationMinutes));
   el.distance.focus();
 }
 
@@ -2236,8 +2281,37 @@ function describeIntervalResult(bilanz, gespeichert, abgebrochen) {
 /** Sperrt alles ausser der Stoppuhr – wie die Tastensperre beim Aufzeichnen. */
 function setAppInert(inert) {
   for (const bereich of document.querySelectorAll('.app > *')) {
+    // Die Stoppuhr liegt selbst in `.app` und darf nicht mitgesperrt werden.
+    // Sonst steht sie zwar da, nimmt aber keine Berührung an: die Knöpfe sind
+    // tot und Tippen wie Scrollen gehen durch sie hindurch in den Start-Hub.
+    if (bereich === el.intervalScreen) continue;
     bereich.inert = inert;
   }
+}
+
+/**
+ * Sperrt das Scrollen der Seite hinter der Stoppuhr.
+ *
+ * `overflow: hidden` allein reicht auf iOS nicht: das Gummiband-Scrollen zieht
+ * auch feste Elemente mit und legt darüber den Start-Hub frei. Deshalb wird
+ * der Body festgestellt und um die bisherige Scrollhöhe nach oben versetzt –
+ * so bleibt das Bild stehen und die Position ist nach dem Training wieder da.
+ */
+let scrollLockY = 0;
+
+function setBodyScrollLocked(gesperrt) {
+  if (gesperrt) {
+    if (document.body.classList.contains('scroll-locked')) return;
+    scrollLockY = window.scrollY;
+    document.body.style.top = `-${scrollLockY}px`;
+    document.body.classList.add('scroll-locked');
+    return;
+  }
+
+  if (!document.body.classList.contains('scroll-locked')) return;
+  document.body.classList.remove('scroll-locked');
+  document.body.style.top = '';
+  window.scrollTo(0, scrollLockY);
 }
 
 /* ----------------------------------------------------------------- Teilen */
@@ -2504,6 +2578,48 @@ function renderProfileStats() {
       ['Aktuelle Serie', formatDays(stats.currentDayStreak)],
       ['Längste Serie', formatDays(stats.longestDayStreak)],
     ])
+  );
+}
+
+/**
+ * Bestzeiten über die gängigen Distanzen.
+ *
+ * Alle Marken stehen immer da, auch die noch offenen: eine Liste, die mit
+ * jedem Lauf um eine Zeile wächst, verrät nicht, was überhaupt zu holen ist.
+ * Die offenen Zeilen treten dafür farblich zurück.
+ */
+function renderBestTimes() {
+  el.bestTimes.replaceChildren(
+    ...bestTimes(runs).map((eintrag) => {
+      const zeile = document.createElement('li');
+
+      const block = document.createElement('div');
+      block.className = eintrag.durationMinutes === null ? 'best-time empty' : 'best-time';
+
+      const marke = document.createElement('span');
+      marke.className = 'best-time-distance';
+      marke.textContent = `${numberFormat.format(eintrag.targetKm)} km`;
+
+      const tag = document.createElement('span');
+      tag.className = 'best-time-date';
+
+      const wert = document.createElement('span');
+      wert.className = 'best-time-value';
+
+      if (eintrag.durationMinutes === null) {
+        wert.textContent = 'noch keine Zeit';
+      } else {
+        wert.textContent = formatDuration(eintrag.durationMinutes * 60_000);
+        // Die tatsächlich gelaufene Strecke gehört dazu: 5,07 km erklärt,
+        // warum diese Zeit für die 5-km-Marke zählt.
+        tag.textContent =
+          `${formatDate(eintrag.date)} · ${numberFormat.format(eintrag.distanceKm)} km`;
+      }
+
+      block.append(marke, tag, wert);
+      zeile.append(block);
+      return zeile;
+    })
   );
 }
 
@@ -2991,20 +3107,71 @@ function clearDataMessages() {
 
 /* -------------------------------------------------------------- Tracking */
 
+/**
+ * Wählt die Aufzeichnungsart.
+ *
+ * Erst hier – also aus einer Berührung heraus – kann überhaupt eine
+ * Standortabfrage entstehen; abgefragt wird sie trotzdem erst beim Start.
+ * Während einer laufenden Aufzeichnung ist die Wahl gesperrt: mitten im Lauf
+ * die Art zu wechseln hiesse, die bisherige Messung wegzuwerfen.
+ */
+function setTrackGps(an, { merken = true } = {}) {
+  if (isRecording()) return;
+
+  // Ohne Standortdienst oder ohne HTTPS bleibt nur die Uhr.
+  const moeglich = tracker.isSupported() && window.isSecureContext;
+  trackGps = an && moeglich;
+
+  if (merken) saveGpsPreference(trackGps);
+
+  el.trackGpsOn.className = trackGps ? 'chip active' : 'chip';
+  el.trackGpsOff.className = trackGps ? 'chip' : 'chip active';
+  el.trackGpsOn.setAttribute('aria-pressed', String(trackGps));
+  el.trackGpsOff.setAttribute('aria-pressed', String(!trackGps));
+
+  clearTrackError();
+  el.trackStatus.textContent = trackGpsHint(an, moeglich);
+  renderTracking(recorder().getState());
+}
+
+function trackGpsHint(gewuenscht, moeglich) {
+  if (gewuenscht && !moeglich) {
+    return tracker.isSupported()
+      ? 'Standortzugriff braucht HTTPS oder localhost – hier läuft nur die Uhr.'
+      : 'Dieser Browser kann den Standort nicht bestimmen – hier läuft nur die Uhr.';
+  }
+
+  return trackGps
+    ? 'Bereit. Der Browser fragt beim Start nach der Standortfreigabe.'
+    : 'Bereit. Ohne GPS läuft nur die Uhr – die Distanz trägst du danach nach.';
+}
+
 function handleTrackStart() {
   clearTrackError();
-  tracker.start();
+  recorder().start();
 }
 
 function handleTrackPause() {
-  const { status } = tracker.getState();
-  if (status === 'tracking') tracker.pause();
-  else if (status === 'paused') tracker.resume();
+  const { status } = recorder().getState();
+  if (status === 'tracking') recorder().pause();
+  else if (status === 'paused') recorder().resume();
 }
 
 function handleTrackStop() {
-  const summary = tracker.stop();
+  const mitGps = trackGps;
+  const summary = recorder().stop();
   if (!summary) return;
+
+  // Ohne GPS gibt es nur die Zeit. Statt sie zu verlieren, steht sie unten im
+  // Formular schon vorbereitet – es fehlt nur die Distanz.
+  if (!mitGps) {
+    clearTrackError();
+    prefillManualRun(summary.startedAt, summary.durationMinutes);
+    el.trackStatus.textContent =
+      `Zeit gestoppt: ${numberFormat.format(summary.durationMinutes)} min. ` +
+      'Trag unten die Distanz nach, dann ist der Lauf gespeichert.';
+    return;
+  }
 
   if (summary.distanceKm <= 0) {
     return showTrackError(
@@ -3032,7 +3199,7 @@ function handleTrackStop() {
 }
 
 function handleTrackDiscard() {
-  tracker.discard();
+  recorder().discard();
   clearTrackError();
   el.trackStatus.textContent = 'Aufzeichnung verworfen.';
 }
@@ -3042,7 +3209,7 @@ function handleTrackDiscard() {
 function setLocked(value) {
   locked = value;
   cancelUnlockHold();
-  renderTracking(tracker.getState());
+  renderTracking(recorder().getState());
 }
 
 /**
@@ -3306,11 +3473,18 @@ function renderTracking(state) {
     cancelUnlockHold();
   }
 
-  el.trackDistance.textContent = distanceFormat.format(state.distanceKm);
+  // Ohne GPS wird nichts gemessen, was in diesen beiden Feldern stehen könnte
+  // – eine 0,00 wäre keine Angabe, sondern eine falsche.
+  el.trackDistance.textContent = state.gps ? distanceFormat.format(state.distanceKm) : '–';
   el.trackDuration.textContent = formatDuration(state.elapsedMs);
-  el.trackPace.textContent = formatPace(
-    paceMinPerKm(state.distanceKm, state.elapsedMs)
-  );
+  el.trackPace.textContent = state.gps
+    ? formatPace(paceMinPerKm(state.distanceKm, state.elapsedMs))
+    : '–';
+
+  // Mitten in der Aufzeichnung die Art zu wechseln, würfe die Messung weg.
+  for (const chip of [el.trackGpsOn, el.trackGpsOff]) {
+    chip.disabled = running;
+  }
 
   el.trackStart.hidden = running;
   el.trackPause.hidden = !running;
@@ -3338,11 +3512,18 @@ function renderTracking(state) {
   // Die Statuszeile läuft auch gesperrt weiter – eine eingefrorene Anzeige
   // sähe aus, als hinge die App.
   if (state.status === 'paused') {
-    el.trackStatus.textContent = 'Pausiert – die Strecke zählt erst ab dem Fortsetzen weiter.';
+    el.trackStatus.textContent = state.gps
+      ? 'Pausiert – die Strecke zählt erst ab dem Fortsetzen weiter.'
+      : 'Pausiert – die Uhr zählt erst ab dem Fortsetzen weiter.';
     return;
   }
 
   if (state.status === 'tracking') {
+    if (!state.gps) {
+      el.trackStatus.textContent = 'Ohne GPS – es läuft nur die Uhr.';
+      return;
+    }
+
     if (state.lastAccuracyM === null) {
       el.trackStatus.textContent = 'Warte auf das erste GPS-Signal …';
       return;
@@ -3606,5 +3787,5 @@ function markUpdateReady() {
  * verlorene Strecke.
  */
 function maybeShowUpdateHint() {
-  el.updateHint.hidden = !(updateReady && tracker.getState().status === 'idle');
+  el.updateHint.hidden = !(updateReady && !isRecording());
 }

@@ -155,3 +155,102 @@ describe('Bereiche und Umschaltung', () => {
     assert.equal(ausgewaehlt.length, 1);
   });
 });
+
+describe('Titelzeile im Profil', () => {
+  test('der Titel steht auf der Mittelachse, nicht neben dem Knopf', () => {
+    // Als Flex-Zeile war das Paar aus Titel und Knopf mittig – der Titel
+    // selbst damit um die halbe Knopfbreite links vom Abzeichen darüber.
+    const regel = /\.profile-rank-row\s*\{([^}]*)\}/.exec(css);
+    assert.ok(regel, '.profile-rank-row fehlt');
+    assert.match(regel[1], /display:\s*grid/);
+    assert.match(regel[1], /grid-template-columns:[\s\S]*1fr[\s\S]*auto[\s\S]*1fr/);
+    assert.match(regel[1], /align-items:\s*center/);
+  });
+
+  test('der Knopf sitzt in der Spalte rechts daneben', () => {
+    assert.match(css, /\.profile-rank-row \.share-button\s*\{[^}]*grid-column:\s*3/);
+    assert.match(css, /\.profile-rank-row \.share-button\s*\{[^}]*justify-self:\s*start/);
+  });
+
+  test('Titel und Knopf tragen keinen eigenen oberen Abstand mehr', () => {
+    // Zwei verschiedene margin-top in einer zentrierten Zeile hiessen: beide
+    // stehen unterschiedlich hoch.
+    assert.match(css, /\.profile-rank\s*\{[^}]*margin:\s*0;/);
+    assert.doesNotMatch(css, /\.share-button\s*\{[^}]*margin-top/);
+  });
+
+  test('der Knopf passt immer neben den längsten Titel', () => {
+    // Die Aussenspalten haben mindestens Knopfbreite; wird es eng, bricht
+    // lieber der Titel um, als dass der Knopf aus der Karte läuft.
+    assert.match(css, /--share-button-size:/);
+    assert.match(css, /\.profile-rank-row\s*\{[^}]*minmax\(var\(--share-button-size\), 1fr\)/);
+    assert.match(css, /\.profile-rank-row \.profile-rank\s*\{[^}]*overflow-wrap:\s*anywhere/);
+  });
+});
+
+describe('Bestzeiten stehen zwischen Gesamtstatistik und Lauf-Liste', () => {
+  /** Reihenfolge der Karten im Profil-Bereich. */
+  const profil = /<div class="view" id="view-profile"[\s\S]*?\n    <\/div>/.exec(html);
+
+  test('die Sektion existiert und hat eine Liste', () => {
+    assert.match(html, /id="best-times-title"/);
+    assert.match(html, /<ul class="best-times" id="best-times">/);
+  });
+
+  test('sie steht hinter der Gesamtstatistik und vor den Läufen', () => {
+    assert.ok(profil, 'der Profil-Bereich wurde nicht gefunden');
+
+    const reihe = [...profil[0].matchAll(/aria-labelledby="([a-z-]+)"/g)].map((m) => m[1]);
+    const gesamt = reihe.indexOf('profile-stats-title');
+    const best = reihe.indexOf('best-times-title');
+    const laeufe = reihe.indexOf('runs-title');
+
+    assert.ok(gesamt !== -1 && best !== -1 && laeufe !== -1, `gefunden: ${reihe}`);
+    assert.ok(gesamt < best, 'Bestzeiten stehen vor der Gesamtstatistik');
+    assert.ok(best < laeufe, 'Bestzeiten stehen hinter der Lauf-Liste');
+  });
+
+  test('alle Zeilen teilen sich dieselben Spalten', () => {
+    // Sonst steht jede Zeile für sich und die Zeiten fluchten nicht.
+    const regel = /\.best-time\s*\{([^}]*)\}/.exec(css);
+    assert.ok(regel, '.best-time fehlt');
+    assert.match(regel[1], /grid-template-columns:\s*4\.5rem/);
+    assert.match(css, /\.best-time-value\s*\{[^}]*text-align:\s*right/);
+  });
+});
+
+describe('Die Intervall-Stoppuhr ist ein eigener Vollbild-Schirm', () => {
+  const app = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
+
+  test('die Sperre lässt die Stoppuhr selbst aus', () => {
+    // Der Schirm liegt in `.app` und wurde von setAppInert() mitgesperrt.
+    // Damit stand er zwar da, nahm aber keine Berührung an: Knöpfe tot,
+    // Tippen und Scrollen gingen durch ihn hindurch in den Start-Hub.
+    const regel = /function setAppInert\(inert\)\s*\{([\s\S]*?)\n\}/.exec(app);
+    assert.ok(regel, 'setAppInert() fehlt');
+    assert.match(regel[1], /bereich === el\.intervalScreen/);
+  });
+
+  test('beim Start wird die Seite dahinter festgestellt', () => {
+    assert.match(app, /setBodyScrollLocked\(true\)/);
+    assert.match(app, /setBodyScrollLocked\(false\)/);
+    assert.match(css, /body\.scroll-locked\s*\{[^}]*position:\s*fixed/);
+  });
+
+  test('der Schirm deckt den ganzen sichtbaren Bereich ab', () => {
+    const regel = /\.interval-screen\s*\{([^}]*)\}/.exec(css);
+    assert.ok(regel, '.interval-screen fehlt');
+    assert.match(regel[1], /position:\s*fixed/);
+    assert.match(regel[1], /inset:\s*0/);
+    // Ohne dvh bleibt unter der wandernden Adressleiste ein Streifen frei.
+    assert.match(regel[1], /height:\s*100dvh/);
+    // Sonst scheint unter Notch und Statusleiste die Seite darunter durch.
+    assert.match(regel[1], /padding-top:[^;]*env\(safe-area-inset-top/);
+    assert.match(regel[1], /overscroll-behavior:\s*contain/);
+  });
+
+  test('zentriert wird nur, solange der Inhalt passt', () => {
+    // Sonst schneidet ein überlanger Inhalt oben ab und ist nicht erreichbar.
+    assert.match(css, /\.interval-screen\s*\{[^}]*justify-content:\s*safe center/);
+  });
+});

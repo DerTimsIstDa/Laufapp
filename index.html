@@ -187,8 +187,16 @@
         </div>
       </div>
 
+      <!-- Erst diese Wahl entscheidet, ob überhaupt nach dem Standort gefragt
+           wird. Vorbelegt ist "Ohne GPS", damit das Öffnen der Ansicht keine
+           Systemabfrage auslöst. -->
+      <div class="filter-row" id="track-gps-choice" role="group" aria-label="Art der Aufzeichnung">
+        <button type="button" class="chip" id="track-gps-on" aria-pressed="false">Mit GPS</button>
+        <button type="button" class="chip active" id="track-gps-off" aria-pressed="true">Ohne GPS</button>
+      </div>
+
       <p class="muted tracking-status" id="track-status">
-        Bereit. Der Browser fragt beim Start nach der Standortfreigabe.
+        Bereit. Ohne GPS läuft nur die Uhr – die Distanz trägst du danach nach.
       </p>
 
       <div class="tracking-buttons" id="tracking-buttons">
@@ -671,6 +679,19 @@
         <h2 id="profile-stats-title">Gesamtstatistik</h2>
         <p class="muted" id="profile-stats-empty">Noch keine Läufe eingetragen.</p>
         <dl class="stat-grid" id="profile-stats" hidden></dl>
+      </section>
+
+      <!-- Bestzeiten über die gängigen Wettkampfdistanzen. Gewertet wird die
+           Gesamtzeit eines Laufs, der auf ±100 m hinkommt – die gespeicherten
+           Strecken haben keine Zeitstempel, aus denen sich ein Zwischenstand
+           bei Kilometer fünf herauslesen liesse. -->
+      <section class="card" aria-labelledby="best-times-title">
+        <h2 id="best-times-title">Bestzeiten</h2>
+        <p class="muted">
+          Schnellste Zeit über die jeweilige Distanz. Es zählt ein Lauf, der
+          auf 100 m an die Marke herankommt.
+        </p>
+        <ul class="best-times" id="best-times"></ul>
       </section>
 
       <!-- Detailansicht eines Laufs. Steht über der Liste, damit sie beim

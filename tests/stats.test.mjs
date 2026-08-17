@@ -7,6 +7,9 @@ import {
   distanceByMonth,
   runsInPeriod,
   localIsoDate,
+  bestTimes,
+  BEST_TIME_DISTANCES,
+  BEST_TIME_TOLERANCE_KM,
 } from '../js/stats.js';
 import { makeRun, day } from './helpers.mjs';
 
@@ -353,5 +356,96 @@ describe('Durchschnitts-Pace', () => {
     ];
 
     assert.equal(buildStats(mitUndOhne).averagePaceMinPerKm, 5, 'nur der Lauf mit Pace zählt');
+  });
+});
+
+describe('Bestzeiten je Distanz', () => {
+  /** Kurz für einen Lauf mit Dauer. */
+  const lauf = (dayOffset, distanceKm, durationMinutes) =>
+    makeRun(dayOffset, distanceKm, { durationMinutes });
+
+  /** Die Zeile zu einer Zielmarke. */
+  const zu = (zeilen, targetKm) => zeilen.find((z) => z.targetKm === targetKm);
+
+  test('führt genau die sechs Marken, immer in derselben Reihenfolge', () => {
+    assert.deepEqual(BEST_TIME_DISTANCES, [5, 8, 10, 12, 15, 21.1]);
+    assert.deepEqual(
+      bestTimes([]).map((z) => z.targetKm),
+      BEST_TIME_DISTANCES
+    );
+  });
+
+  test('ohne Läufe steht jede Marke offen', () => {
+    for (const zeile of bestTimes([])) {
+      assert.equal(zeile.durationMinutes, null);
+      assert.equal(zeile.date, null);
+    }
+  });
+
+  test('nimmt die schnellste Zeit über die Distanz', () => {
+    const zeilen = bestTimes([lauf(0, 5, 26), lauf(10, 5, 24.5), lauf(20, 5, 25)]);
+    const fuenf = zu(zeilen, 5);
+
+    assert.equal(fuenf.durationMinutes, 24.5);
+    assert.equal(fuenf.date, day(10));
+  });
+
+  test('nicht die schnellste Pace irgendeines Laufs', () => {
+    // Der 3-km-Lauf ist deutlich schneller unterwegs, ist aber keine 5-km-Zeit.
+    const zeilen = bestTimes([lauf(0, 3, 12), lauf(1, 5, 26)]);
+
+    assert.equal(zu(zeilen, 5).durationMinutes, 26);
+  });
+
+  test('knapp daneben zählt noch, deutlich daneben nicht', () => {
+    assert.equal(BEST_TIME_TOLERANCE_KM, 0.1);
+
+    const knapp = bestTimes([lauf(0, 5.05, 25)]);
+    assert.equal(zu(knapp, 5).durationMinutes, 25);
+    assert.equal(zu(knapp, 5).distanceKm, 5.05, 'die echte Strecke bleibt erhalten');
+
+    const zuWeit = bestTimes([lauf(0, 5.3, 22)]);
+    assert.equal(zu(zuWeit, 5).durationMinutes, null);
+  });
+
+  test('genau auf der Toleranzgrenze zählt noch', () => {
+    assert.equal(zu(bestTimes([lauf(0, 5.1, 25)]), 5).durationMinutes, 25);
+    assert.equal(zu(bestTimes([lauf(0, 4.9, 25)]), 5).durationMinutes, 25);
+  });
+
+  test('ein Lauf ohne Zeit bringt keine Bestzeit', () => {
+    assert.equal(zu(bestTimes([makeRun(0, 10)]), 10).durationMinutes, null);
+  });
+
+  test('eine eingetragene Pace ergibt die Zeit, wenn die Dauer fehlt', () => {
+    const zeilen = bestTimes([makeRun(0, 8, { paceMinPerKm: 5.25 })]);
+
+    assert.equal(zu(zeilen, 8).durationMinutes, 42);
+  });
+
+  test('die gemessene Dauer schlägt eine eingetragene Pace', () => {
+    // Die Pace kann von einer anderen Uhr stammen und auf eine andere Strecke
+    // gerechnet sein; gelaufen ist, was auf der Uhr stand.
+    const zeilen = bestTimes([makeRun(0, 10, { durationMinutes: 50, paceMinPerKm: 4 })]);
+
+    assert.equal(zu(zeilen, 10).durationMinutes, 50);
+  });
+
+  test('bei gleicher Zeit gewinnt der frühere Lauf', () => {
+    const zeilen = bestTimes([lauf(30, 10, 50), lauf(5, 10, 50)]);
+
+    assert.equal(zu(zeilen, 10).date, day(5));
+  });
+
+  test('der Halbmarathon liegt auf 21,1 km', () => {
+    const zeilen = bestTimes([lauf(0, 21.08, 118.5)]);
+
+    assert.equal(zu(zeilen, 21.1).durationMinutes, 118.5);
+    assert.equal(zu(zeilen, 15).durationMinutes, null, 'zählt nicht auch als 15 km');
+  });
+
+  test('kaputte Eingabe stürzt nicht ab', () => {
+    assert.equal(bestTimes(null).length, BEST_TIME_DISTANCES.length);
+    assert.equal(zu(bestTimes([null, {}, { distanceKm: 'fünf' }]), 5).durationMinutes, null);
   });
 });
