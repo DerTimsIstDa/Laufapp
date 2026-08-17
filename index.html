@@ -681,6 +681,53 @@
         <dl class="stat-grid" id="profile-stats" hidden></dl>
       </section>
 
+      <!-- Aktivität über die letzten Wochen: Wochen als Spalten, Wochentage
+           als Zeilen. Steht bewusst hier und nicht im Statistik-Bereich – der
+           schaltet zwischen Woche und Monat um, und über einer Wochenansicht
+           wäre ein Vierteljahr-Raster nur verwirrend. -->
+      <section class="card" aria-labelledby="activity-title">
+        <h2 id="activity-title">Aktivität</h2>
+        <p class="muted">
+          Die letzten 18 Wochen. Je kräftiger ein Feld, desto mehr Kilometer
+          an dem Tag. Tippe ein Feld an für die Einzelheiten.
+        </p>
+
+        <div class="heatmap" id="heatmap">
+          <div class="heatmap-months" id="heatmap-months" aria-hidden="true"></div>
+          <div class="heatmap-weekdays" aria-hidden="true">
+            <span></span><span>Di</span><span></span>
+            <span>Do</span><span></span><span>Sa</span><span></span>
+          </div>
+          <div class="heatmap-grid" id="heatmap-grid"></div>
+        </div>
+
+        <p class="heatmap-detail muted" id="heatmap-detail" role="status"></p>
+
+        <div class="heatmap-legend" aria-hidden="true">
+          <span>weniger</span>
+          <span class="heatmap-cell" data-level="0"></span>
+          <span class="heatmap-cell" data-level="1"></span>
+          <span class="heatmap-cell" data-level="2"></span>
+          <span class="heatmap-cell" data-level="3"></span>
+          <span class="heatmap-cell" data-level="4"></span>
+          <span>mehr</span>
+        </div>
+      </section>
+
+      <!-- Verlauf der Ø-Pace. Steht direkt unter der Aktivität: beides sind
+           Verlaufsansichten über dieselben Wochen, und beides gehört nicht
+           in den Statistik-Bereich, der Kennzahlen zeigt statt Entwicklung. -->
+      <section class="card" aria-labelledby="pace-trend-title">
+        <h2 id="pace-trend-title">Pace im Verlauf</h2>
+        <p class="muted" id="pace-trend-caption"></p>
+
+        <div class="pace-trend" id="pace-trend"></div>
+
+        <p class="muted" id="pace-trend-empty">
+          Noch nicht genug Läufe für einen Trend.
+        </p>
+      </section>
+
       <!-- Bestzeiten über die gängigen Wettkampfdistanzen. Gewertet wird die
            Gesamtzeit eines Laufs, der auf ±100 m hinkommt – die gespeicherten
            Strecken haben keine Zeitstempel, aus denen sich ein Zwischenstand

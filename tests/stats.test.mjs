@@ -8,6 +8,11 @@ import {
   runsInPeriod,
   localIsoDate,
   bestTimes,
+  activityCalendar,
+  paceTrend,
+  PACE_TREND_MIN_POINTS,
+  ACTIVITY_WEEKS,
+  ACTIVITY_LEVELS,
   BEST_TIME_DISTANCES,
   BEST_TIME_TOLERANCE_KM,
 } from '../js/stats.js';
@@ -447,5 +452,162 @@ describe('Bestzeiten je Distanz', () => {
   test('kaputte Eingabe stürzt nicht ab', () => {
     assert.equal(bestTimes(null).length, BEST_TIME_DISTANCES.length);
     assert.equal(zu(bestTimes([null, {}, { distanceKm: 'fünf' }]), 5).durationMinutes, null);
+  });
+});
+
+describe('Aktivitätsraster', () => {
+  test('zeigt volle Wochen, montags beginnend', () => {
+    // day(0) ist Donnerstag, der 01.01.2026 – die Woche davor beginnt am 29.12.
+    const tage = activityCalendar([], { todayIso: HEUTE(0) });
+
+    assert.equal(tage.length, ACTIVITY_WEEKS * 7);
+    assert.equal(tage.at(-1).date, '2026-01-04', 'endet am Sonntag der laufenden Woche');
+    assert.equal(new Date(`${tage[0].date}T00:00:00Z`).getUTCDay(), 1, 'beginnt an einem Montag');
+  });
+
+  test('die Tage sind lückenlos und aufsteigend', () => {
+    const tage = activityCalendar([], { todayIso: HEUTE(0) });
+
+    for (let i = 1; i < tage.length; i++) {
+      const vorher = Date.parse(`${tage[i - 1].date}T00:00:00Z`);
+      const jetzt = Date.parse(`${tage[i].date}T00:00:00Z`);
+      assert.equal(jetzt - vorher, 86_400_000, `Lücke vor ${tage[i].date}`);
+    }
+  });
+
+  test('summiert mehrere Läufe eines Tages', () => {
+    const tage = activityCalendar([makeRun(0, 4), makeRun(0, 6.5)], { todayIso: HEUTE(0) });
+    const tag = tage.find((t) => t.date === day(0));
+
+    assert.equal(tag.runCount, 2);
+    assert.equal(tag.distanceKm, 10.5);
+    assert.equal(tag.level, 3, '10,5 km liegen über der 10-km-Grenze');
+  });
+
+  test('die Stufen folgen den Kilometergrenzen', () => {
+    assert.deepEqual(ACTIVITY_LEVELS, [5, 10, 15]);
+
+    const stufeVon = (km) => {
+      const tage = activityCalendar([makeRun(0, km)], { todayIso: HEUTE(0) });
+      return tage.find((t) => t.date === day(0)).level;
+    };
+
+    assert.equal(stufeVon(0.5), 1);
+    assert.equal(stufeVon(4.99), 1);
+    assert.equal(stufeVon(5), 2, 'genau auf der Grenze zählt zur höheren Stufe');
+    assert.equal(stufeVon(9.99), 2);
+    assert.equal(stufeVon(10), 3);
+    assert.equal(stufeVon(15), 4);
+    assert.equal(stufeVon(42.2), 4, 'über der letzten Grenze bleibt es die höchste Stufe');
+  });
+
+  test('ein Tag ohne Lauf ist Stufe 0', () => {
+    const tage = activityCalendar([], { todayIso: HEUTE(0) });
+    assert.ok(tage.every((t) => t.level === 0 && t.runCount === 0 && t.distanceKm === 0));
+  });
+
+  test('Tage nach heute sind ausgezeichnet', () => {
+    // day(0) ist ein Donnerstag: Freitag, Samstag und Sonntag stehen noch aus.
+    const tage = activityCalendar([], { todayIso: HEUTE(0) });
+    const zukunft = tage.filter((t) => t.future);
+
+    assert.equal(zukunft.length, 3);
+    assert.ok(zukunft.every((t) => t.date > day(0)));
+  });
+
+  test('Läufe ausserhalb des Zeitraums bleiben draussen', () => {
+    const tage = activityCalendar([makeRun(-400, 10), makeRun(0, 5)], { todayIso: HEUTE(0) });
+
+    assert.equal(tage.filter((t) => t.runCount > 0).length, 1);
+  });
+
+  test('kaputte Eingabe stürzt nicht ab', () => {
+    for (const value of [null, undefined, 'text', [null, {}, { date: 5 }]]) {
+      assert.doesNotThrow(() => activityCalendar(value, { todayIso: HEUTE(0) }));
+      assert.equal(activityCalendar(value, { todayIso: HEUTE(0) }).length, ACTIVITY_WEEKS * 7);
+    }
+  });
+});
+
+describe('Pace im Verlauf', () => {
+  /** Lauf mit gerechneter Pace: 5 km in `pace` min/km. */
+  const lauf = (dayOffset, pace, distanceKm = 5) =>
+    makeRun(dayOffset, distanceKm, { durationMinutes: distanceKm * pace });
+
+  test('ohne Läufe gibt es keine Punkte', () => {
+    assert.deepEqual(paceTrend([]), { period: 'week', points: [] });
+    assert.deepEqual(paceTrend(null).points, []);
+  });
+
+  test('Läufe ohne Pace zählen nicht mit', () => {
+    // Ohne Dauer und ohne Pace ist da nichts, was sich auftragen liesse.
+    assert.deepEqual(paceTrend([makeRun(0, 5), makeRun(7, 8)]).points, []);
+  });
+
+  test('drei Punkte sind die Untergrenze für eine Linie', () => {
+    assert.equal(PACE_TREND_MIN_POINTS, 3);
+  });
+
+  test('kurze Historie wird nach Wochen gebündelt', () => {
+    const trend = paceTrend([lauf(0, 6), lauf(7, 5.8), lauf(14, 5.5)]);
+
+    assert.equal(trend.period, 'week');
+    assert.equal(trend.points.length, 3);
+    // day(0) ist Donnerstag, der 01.01.2026 – die Woche beginnt am 29.12.
+    assert.equal(trend.points[0].start, '2025-12-29');
+  });
+
+  test('lange Historie wird nach Monaten gebündelt', () => {
+    // Über ein Vierteljahr hinaus wären es zu viele Wochenpunkte.
+    const trend = paceTrend([lauf(0, 6), lauf(60, 5.8), lauf(120, 5.5)]);
+
+    assert.equal(trend.period, 'month');
+    assert.deepEqual(trend.points.map((p) => p.start), ['2026-01-01', '2026-03-01', '2026-05-01']);
+  });
+
+  test('Zeiträume ohne Lauf fallen heraus statt auf null zu gehen', () => {
+    // Woche 1 und Woche 4 – die beiden dazwischen tauchen nicht auf.
+    const trend = paceTrend([lauf(0, 6), lauf(21, 5.5), lauf(28, 5.4)]);
+
+    assert.equal(trend.points.length, 3);
+    assert.ok(trend.points.every((p) => p.paceMinPerKm > 0));
+  });
+
+  test('der Durchschnitt ist nach Strecke gewichtet', () => {
+    // 20 km in 6:00 und 2 km in 5:00 – der schlichte Mittelwert wäre 5:30.
+    const trend = paceTrend([lauf(0, 6, 20), lauf(1, 5, 2), lauf(7, 5.5), lauf(14, 5.5)]);
+
+    const erwartet = (6 * 20 + 5 * 2) / 22;
+    assert.ok(Math.abs(trend.points[0].paceMinPerKm - erwartet) < 1e-9);
+    assert.equal(trend.points[0].runCount, 2);
+    assert.equal(trend.points[0].distanceKm, 22);
+  });
+
+  test('eine von Hand eingetragene Pace zählt genauso', () => {
+    const runs = [
+      makeRun(0, 5, { paceMinPerKm: 5.5 }),
+      makeRun(7, 5, { paceMinPerKm: 5.4 }),
+      makeRun(14, 5, { paceMinPerKm: 5.3 }),
+    ];
+
+    assert.equal(paceTrend(runs).points.length, 3);
+    assert.equal(paceTrend(runs).points[0].paceMinPerKm, 5.5);
+  });
+
+  test('nur die letzten Zeiträume, älteste fallen weg', () => {
+    const runs = Array.from({ length: 20 }, (_, i) => lauf(i * 30, 6 - i * 0.05));
+    const trend = paceTrend(runs, { limit: 12 });
+
+    assert.equal(trend.points.length, 12);
+    // Die jüngsten Monate bleiben stehen, nicht die ältesten.
+    assert.equal(trend.points.at(-1).start.slice(0, 7), day(19 * 30).slice(0, 7));
+    assert.ok(trend.points[0].start > day(0), 'der erste Monat ist weggefallen');
+  });
+
+  test('die Punkte kommen chronologisch', () => {
+    const trend = paceTrend([lauf(14, 5.5), lauf(0, 6), lauf(7, 5.8)]);
+
+    const daten = trend.points.map((p) => p.start);
+    assert.deepEqual(daten, [...daten].sort());
   });
 });

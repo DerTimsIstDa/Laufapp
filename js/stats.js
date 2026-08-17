@@ -161,6 +161,169 @@ export function runsInPeriod(runs, { period, todayIso = localIsoDate(new Date())
   return runs.filter((run) => typeof run?.date === 'string' && inSelbem(run.date));
 }
 
+/**
+ * Wie viele Wochen die Aktivitäts-Heatmap zeigt.
+ *
+ * Achtzehn Wochen sind gut vier Monate. Mehr passt auf einem Handy nicht mehr
+ * mit einer Feldbreite hin, die sich noch treffen lässt: bei 375 px bleiben
+ * für die Spalten rund 300 px, das sind hier knapp 15 px je Feld. Bei einem
+ * halben Jahr wären es unter 10 px – gut zum Ansehen, nichts zum Antippen.
+ */
+export const ACTIVITY_WEEKS = 18;
+
+/**
+ * Kilometergrenzen zwischen den Stufen.
+ *
+ * Vier Stufen über "kein Lauf": bis 5 km ein normaler Feierabendlauf, bis
+ * 10 km eine ordentliche Runde, bis 15 km ein langer Lauf, darüber ein sehr
+ * langer. Gezählt wird die Summe des Tages – zweimal 5 km sind ein 10-km-Tag.
+ */
+export const ACTIVITY_LEVELS = [5, 10, 15];
+
+/**
+ * @typedef {Object} ActivityDay
+ * @property {string} date         ISO-Tag
+ * @property {number} distanceKm   Summe des Tages
+ * @property {number} runCount
+ * @property {number} level        0 = kein Lauf, sonst 1..ACTIVITY_LEVELS.length+1
+ * @property {boolean} future      liegt nach heute – die laufende Woche ist voll
+ */
+
+/**
+ * Ein Feld je Tag, montags beginnend und lückenlos.
+ *
+ * Die Liste beginnt am Montag der ersten gezeigten Woche und endet am Sonntag
+ * der laufenden – so ist sie immer ein Vielfaches von sieben und lässt sich
+ * ohne Rechnung spaltenweise in ein Raster mit sieben Zeilen füllen. Die Tage
+ * nach heute sind mit `future` ausgezeichnet: sie halten das Raster
+ * rechteckig, sind aber keine Aussage.
+ *
+ * @param {import('./storage.js').Run[]} runs
+ * @param {{ weeks?: number, todayIso?: string }} [options]
+ * @returns {ActivityDay[]}
+ */
+export function activityCalendar(
+  runs,
+  { weeks = ACTIVITY_WEEKS, todayIso = localIsoDate(new Date()) } = {}
+) {
+  /** @type {Map<string, {distanceKm: number, runCount: number}>} */
+  const proTag = new Map();
+
+  for (const run of Array.isArray(runs) ? runs : []) {
+    if (typeof run?.date !== 'string' || typeof run.distanceKm !== 'number') continue;
+
+    const eintrag = proTag.get(run.date) ?? { distanceKm: 0, runCount: 0 };
+    eintrag.distanceKm += run.distanceKm;
+    eintrag.runCount += 1;
+    proTag.set(run.date, eintrag);
+  }
+
+  const heute = toDayNumber(todayIso);
+  const letzterMontag = toWeekIndex(heute) * 7 + MONDAY_OFFSET;
+  const ersterTag = letzterMontag - (weeks - 1) * 7;
+
+  const tage = [];
+  for (let nummer = ersterTag; nummer < ersterTag + weeks * 7; nummer++) {
+    const date = fromDayNumber(nummer);
+    const { distanceKm = 0, runCount = 0 } = proTag.get(date) ?? {};
+
+    tage.push({
+      date,
+      distanceKm,
+      runCount,
+      level: activityLevel(distanceKm, runCount),
+      future: nummer > heute,
+    });
+  }
+
+  return tage;
+}
+
+/** 0 ohne Lauf, sonst die Stufe nach den Kilometergrenzen. */
+function activityLevel(distanceKm, runCount) {
+  if (runCount === 0) return 0;
+  return 1 + ACTIVITY_LEVELS.filter((grenze) => distanceKm >= grenze).length;
+}
+
+/**
+ * So viele Punkte braucht eine Linie, damit sie einen Verlauf zeigt.
+ *
+ * Zwei Punkte sind keine Entwicklung, sondern ein Vergleich – und als Linie
+ * gezeichnet behaupten sie eine Richtung, die die Daten nicht hergeben.
+ */
+export const PACE_TREND_MIN_POINTS = 3;
+
+/** Ab wie vielen Wochen Spannweite nach Monaten statt nach Wochen gebündelt wird. */
+const PACE_TREND_WEEK_SPAN = 12;
+
+/**
+ * @typedef {Object} PaceTrend
+ * @property {'week'|'month'} period
+ * @property {{ start: string, paceMinPerKm: number, runCount: number, distanceKm: number }[]} points
+ */
+
+/**
+ * Ø-Pace je Zeitraum, für die Verlaufslinie.
+ *
+ * Gebündelt wird nach Wochen, solange die Läufe in ein Vierteljahr passen,
+ * sonst nach Monaten – zwölf Wochenpunkte sind lesbar, fünfzig sind ein
+ * Zaun. Zeiträume ohne Lauf fallen heraus statt auf 0 zu gehen: eine Pace von
+ * null wäre kein langsamer Zeitraum, sondern gar keiner.
+ *
+ * Der Durchschnitt ist wie in buildStats() nach Strecke gewichtet – zwanzig
+ * Kilometer in 6:00 wiegen schwerer als zwei in 5:00.
+ *
+ * @param {import('./storage.js').Run[]} runs
+ * @param {{ limit?: number, todayIso?: string }} [options]
+ * @returns {PaceTrend}
+ */
+export function paceTrend(runs, { limit = 12 } = {}) {
+  const mitPace = (Array.isArray(runs) ? runs : []).filter(
+    (run) => typeof run?.date === 'string' && runPaceMinPerKm(run) !== null
+  );
+
+  if (mitPace.length === 0) return { period: 'week', points: [] };
+
+  const wochen = mitPace.map((run) => toWeekIndex(toDayNumber(run.date)));
+  const spanne = Math.max(...wochen) - Math.min(...wochen) + 1;
+  const period = spanne > PACE_TREND_WEEK_SPAN ? 'month' : 'week';
+
+  const toIndex =
+    period === 'month'
+      ? (isoDate) => toMonthIndex(isoDate)
+      : (isoDate) => toWeekIndex(toDayNumber(isoDate));
+
+  const start =
+    period === 'month'
+      ? (index) => `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, '0')}-01`
+      : (index) => fromDayNumber(index * 7 + MONDAY_OFFSET);
+
+  /** @type {Map<number, {distanceKm: number, minutes: number, runCount: number}>} */
+  const eimer = new Map();
+
+  for (const run of mitPace) {
+    const index = toIndex(run.date);
+    const eimerchen = eimer.get(index) ?? { distanceKm: 0, minutes: 0, runCount: 0 };
+
+    eimerchen.distanceKm += run.distanceKm;
+    eimerchen.minutes += runPaceMinPerKm(run) * run.distanceKm;
+    eimerchen.runCount += 1;
+    eimer.set(index, eimerchen);
+  }
+
+  const points = [...eimer.entries()]
+    .sort(([a], [b]) => a - b)
+    .slice(-limit)
+    .map(([index, wert]) => ({
+      start: start(index),
+      paceMinPerKm: wert.minutes / wert.distanceKm,
+      runCount: wert.runCount,
+      distanceKm: wert.distanceKm,
+    }));
+
+  return { period, points };
+}
+
 /** Die Distanzen, für die eine Bestzeit geführt wird. */
 export const BEST_TIME_DISTANCES = [5, 8, 10, 12, 15, 21.1];
 

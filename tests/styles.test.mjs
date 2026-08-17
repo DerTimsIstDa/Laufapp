@@ -2,6 +2,8 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
+import { ACTIVITY_WEEKS } from '../js/stats.js';
+
 /**
  * CSS-Regeln, die sich in Node nicht am Verhalten prüfen lassen, aber halten
  * müssen. Diese Tests lesen die Quelle – grob, aber besser als nichts.
@@ -80,6 +82,23 @@ describe('Eingabefelder sind zentral bemasst', () => {
       ([, , block]) => /(^|;)\s*(padding|height|min-height):/.test(block)
     );
     assert.deepEqual(eigenmass.map((m) => m[0].split('{')[0].trim()), []);
+  });
+
+  test('Felder einer Reihe teilen sich die Beschriftungszeile', () => {
+    // Sonst genügt eine Beschriftung, die umbricht, um das Feld daneben um
+    // eine Zeilenhöhe tiefer zu setzen – so standen "Dein Name" und "Läufe
+    // pro Woche" im Profil versetzt.
+    const regel = /\n\.field \{([^}]*)\}/.exec(css);
+    assert.ok(regel, '.field fehlt');
+    assert.match(regel[1], /grid-template-rows:\s*subgrid/);
+    assert.match(regel[1], /grid-row:\s*span 2/);
+  });
+
+  test('ohne subgrid rutscht das Feld ans untere Ende', () => {
+    // Auch dann stehen die Eingabefelder einer Reihe auf einer Höhe.
+    const fallback = /@supports not \(grid-template-rows: subgrid\)\s*\{([\s\S]*?)\n\}/.exec(css);
+    assert.ok(fallback, 'der Rückfallweg fehlt');
+    assert.match(fallback[1], /\.field > :last-child\s*\{[^}]*margin-top:\s*auto/);
   });
 
   test('Beschriftung und Feld hängen am selben Abstand', () => {
@@ -185,6 +204,78 @@ describe('Titelzeile im Profil', () => {
     assert.match(css, /--share-button-size:/);
     assert.match(css, /\.profile-rank-row\s*\{[^}]*minmax\(var\(--share-button-size\), 1fr\)/);
     assert.match(css, /\.profile-rank-row \.profile-rank\s*\{[^}]*overflow-wrap:\s*anywhere/);
+  });
+});
+
+describe('Aktivitätsraster im Profil', () => {
+  test('es steht im Profil, nicht im Statistik-Bereich mit dem Umschalter', () => {
+    // Der Statistik-Bereich schaltet zwischen Woche und Monat um; ein Raster
+    // über ein Vierteljahr hätte über einer Wochenansicht nichts zu suchen.
+    assert.match(html, /id="activity-title"/);
+    assert.doesNotMatch(
+      /<section class="card" aria-labelledby="period-title">[\s\S]*?<\/section>/.exec(html)[0],
+      /heatmap/
+    );
+  });
+
+  test('Wochen als Spalten, Wochentage als Zeilen', () => {
+    const regel = /\.heatmap-grid\s*\{([^}]*)\}/.exec(css);
+    assert.ok(regel, '.heatmap-grid fehlt');
+    assert.match(regel[1], /grid-template-rows:\s*repeat\(7,/);
+    // Spaltenweise gefüllt – nur so landet jede Woche in einer Spalte, ohne
+    // dass beim Erzeugen gerechnet werden muss.
+    assert.match(regel[1], /grid-auto-flow:\s*column/);
+  });
+
+  test('CSS und Rechnung meinen dieselbe Zahl Wochen', () => {
+    const ausCss = /--heatmap-weeks:\s*(\d+)/.exec(css);
+    assert.ok(ausCss, '--heatmap-weeks fehlt');
+    assert.equal(Number(ausCss[1]), ACTIVITY_WEEKS);
+  });
+
+  test('fünf Stufen, nur die oberste voll gesättigt', () => {
+    for (const stufe of [1, 2, 3, 4]) {
+      assert.match(css, new RegExp(`--heatmap-${stufe}:`), `Stufe ${stufe} fehlt`);
+    }
+    // "Kein Lauf" ist die tiefste Fläche, keine schwache Akzentfarbe – sonst
+    // sähe ein Ruhetag aus wie ein kurzer Lauf.
+    assert.match(css, /--heatmap-0:\s*var\(--sunken\)/);
+    assert.match(css, /--heatmap-4:\s*var\(--accent\)/);
+  });
+});
+
+describe('Pace-Verlauf im Profil', () => {
+  const app = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
+
+  test('steht direkt unter der Aktivität', () => {
+    const profil = /<div class="view" id="view-profile"[\s\S]*?\n    <\/div>/.exec(html);
+    const reihe = [...profil[0].matchAll(/aria-labelledby="([a-z-]+)"/g)].map((m) => m[1]);
+
+    assert.equal(reihe[reihe.indexOf('activity-title') + 1], 'pace-trend-title');
+  });
+
+  test('gezeichnet wird selbst, ohne nachgeladene Bibliothek', () => {
+    // Kein <script src> ausser dem eigenen Modul.
+    const skripte = [...html.matchAll(/<script[^>]*src="([^"]+)"/g)].map((m) => m[1]);
+    assert.deepEqual(skripte, ['js/app.js']);
+    assert.match(app, /createPaceChart/);
+  });
+
+  test('die Achse steht auf dem Kopf, damit besser oben ist', () => {
+    // Kleinere Pace ist die schnellere: der Wert wächst nach unten, also
+    // steigt die Linie, wenn jemand schneller wird.
+    assert.match(app, /padTop \+ \(\(pace - skala\.min\) \/ \(skala\.max - skala\.min\)\) \* innenHoehe/);
+  });
+
+  test('zu wenige Punkte ergeben einen Hinweis statt eines leeren Diagramms', () => {
+    assert.match(html, /id="pace-trend-empty"[\s\S]{0,120}nicht genug Läufe/);
+    assert.match(app, /points\.length >= PACE_TREND_MIN_POINTS/);
+  });
+
+  test('Linie und Punkte tragen die Akzentfarbe', () => {
+    assert.match(css, /\.pace-line\s*\{[^}]*stroke:\s*var\(--accent\)/);
+    assert.match(css, /\.pace-point\s*\{[^}]*fill:\s*var\(--accent\)/);
+    assert.match(css, /\.pace-grid\s*\{[^}]*stroke:\s*var\(--line\)/);
   });
 });
 

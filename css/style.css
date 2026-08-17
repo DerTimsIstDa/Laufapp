@@ -623,11 +623,37 @@ button:disabled {
   grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
 }
 
+/**
+ * Beschriftung oben, Feld darunter.
+ *
+ * Als Raster mit geerbten Zeilen statt als Flex-Spalte: nebeneinander stehende
+ * Felder teilen sich damit dieselbe Beschriftungszeile. Sonst reicht eine
+ * Beschriftung, die umbricht ("Läufe pro Woche optional" tut das auf schmalen
+ * Schirmen, "Dein Name optional" nicht), um das Feld daneben um eine Zeilenhöhe
+ * tiefer zu setzen – zwei Eingabefelder in einer Reihe standen dann versetzt.
+ *
+ * Ausserhalb von .fields gibt es kein Elternraster; subgrid fällt dort auf
+ * zwei gewöhnliche Zeilen zurück, was genau der bisherigen Spalte entspricht.
+ */
 .field {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 2;
   gap: var(--label-gap);
   min-width: 0;
+}
+
+/* Ohne subgrid bleibt es bei der Spalte; das Feld rutscht dann ans untere
+   Ende, damit die Eingabefelder einer Reihe trotzdem auf einer Höhe stehen. */
+@supports not (grid-template-rows: subgrid) {
+  .field {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .field > :last-child {
+    margin-top: auto;
+  }
 }
 
 /* Ein Feld, das allein steht statt in einer Reihe – etwa die Notiz an der
@@ -1499,6 +1525,203 @@ textarea:focus {
 }
 
 /* Trophäen-Übersicht im Profil */
+
+/* ------------------------------------------------------ Aktivitätsraster */
+
+/**
+ * Wochen als Spalten, Wochentage als Zeilen.
+ *
+ * Die Spaltenzahl steht als Variable, weil app.js sie aus derselben Konstante
+ * setzt, aus der auch die Tage kommen – zwei Zahlen, die auseinanderlaufen
+ * könnten, wären genau ein Fehler zu viel.
+ *
+ * Links eine schmale Spalte für die Wochentage, oben eine Zeile für die
+ * Monatsnamen. Die Felder skalieren über 1fr mit der Kartenbreite mit; auf
+ * einem breiten Schirm werden sie grösser statt das Raster schmal zu lassen.
+ */
+.heatmap {
+  --heatmap-weeks: 18;
+  --heatmap-gap: 3px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-1) var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.heatmap-months {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: repeat(var(--heatmap-weeks), minmax(0, 1fr));
+  font-size: 0.625rem;
+  color: var(--muted);
+  line-height: 1.2;
+}
+
+/* Der Monatsname steht über der Woche, in der der Monat beginnt, und darf
+   nach rechts über seine Spalte hinausragen – drei Zeichen sind breiter als
+   ein Feld. */
+.heatmap-months span {
+  grid-row: 1;
+  white-space: nowrap;
+}
+
+.heatmap-weekdays {
+  grid-column: 1;
+  grid-row: 2;
+  display: grid;
+  grid-template-rows: repeat(7, minmax(0, 1fr));
+  gap: var(--heatmap-gap);
+  font-size: 0.625rem;
+  color: var(--muted);
+  line-height: 1;
+}
+
+.heatmap-weekdays span {
+  display: flex;
+  align-items: center;
+}
+
+/**
+ * Spaltenweise gefüllt: sieben feste Zeilen, und die Tage kommen in
+ * chronologischer Reihenfolge herein. Damit landet jede Woche in einer Spalte,
+ * ohne dass beim Erzeugen gerechnet werden müsste.
+ */
+.heatmap-grid {
+  grid-column: 2;
+  grid-row: 2;
+  display: grid;
+  grid-template-rows: repeat(7, minmax(0, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--heatmap-gap);
+}
+
+.heatmap-cell {
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  border-radius: 2px;
+  background: var(--heatmap-0);
+}
+
+/* Von sehr gedeckt bis voll gesättigt – dieselbe Akzentfarbe, nur mehr davon.
+   Stufe 0 ist keine Abstufung des Akzents, sondern die tiefste Fläche: "kein
+   Lauf" soll nicht wie "ein bisschen" aussehen. */
+.heatmap {
+  --heatmap-0: var(--sunken);
+  --heatmap-1: rgba(196, 240, 0, 0.18);
+  --heatmap-2: rgba(196, 240, 0, 0.4);
+  --heatmap-3: rgba(196, 240, 0, 0.68);
+  --heatmap-4: var(--accent);
+}
+
+.heatmap-cell[data-level="1"] { background: var(--heatmap-1); }
+.heatmap-cell[data-level="2"] { background: var(--heatmap-2); }
+.heatmap-cell[data-level="3"] { background: var(--heatmap-3); }
+.heatmap-cell[data-level="4"] { background: var(--heatmap-4); }
+
+/* Tage, die noch nicht waren: da, damit das Raster rechteckig bleibt, aber
+   ohne Aussage – deshalb nur angedeutet. */
+.heatmap-cell[data-future="true"] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+button.heatmap-cell:hover,
+button.heatmap-cell:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+button.heatmap-cell[aria-pressed="true"] {
+  outline: 2px solid var(--text);
+  outline-offset: 1px;
+}
+
+/* Bleibt auch leer stehen, damit die Karte beim Antippen nicht springt. */
+.heatmap-detail {
+  margin: var(--space-3) 0 0;
+  min-height: 1.4em;
+  font-size: 0.8125rem;
+}
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  font-size: 0.625rem;
+  color: var(--muted);
+}
+
+.heatmap-legend .heatmap-cell {
+  width: 0.625rem;
+  height: 0.625rem;
+  aspect-ratio: auto;
+}
+
+.heatmap-legend span:first-child {
+  margin-right: var(--space-1);
+}
+
+.heatmap-legend span:last-child {
+  margin-left: var(--space-1);
+}
+
+/* --------------------------------------------------------- Pace-Verlauf */
+
+/**
+ * Verlaufslinie der Ø-Pace.
+ *
+ * Die Y-Achse steht auf dem Kopf: eine kleinere Pace ist die schnellere, und
+ * eine Verbesserung soll steigen, nicht fallen. Gerechnet wird das beim
+ * Zeichnen, hier steht nur das Aussehen.
+ */
+.pace-trend {
+  margin-top: var(--space-4);
+}
+
+.pace-trend svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.pace-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.pace-axis-label {
+  fill: var(--muted);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pace-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 4px var(--accent-glow));
+}
+
+/* Fläche unter der Linie – nur angedeutet, sie soll die Linie tragen und
+   nicht mit ihr konkurrieren. */
+.pace-area {
+  fill: var(--accent-soft);
+  stroke: none;
+}
+
+.pace-point {
+  fill: var(--accent);
+  stroke: var(--bg);
+  stroke-width: 1.5;
+}
 
 /* ---------------------------------------------------------- Bestzeiten */
 
