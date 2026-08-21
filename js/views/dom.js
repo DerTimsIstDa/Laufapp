@@ -36,6 +36,8 @@ export const el = {
   trackGpsChoice: document.getElementById('track-gps-choice'),
   trackGpsOn: document.getElementById('track-gps-on'),
   trackGpsOff: document.getElementById('track-gps-off'),
+  trackVoiceRow: document.getElementById('track-voice-row'),
+  trackVoice: document.getElementById('track-voice'),
   trackStatus: document.getElementById('track-status'),
   trackError: document.getElementById('track-error'),
   trackStart: document.getElementById('track-start'),

@@ -550,19 +550,7 @@ export function saveProfile({ name, weeklyGoal, goalSince }) {
  * @returns {boolean}
  */
 export function loadGpsPreference() {
-  let raw;
-  try {
-    raw = localStorage.getItem(RECORDING_KEY);
-  } catch {
-    return false;
-  }
-  if (!raw) return false;
-
-  try {
-    return JSON.parse(raw)?.gps === true;
-  } catch {
-    return false;
-  }
+  return leseAufzeichnung().gps === true;
 }
 
 /**
@@ -572,9 +560,66 @@ export function loadGpsPreference() {
 export function saveGpsPreference(gps) {
   const wert = gps === true;
 
-  schreibe(RECORDING_KEY, { gps: wert }, 'Die Aufzeichnungsart');
+  schreibeAufzeichnung({ gps: wert });
 
   return wert;
+}
+
+/**
+ * Ansagen während des Laufs – ein und aus, über Sitzungen hinweg.
+ *
+ * Voreingestellt **an**: Der Schalter steht sichtbar in der Aufzeichnungs-
+ * Karte, und wer die Ansage nicht will, sieht ihn dort, bevor er startet.
+ * Anders als beim GPS löst hier nichts eine Abfrage des Betriebssystems aus.
+ *
+ * Liegt im selben Topf wie die Aufzeichnungsart: beides beschreibt, wie
+ * **dieses Gerät** aufzeichnet, und beides gehört deshalb nicht in die
+ * Exportdatei – eine Sicherung beschreibt die Läufe, nicht die Knöpfe.
+ *
+ * @returns {boolean}
+ */
+export function loadVoicePreference() {
+  return leseAufzeichnung().voice !== false;
+}
+
+/**
+ * @param {boolean} voice
+ * @returns {boolean} derselbe Wert, zum Weiterreichen
+ */
+export function saveVoicePreference(voice) {
+  const wert = voice === true;
+
+  schreibeAufzeichnung({ voice: wert });
+
+  return wert;
+}
+
+/**
+ * Der ganze Topf, notfalls leer.
+ *
+ * Gelesen und geschrieben wird immer im Ganzen: Zwei Schalter teilen sich
+ * einen Speicherplatz, und wer nur seinen eigenen hineinschreibt, löscht den
+ * anderen. Ein Test wacht darüber.
+ */
+function leseAufzeichnung() {
+  let raw;
+  try {
+    raw = localStorage.getItem(RECORDING_KEY);
+  } catch {
+    return {};
+  }
+  if (!raw) return {};
+
+  try {
+    const gelesen = JSON.parse(raw);
+    return gelesen !== null && typeof gelesen === 'object' ? gelesen : {};
+  } catch {
+    return {};
+  }
+}
+
+function schreibeAufzeichnung(aenderung) {
+  schreibe(RECORDING_KEY, { ...leseAufzeichnung(), ...aenderung }, 'Die Aufzeichnungsart');
 }
 
 /* --------------------------------------------- Letzte Sicherung ---- */

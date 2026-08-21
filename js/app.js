@@ -63,6 +63,15 @@ import { goalXp, reachedGoalWeeks, XP_PER_GOAL_WEEK } from './goal.js';
 import { drawShareCard } from './share-card.js';
 import { phaseAt, summarize, WORK, REST, PHASE_LABEL } from './interval.js';
 import { unlock, isSoundOn, setSoundOn, beepWork, beepRest, beepFinish } from './beep.js';
+import {
+  nextAnnouncement,
+  speak,
+  cancelSpeech,
+  unlockVoice,
+  isVoiceOn,
+  setVoiceOn,
+  isVoiceSupported,
+} from './speech.js';
 import { projectTrack, hasDrawableRoute, toStorageTrack, DEFAULT_VIEWPORT } from './route.js';
 import {
   isStandalone,
@@ -105,6 +114,7 @@ import {
   loadExercisePlan, saveExercisePlan,
   loadProfile, saveProfile,
   loadGpsPreference, saveGpsPreference,
+  loadVoicePreference, saveVoicePreference,
   loadLastExport, saveLastExport,
   setStorageErrorHandler,
 } from './storage.js';
@@ -253,9 +263,38 @@ const INTERVAL_RING = 2 * Math.PI * 110;
 const RING_UMFANG = 2 * Math.PI * 52;
 
 const tracker = createTracker({
-  onUpdate: renderTracking,
+  onUpdate: (state) => {
+    maybeAnnounce(state);
+    renderTracking(state);
+  },
   onError: showTrackError,
 });
+
+/**
+ * Die zuletzt gemachte Ansage – oder `null`, solange keine kam.
+ *
+ * Der einzige Zustand, den die Ansagen brauchen: woraus sich die nächste
+ * ergibt, rechnet `nextAnnouncement()` aus. Zurückgesetzt wird er beim Start
+ * einer Aufzeichnung, nicht beim Beenden – sonst spräche ein Neustart die
+ * Kilometer des vorigen Laufs nicht mehr an.
+ */
+let letzteAnsage = null;
+
+/**
+ * Sagt an, wenn ein voller Kilometer voll ist.
+ *
+ * Läuft bei jeder Positionsmeldung, also mehrmals je Sekunde – deshalb steht
+ * die Entscheidung in einer puren Funktion und nicht hier.
+ */
+function maybeAnnounce(state) {
+  if (!trackGps || !isVoiceOn()) return;
+
+  const ansage = nextAnnouncement(state, letzteAnsage);
+  if (ansage === null) return;
+
+  letzteAnsage = ansage;
+  speak(ansage.text);
+}
 
 /** Aufzeichnung ohne Standort – dieselbe Bedienung, nur die Uhr. */
 const stopwatch = createStopwatch({ onUpdate: renderTracking });
@@ -359,6 +398,21 @@ function init() {
 
   el.trackGpsOn.addEventListener('click', () => setTrackGps(true));
   el.trackGpsOff.addEventListener('click', () => setTrackGps(false));
+
+  // Erst der Schalterstand, dann setTrackGps – das blendet die Zeile ein oder
+  // aus und braucht den Stand schon.
+  setVoiceOn(loadVoicePreference());
+  el.trackVoice.checked = isVoiceOn();
+  el.trackVoice.addEventListener('change', () => {
+    saveVoicePreference(setVoiceOn(el.trackVoice.checked));
+    // Mitten im Lauf ausgeschaltet: Die Kilometer, die währenddessen fallen,
+    // werden nicht nachgeholt. Die erste Ansage danach nennt den Schnitt über
+    // alles seit der letzten gehörten – nach zwei stummen Kilometern also
+    // deren Mittel, nicht den letzten allein. Das ist die ehrlichere Zahl:
+    // eine Zeit für einen Kilometer, dessen Beginn niemand angesagt hat,
+    // wäre erfunden.
+  });
+
   setTrackGps(loadGpsPreference(), { merken: false });
 
   maybeShowInstallHint();
@@ -2562,6 +2616,10 @@ function setTrackGps(an, { merken = true } = {}) {
   el.trackGpsOn.setAttribute('aria-pressed', String(trackGps));
   el.trackGpsOff.setAttribute('aria-pressed', String(!trackGps));
 
+  // Ohne Strecke gibt es keinen Kilometer anzusagen. Und ohne Sprachausgabe
+  // im Browser wäre der Schalter ein Versprechen, das niemand einlöst.
+  el.trackVoiceRow.hidden = !trackGps || !isVoiceSupported();
+
   clearTrackError();
   el.trackStatus.textContent = trackGpsHint(an, moeglich);
   renderTracking(recorder().getState());
@@ -2581,6 +2639,11 @@ function trackGpsHint(gewuenscht, moeglich) {
 
 function handleTrackStart() {
   clearTrackError();
+
+  // Aus dem Klick heraus, sonst bleibt die Sprachausgabe auf iOS stumm.
+  letzteAnsage = null;
+  if (trackGps && isVoiceOn()) unlockVoice();
+
   recorder().start();
 }
 
@@ -2591,6 +2654,7 @@ function handleTrackPause() {
 }
 
 function handleTrackStop() {
+  cancelSpeech();
   const mitGps = trackGps;
   const summary = recorder().stop();
   if (!summary) return;
@@ -2632,6 +2696,7 @@ function handleTrackStop() {
 }
 
 function handleTrackDiscard() {
+  cancelSpeech();
   recorder().discard();
   clearTrackError();
   el.trackStatus.textContent = 'Aufzeichnung verworfen.';

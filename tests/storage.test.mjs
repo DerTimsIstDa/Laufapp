@@ -5,6 +5,7 @@ import {
   loadRuns, addRun, updateRun, removeRun, replaceRuns, saveRuns,
   loadSessions, addSession, updateSession, removeSession, replaceSessions,
   loadGpsPreference, saveGpsPreference,
+  loadVoicePreference, saveVoicePreference,
   loadLastExport, saveLastExport,
   saveExerciseLog, saveSessions, saveExercisePlan, saveProfile,
   setStorageErrorHandler,
@@ -586,6 +587,55 @@ describe('Schreibfehler', () => {
 
     assert.equal(runs.length, 1);
     assert.equal(runs[0].distanceKm, 5);
+  });
+});
+
+describe('Ansagen ein und aus', () => {
+  test('voreingestellt an – auch ohne gespeicherten Stand', () => {
+    // Anders als beim GPS löst hier nichts eine Systemabfrage aus, und der
+    // Schalter steht sichtbar in der Karte, bevor jemand startet.
+    assert.equal(loadVoicePreference(), true);
+  });
+
+  test('aus bleibt aus, an bleibt an', () => {
+    assert.equal(saveVoicePreference(false), false);
+    assert.equal(loadVoicePreference(), false);
+
+    assert.equal(saveVoicePreference(true), true);
+    assert.equal(loadVoicePreference(), true);
+  });
+
+  test('zwei Schalter, ein Speicherplatz – keiner löscht den anderen', () => {
+    // Beide liegen unter laufapp.recording.v1. Wer nur seinen eigenen Wert
+    // hineinschreibt, wirft den anderen weg – ohne Fehler, ohne Meldung.
+    saveGpsPreference(true);
+    saveVoicePreference(false);
+
+    assert.equal(loadGpsPreference(), true, 'die Aufzeichnungsart ging verloren');
+    assert.equal(loadVoicePreference(), false);
+
+    // Und in der anderen Reihenfolge.
+    saveVoicePreference(true);
+    saveGpsPreference(false);
+
+    assert.equal(loadVoicePreference(), true, 'der Ansage-Schalter ging verloren');
+    assert.equal(loadGpsPreference(), false);
+  });
+
+  test('beide stehen wirklich in einem Eintrag', () => {
+    saveGpsPreference(true);
+    saveVoicePreference(false);
+
+    assert.deepEqual(store.read('laufapp.recording.v1'), { gps: true, voice: false });
+  });
+
+  test('kaputter Inhalt wirft nicht, sondern fällt auf die Vorgabe zurück', () => {
+    for (const müll of ['kein json', '"text"', 'null', '[]', '42']) {
+      localStorage.setItem('laufapp.recording.v1', müll);
+
+      assert.equal(loadVoicePreference(), true, `${müll} hat die Vorgabe verändert`);
+      assert.equal(loadGpsPreference(), false, `${müll} hat GPS eingeschaltet`);
+    }
   });
 });
 

@@ -233,6 +233,13 @@
         <button type="button" class="chip active" id="track-gps-off" aria-pressed="true">Ohne GPS</button>
       </div>
 
+      <!-- Nur mit GPS sichtbar: ohne Strecke gibt es keinen Kilometer
+           anzusagen, und ein Schalter ohne Wirkung ist schlimmer als keiner. -->
+      <label class="interval-toggle" id="track-voice-row" hidden>
+        <input type="checkbox" id="track-voice" checked>
+        <span>Ansage bei jedem Kilometer</span>
+      </label>
+
       <p class="muted tracking-status" id="track-status">
         Bereit. Ohne GPS läuft nur die Uhr – die Distanz trägst du danach nach.
       </p>
