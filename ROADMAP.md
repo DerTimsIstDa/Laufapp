@@ -514,6 +514,8 @@ Ein Punkt = ein Commit (§6, Regel 1). So sind sie gefallen:
 | 4 | B2 | `28b277a` | Fehlgeschlagenes Speichern wird sichtbar |
 | 5 | – | `1134dca` | Kontext und Roadmap auf den Stand nach dem Push |
 | 6 | C1 | `ddb579b` | Erinnerung an die Sicherung nach dreissig Tagen |
+| 7 | – | `af9b35f` | Haekchen-Runde nach C1 nachgeholt |
+| 8 | B3 | `a18a661` | Testluecken der jungen Module geschlossen |
 
 `css/style.css` wurde **sauber getrennt**: die gelöschte Regel in Commit 1,
 die `.storage-hint`-Regel in Commit 4. Interaktives `git add -p` war dafür

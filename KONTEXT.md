@@ -329,17 +329,17 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Trophäen mit `progress()`: 55 von 62** · Trophäen-XP gesamt: **5055**
 - **`sw.js`: `funrun-v47`**
 - Letzte Commits (neueste zuerst, Stand des Repos):
-  1. Erinnerung an die Sicherung nach dreissig Tagen
-  2. Kontext und Roadmap auf den Stand nach dem Push
-  3. Fehlgeschlagenes Speichern wird sichtbar
-  4. APP_SHELL gegen den Dateibaum pruefen
-  5. README auf den Stand des Codes gebracht
+  1. Testluecken der jungen Module geschlossen
+  2. Haekchen-Runde nach C1 nachgeholt
+  3. Erinnerung an die Sicherung nach dreissig Tagen
+  4. Kontext und Roadmap auf den Stand nach dem Push
+  5. Fehlgeschlagenes Speichern wird sichtbar
 
 ### Roadmap-Block A, B2, B3 und C1 sind committet
 
 Die Änderungen aus A1, A2, A4, B2, B3 und C1 liegen seit dem 2026-08-21 in acht
 Commits auf `master` und sind gepusht; auf `dertimsistda.github.io` läuft
-`ddb579b`. Das Arbeitsverzeichnis ist sauber.
+`a18a661`. Das Arbeitsverzeichnis ist sauber.
 
 | Roadmap | Commit | Was |
 |---|---|---|
@@ -349,11 +349,14 @@ Commits auf `master` und sind gepusht; auf `dertimsistda.github.io` läuft
 | B2 | `28b277a` | Schreibfehler werden gemeldet statt geschluckt; `CACHE_VERSION` auf v46 |
 | – | `1134dca` | `KONTEXT.md` und `ROADMAP.md` auf den Stand nach dem Push |
 | C1 | `ddb579b` | Erinnerung an die Sicherung nach 30 Tagen; `CACHE_VERSION` auf v47 |
+| – | `af9b35f` | Häkchen-Runde nach C1 nachgeholt (§7-Tabelle, §8 Schritt 9) |
+| B3 | `a18a661` | Testlücken der jungen Module; neue Dateien für `beep.js` und `wake-lock.js` |
 
 `css/style.css` steckte in A1 und B2 und wurde auf beide Commits aufgeteilt –
 die gelöschte Regel in A1, die `.storage-hint`-Regel in B2. Jeder Commit ist
-für sich grün geprüft (706 / 706 / 711 / 725 / – / 749 Tests), damit ein
-späteres `git bisect` nicht in einem kaputten Stand landet.
+für sich grün geprüft (706 / 706 / 711 / 725 / – / 749 / – / 802 Tests), damit
+ein späteres `git bisect` nicht in einem kaputten Stand landet. Die beiden
+Striche sind die reinen Dokument-Commits – dort ändert sich keine Testzahl.
 
 **Nächster Punkt laut Roadmap §5: B1** – `js/app.js` entflechten, kleine
 Variante: nur Trainingsformular (~430 Zeilen) und Statistik (~400 Zeilen)
