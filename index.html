@@ -337,7 +337,39 @@
               autocomplete="off"
             >
           </div>
+
+          <div class="field field-breit">
+            <label for="note">Notiz <span class="optional">optional</span></label>
+            <input
+              type="text"
+              id="note"
+              name="note"
+              maxlength="200"
+              placeholder="Die letzten zwei Kilometer liefen wie von allein"
+              autocomplete="off"
+            >
+          </div>
         </div>
+
+        <!-- Fünf Sprossen als Auswahl, nicht als Schieberegler: ein Regler
+             legt Zwischenwerte nahe, die es nicht gibt. Echte Radiofelder,
+             damit Tastatur und Vorlesehilfe die Gruppe als eine Frage
+             begreifen; sichtbar sind sie als Chips, nicht als Punkte. -->
+        <fieldset class="feeling">
+          <legend>Wie war's? <span class="optional">optional</span></legend>
+          <div class="feeling-scale">
+            <input type="radio" id="feeling-1" name="feeling" value="1">
+            <label for="feeling-1"><span class="feeling-zahl">1</span><span class="feeling-wort">mies</span></label>
+            <input type="radio" id="feeling-2" name="feeling" value="2">
+            <label for="feeling-2"><span class="feeling-zahl">2</span><span class="feeling-wort">zäh</span></label>
+            <input type="radio" id="feeling-3" name="feeling" value="3">
+            <label for="feeling-3"><span class="feeling-zahl">3</span><span class="feeling-wort">geht so</span></label>
+            <input type="radio" id="feeling-4" name="feeling" value="4">
+            <label for="feeling-4"><span class="feeling-zahl">4</span><span class="feeling-wort">gut</span></label>
+            <input type="radio" id="feeling-5" name="feeling" value="5">
+            <label for="feeling-5"><span class="feeling-zahl">5</span><span class="feeling-wort">stark</span></label>
+          </div>
+        </fieldset>
 
         <p class="error" id="form-error" role="alert" hidden></p>
         <p class="form-warning" id="form-warning" role="status" hidden></p>
@@ -773,6 +805,10 @@
         </div>
 
         <dl class="stat-grid" id="detail-facts"></dl>
+
+        <!-- Nicht im Raster darüber: eine Notiz kann zwei Zeilen lang sein
+             und würde jede Zelle der Reihe mit aufziehen. -->
+        <p class="detail-note" id="detail-note" hidden></p>
 
         <h3 class="group-title">Strecke</h3>
         <div class="route" id="route-container"></div>

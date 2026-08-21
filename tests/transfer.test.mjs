@@ -77,6 +77,23 @@ describe('Roundtrip', () => {
     assert.deepEqual(roundtrip(runs).runs, runs);
   });
 
+  test('Notiz und Gefühl überstehen Export und Import', () => {
+    // Regel aus der Roadmap: bei jedem neuen gespeicherten Feld muss die
+    // Sicherung mitziehen. Sonst ist es genau dann weg, wenn jemand seine
+    // Daten wiederherstellt – und dann merkt es niemand mehr rechtzeitig.
+    const runs = [
+      {
+        id: 'n',
+        distanceKm: 8,
+        date: '2026-08-14',
+        note: 'Gegenwind auf dem Rückweg',
+        feeling: 4,
+      },
+    ];
+
+    assert.deepEqual(roundtrip(runs).runs, runs);
+  });
+
   test('die aufgezeichnete Route übersteht Export und Import', () => {
     const runs = [
       {

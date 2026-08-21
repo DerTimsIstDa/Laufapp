@@ -676,6 +676,113 @@ form > .field {
   margin-top: var(--field-gap);
 }
 
+/* Ein Feld über die ganze Breite des Zweispalters. Für Text, der Platz
+   braucht: eine halbe Zeile Notiz ist keine Notiz. */
+.field-breit {
+  grid-column: 1 / -1;
+}
+
+/* Die Notiz in der Detailansicht. Kursiv, weil sie als einzige Zeile dort
+   nicht gemessen, sondern geschrieben wurde. */
+.detail-note {
+  margin: var(--space-3) 0 0;
+  font-size: 0.875rem;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--body);
+  overflow-wrap: anywhere;
+}
+
+/* --------------------------------------------------------- Wie war's? */
+
+.feeling {
+  margin-top: var(--field-gap);
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+/* legend statt label: gleiche Optik, aber die Gruppe bleibt für Tastatur und
+   Vorlesehilfe eine einzige Frage mit fünf Antworten. */
+.feeling legend {
+  padding: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.feeling-scale {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--label-gap);
+}
+
+/* Nicht display:none – ein verstecktes Feld ist auch für die Tastatur weg.
+   Die Masse aus der Grundregel für Eingabefelder müssen hier ausdrücklich
+   zurückgenommen werden, sonst schiebt die Mindesthöhe die Reihe auf. */
+.feeling-scale input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.feeling-scale label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  padding: var(--space-2) 0.15rem;
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--body);
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
+}
+
+.feeling-zahl {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Das Wort darf umbrechen, bevor es die Spalte sprengt – "geht so" ist auf
+   einem schmalen Telefon breiter als ein Fünftel der Zeile. */
+.feeling-wort {
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--dim);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.feeling-scale input:checked + label {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--text);
+}
+
+.feeling-scale input:checked + label .feeling-wort {
+  color: var(--accent);
+}
+
+/* Die Tastaturmarke gehört sichtbar an den Chip, nicht an das Feld, das
+   niemand sieht. */
+.feeling-scale input:focus-visible + label {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 label {
   font-size: 0.6875rem;
   font-weight: 600;

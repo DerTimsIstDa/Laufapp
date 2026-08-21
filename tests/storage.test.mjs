@@ -12,6 +12,7 @@ import {
 import { getProgress, totalXpFromRuns } from '../js/xp.js';
 import { evaluateAchievements, achievementXp } from '../js/achievements.js';
 import { titleForLevel } from '../js/titles.js';
+import { validateRun } from '../js/validation.js';
 import { installFakeLocalStorage } from './helpers.mjs';
 
 let store;
@@ -91,12 +92,34 @@ describe('updateRun', () => {
       date: '2026-08-14',
       timeOfDay: '06:30',
       durationMinutes: 28,
+      note: 'Regen',
+      feeling: 2,
     });
 
     const next = updateRun(runs, runs[0].id, { distanceKm: 5, date: '2026-08-14' });
 
     assert.equal('timeOfDay' in next[0], false);
     assert.equal('durationMinutes' in next[0], false);
+    assert.equal('note' in next[0], false);
+    assert.equal('feeling' in next[0], false);
+  });
+
+  test('Notiz und Gefühl überleben das Bearbeiten', () => {
+    // updateRun zählt die Felder einzeln auf, statt den Lauf zu übernehmen.
+    // Ein vergessenes Feld wäre nach dem ersten Bearbeiten stillschweigend
+    // weg – der Fehler, den man erst bemerkt, wenn die Notiz fehlt.
+    const runs = addRun([], { distanceKm: 5, date: '2026-08-14', note: 'Regen', feeling: 2 });
+
+    const next = updateRun(runs, runs[0].id, {
+      distanceKm: 6,
+      date: '2026-08-14',
+      note: 'Doch trocken geblieben',
+      feeling: 4,
+    });
+
+    assert.equal(next[0].note, 'Doch trocken geblieben');
+    assert.equal(next[0].feeling, 4);
+    assert.deepEqual(store.read(), next);
   });
 
   test('ein aufgezeichneter Lauf bleibt als GPS-Lauf erkennbar', () => {
@@ -130,6 +153,63 @@ describe('updateRun', () => {
   test('unbekannte id lässt alles unverändert', () => {
     const runs = addRun([], { distanceKm: 5, date: '2026-08-14' });
     assert.equal(updateRun(runs, 'gibt-es-nicht', { distanceKm: 9, date: '2026-01-01' }), runs);
+  });
+});
+
+/**
+ * Der Weg vom Formular in den Speicher, an seiner schmalsten Stelle.
+ *
+ * `addRun` und `updateRun` zählen die Felder einzeln auf, statt den geprüften
+ * Lauf zu übernehmen – aus gutem Grund: nur so verschwindet ein geleertes
+ * Feld auch wirklich. Der Preis ist, dass ein neues Feld an drei Stellen
+ * gepflegt werden muss und beim Vergessen **stillschweigend** verlorengeht:
+ * kein Fehler, keine Meldung, der Lauf wird gespeichert – nur eben ohne.
+ *
+ * Genau das ist bei C2 passiert. `validateRun` und `updateRun` kannten die
+ * Notiz, `addRun` nicht; die Tests waren grün, weil keiner den ganzen Weg
+ * geprüft hat. Gefunden hat es erst der Browser.
+ *
+ * Diese zwei Tests kennen keine Feldliste – sie fragen `validateRun`, was ein
+ * Lauf haben darf, und wachsen damit von allein mit.
+ */
+describe('Kein Feld geht auf dem Weg in den Speicher verloren', () => {
+  /** Ein Lauf mit jedem optionalen Feld, das validateRun kennt. */
+  const vollstaendig = () => {
+    const geprueft = validateRun({
+      distanceKm: 8.4,
+      date: '2026-08-20',
+      timeOfDay: '06:30',
+      durationMinutes: 52,
+      paceMinPerKm: '6:12',
+      note: 'Gegenwind auf dem Rückweg',
+      feeling: 4,
+      source: 'manual',
+    });
+
+    assert.equal(geprueft.ok, true, 'die Vorlage selbst muss gültig sein');
+    // Wäre hier nur das Pflichtfeld übrig, prüften die Tests unten nichts.
+    assert.ok(Object.keys(geprueft.run).length >= 8, 'die Vorlage deckt zu wenige Felder ab');
+    return geprueft.run;
+  };
+
+  test('addRun speichert jedes Feld, das validateRun durchlässt', () => {
+    const geprueft = vollstaendig();
+    const [gespeichert] = addRun([], geprueft);
+
+    for (const feld of Object.keys(geprueft)) {
+      assert.deepEqual(gespeichert[feld], geprueft[feld], `${feld} ging beim Anlegen verloren`);
+    }
+  });
+
+  test('updateRun behält jedes Feld, das validateRun durchlässt', () => {
+    const geprueft = vollstaendig();
+    const runs = addRun([], { distanceKm: 1, date: '2026-08-20' });
+    const [gespeichert] = updateRun(runs, runs[0].id, geprueft);
+
+    for (const feld of Object.keys(geprueft)) {
+      if (feld === 'source') continue; // die stammt vom bestehenden Lauf, nicht vom Formular
+      assert.deepEqual(gespeichert[feld], geprueft[feld], `${feld} ging beim Bearbeiten verloren`);
+    }
   });
 });
 

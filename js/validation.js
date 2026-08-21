@@ -14,6 +14,41 @@ export const MAX_DURATION_MINUTES = 1440;
 /** Reicht für jeden Namen und für jede Kopfzeile, in die er passen muss. */
 export const MAX_NAME_LENGTH = 30;
 
+/**
+ * Ein Gedanke zum Lauf, kein Tagebucheintrag. Dieselbe Grenze wie bei der
+ * Notiz an einer Trainingseinheit (`MAX_NOTE_LENGTH` in `training.js`) –
+ * nicht weil die eine von der anderen abhinge, sondern damit sich zwei
+ * Notizfelder in derselben App nicht unterschiedlich verhalten.
+ *
+ * Die Grenze ist kein Selbstzweck: alles liegt im `localStorage`, und der
+ * fasst nur wenige Megabyte. Ein Freitextfeld ohne Grenze ist die zweite
+ * Stelle nach den GPS-Spuren, an der das Fach volläuft.
+ */
+export const MAX_RUN_NOTE_LENGTH = 200;
+
+/**
+ * Die Skala für „wie war's?".
+ *
+ * Fünf Stufen, weil drei zu grob sind (gut/geht/schlecht sagt nichts über
+ * einen Verlauf) und sieben eine Genauigkeit vortäuschen, die ein Gefühl
+ * nicht hat. Die Beschriftungen stehen hier und nicht in der Anzeige: Was
+ * eine 2 bedeutet, gehört zur Bedeutung des Werts, nicht zu seiner
+ * Darstellung. Wer später auswertet („Läufe, bei denen es sich gut
+ * anfühlte"), braucht dieselbe Zuordnung.
+ */
+export const FEELINGS = [
+  { value: 1, label: 'mies' },
+  { value: 2, label: 'zäh' },
+  { value: 3, label: 'geht so' },
+  { value: 4, label: 'gut' },
+  { value: 5, label: 'stark' },
+];
+
+/** Beschriftung zu einem Gefühlswert; `null`, wenn es den Wert nicht gibt. */
+export function feelingLabel(value) {
+  return FEELINGS.find((eintrag) => eintrag.value === value)?.label ?? null;
+}
+
 /** Zweimal am Tag ist reichlich; darüber ist es ein Vertipper. */
 export const MAX_WEEKLY_GOAL = 14;
 
@@ -274,6 +309,34 @@ export function validateRun(input) {
     }
   }
 
+  let note;
+  if (typeof input.note === 'string' && input.note.trim() !== '') {
+    const candidate = input.note.trim();
+    if (candidate.length > MAX_RUN_NOTE_LENGTH) {
+      errors.push({
+        field: 'note',
+        message: `Die Notiz darf höchstens ${MAX_RUN_NOTE_LENGTH} Zeichen lang sein.`,
+      });
+    } else {
+      note = candidate;
+    }
+  }
+
+  let feeling;
+  if (isFilled(input.feeling)) {
+    const candidate = parseNumber(input.feeling);
+    // Eine 3,5 ist keine Stufe. Die Skala hat fünf Sprossen, keine Zwischen-
+    // räume – sonst lässt sich später nicht mehr sagen, was gezählt wurde.
+    if (candidate === null || !FEELINGS.some((eintrag) => eintrag.value === candidate)) {
+      errors.push({
+        field: 'feeling',
+        message: 'Das Gefühl muss eine ganze Zahl von 1 bis 5 sein.',
+      });
+    } else {
+      feeling = candidate;
+    }
+  }
+
   if (errors.length > 0) return { ok: false, errors };
 
   // Unbekannte Felder fallen hier absichtlich weg.
@@ -281,6 +344,8 @@ export function validateRun(input) {
   if (timeOfDay) run.timeOfDay = timeOfDay;
   if (durationMinutes) run.durationMinutes = durationMinutes;
   if (paceMinPerKm) run.paceMinPerKm = paceMinPerKm;
+  if (note) run.note = note;
+  if (feeling) run.feeling = feeling;
   if (input.source === 'gps' || input.source === 'manual') run.source = input.source;
 
   const warnings = [];

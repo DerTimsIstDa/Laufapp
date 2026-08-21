@@ -58,6 +58,7 @@ export const el = {
   time: document.getElementById('time'),
   duration: document.getElementById('duration'),
   pace: document.getElementById('pace'),
+  note: document.getElementById('note'),
   formError: document.getElementById('form-error'),
   formWarning: document.getElementById('form-warning'),
   unlockNotice: document.getElementById('unlock-notice'),
@@ -194,6 +195,7 @@ export const el = {
 
   detailCard: document.getElementById('detail-card'),
   detailFacts: document.getElementById('detail-facts'),
+  detailNote: document.getElementById('detail-note'),
   detailClose: document.getElementById('detail-close'),
   routeContainer: document.getElementById('route-container'),
 

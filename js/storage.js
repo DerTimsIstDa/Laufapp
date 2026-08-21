@@ -137,6 +137,8 @@ function melde(key, was, err) {
  *   timeOfDay?: string,
  *   durationMinutes?: number,
  *   paceMinPerKm?: number,
+ *   note?: string,
+ *   feeling?: 1 | 2 | 3 | 4 | 5,
  *   source?: 'manual' | 'gps'
  * }} Run
  */
@@ -178,14 +180,32 @@ export function saveRuns(runs) {
  */
 export function addRun(
   runs,
-  { distanceKm, date, timeOfDay, durationMinutes, paceMinPerKm, source, track, interval }
+  {
+    distanceKm,
+    date,
+    timeOfDay,
+    durationMinutes,
+    paceMinPerKm,
+    note,
+    feeling,
+    source,
+    track,
+    interval,
+  }
 ) {
   const run = { id: createId(), distanceKm, date };
 
   // Optionale Felder nur setzen, wenn sie ausgefüllt wurden.
+  //
+  // Diese Liste zählt auf, statt zu übernehmen. Ein Feld, das validateRun
+  // durchlässt und hier fehlt, wird nie gespeichert – ohne Fehler, ohne
+  // Meldung. Dasselbe gilt für updateRun weiter unten: ein neues Feld
+  // gehört an beide Stellen.
   if (timeOfDay) run.timeOfDay = timeOfDay;
   if (durationMinutes) run.durationMinutes = durationMinutes;
   if (paceMinPerKm) run.paceMinPerKm = paceMinPerKm;
+  if (note) run.note = note;
+  if (feeling) run.feeling = feeling;
   if (source) run.source = source;
   if (interval) run.interval = interval;
   if (track?.length) run.track = track;
@@ -207,7 +227,11 @@ export function addRun(
  * @param {Run[]} runs
  * @returns {Run[]} unverändert, falls es die id nicht gibt
  */
-export function updateRun(runs, id, { distanceKm, date, timeOfDay, durationMinutes, paceMinPerKm }) {
+export function updateRun(
+  runs,
+  id,
+  { distanceKm, date, timeOfDay, durationMinutes, paceMinPerKm, note, feeling }
+) {
   const existing = runs.find((run) => run.id === id);
   if (!existing) return runs;
 
@@ -215,6 +239,11 @@ export function updateRun(runs, id, { distanceKm, date, timeOfDay, durationMinut
   if (timeOfDay) updated.timeOfDay = timeOfDay;
   if (durationMinutes) updated.durationMinutes = durationMinutes;
   if (paceMinPerKm) updated.paceMinPerKm = paceMinPerKm;
+  // Diese Liste zählt auf, statt zu übernehmen: Was hier fehlt, ist nach dem
+  // ersten Bearbeiten weg. Ein neues Feld gehört deshalb an zwei Stellen –
+  // in validateRun und hierher.
+  if (note) updated.note = note;
+  if (feeling) updated.feeling = feeling;
   if (existing.source) updated.source = existing.source;
   // Wie die Route: das Formular kennt das Intervall-Merkmal nicht und darf es
   // deshalb auch nicht wegwerfen.

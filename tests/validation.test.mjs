@@ -14,6 +14,9 @@ import {
   MAX_DURATION_MINUTES,
   MAX_NAME_LENGTH,
   MAX_WEEKLY_GOAL,
+  MAX_RUN_NOTE_LENGTH,
+  FEELINGS,
+  feelingLabel,
 } from '../js/validation.js';
 
 /** Kurzform: gültige Basis, einzelne Felder überschreibbar. */
@@ -207,6 +210,103 @@ describe('validateRun – optionale Felder', () => {
   test('unbekannte Felder werden nicht durchgereicht', () => {
     const result = validateRun(input({ herzfrequenz: 150, id: 'fremd' }));
     assert.deepEqual(Object.keys(result.run).sort(), ['date', 'distanceKm']);
+  });
+});
+
+describe('validateRun – Notiz', () => {
+  test('eine Notiz wird übernommen und dabei getrimmt', () => {
+    const result = validateRun(input({ note: '  Die letzten zwei km liefen wie von allein  ' }));
+
+    assert.equal(result.ok, true);
+    assert.equal(result.run.note, 'Die letzten zwei km liefen wie von allein');
+  });
+
+  test('leer und nur Leerzeichen hinterlassen kein Feld', () => {
+    for (const note of ['', '   ', undefined, null]) {
+      const result = validateRun(input({ note }));
+      assert.equal(result.ok, true, `${JSON.stringify(note)} sollte gültig sein`);
+      assert.equal('note' in result.run, false, `${JSON.stringify(note)} legt ein Feld an`);
+    }
+  });
+
+  test('an der Grenze: genau erlaubt, eins zu viel nicht', () => {
+    const genau = 'x'.repeat(MAX_RUN_NOTE_LENGTH);
+    assert.equal(validateRun(input({ note: genau })).run.note, genau);
+
+    const zuViel = validateRun(input({ note: 'x'.repeat(MAX_RUN_NOTE_LENGTH + 1) }));
+    assert.deepEqual(errorFields(zuViel), ['note']);
+  });
+
+  test('Leerzeichen an den Rändern zählen nicht mit', () => {
+    // Sonst scheitert eine Notiz, die nach dem Trimmen genau passt.
+    const result = validateRun(input({ note: `  ${'x'.repeat(MAX_RUN_NOTE_LENGTH)}  ` }));
+    assert.equal(result.ok, true);
+  });
+
+  test('etwas, das kein Text ist, wird ignoriert statt gemeldet', () => {
+    // Aus einer fremden Importdatei kann hier alles ankommen. Eine Zahl als
+    // Notiz macht den Lauf nicht ungültig – sie ist einfach keine Notiz.
+    const result = validateRun(input({ note: 42 }));
+    assert.equal(result.ok, true);
+    assert.equal('note' in result.run, false);
+  });
+});
+
+describe('validateRun – Gefühl', () => {
+  test('jede Stufe der Skala wird genommen', () => {
+    for (const { value } of FEELINGS) {
+      const result = validateRun(input({ feeling: value }));
+      assert.equal(result.ok, true, `${value} sollte gültig sein`);
+      assert.equal(result.run.feeling, value);
+    }
+  });
+
+  test('aus dem Formular kommt Text – der zählt genauso', () => {
+    assert.equal(validateRun(input({ feeling: '4' })).run.feeling, 4);
+  });
+
+  test('ohne Angabe kein Feld', () => {
+    for (const feeling of ['', undefined, null]) {
+      const result = validateRun(input({ feeling }));
+      assert.equal(result.ok, true, `${JSON.stringify(feeling)} sollte gültig sein`);
+      assert.equal('feeling' in result.run, false);
+    }
+  });
+
+  test('an den Grenzen: 0 und 6 gibt es nicht', () => {
+    assert.deepEqual(errorFields(validateRun(input({ feeling: 0 }))), ['feeling']);
+    assert.deepEqual(errorFields(validateRun(input({ feeling: 6 }))), ['feeling']);
+    assert.deepEqual(errorFields(validateRun(input({ feeling: -1 }))), ['feeling']);
+  });
+
+  test('zwischen den Sprossen liegt nichts', () => {
+    // Ein Gefühl ist keine Messung. Wer 3,5 zulässt, kann später nicht mehr
+    // sagen, was er gezählt hat.
+    assert.deepEqual(errorFields(validateRun(input({ feeling: 3.5 }))), ['feeling']);
+    assert.deepEqual(errorFields(validateRun(input({ feeling: '3,5' }))), ['feeling']);
+  });
+
+  test('Text, der keine Zahl ist, wird gemeldet', () => {
+    assert.deepEqual(errorFields(validateRun(input({ feeling: 'gut' }))), ['feeling']);
+  });
+});
+
+describe('feelingLabel', () => {
+  test('zu jeder Stufe gehört ein Wort', () => {
+    for (const { value, label } of FEELINGS) {
+      assert.equal(feelingLabel(value), label);
+      assert.ok(label.length > 0);
+    }
+  });
+
+  test('die Skala hat fünf Sprossen, lückenlos von 1 bis 5', () => {
+    assert.deepEqual(FEELINGS.map((f) => f.value), [1, 2, 3, 4, 5]);
+  });
+
+  test('was es nicht gibt, bekommt kein Wort', () => {
+    for (const wert of [0, 6, 3.5, null, undefined, '3']) {
+      assert.equal(feelingLabel(wert), null, `${JSON.stringify(wert)} hat ein Wort bekommen`);
+    }
   });
 });
 

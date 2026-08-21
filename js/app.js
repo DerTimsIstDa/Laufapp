@@ -47,6 +47,7 @@ import {
   normalizeName,
   normalizeWeeklyGoal,
   isValidIsoDate,
+  feelingLabel,
   MAX_WEEKLY_GOAL,
 } from './validation.js';
 import {
@@ -2081,6 +2082,8 @@ function handleSubmit(event) {
     timeOfDay: el.time.value,
     durationMinutes: el.duration.value,
     paceMinPerKm: el.pace.value,
+    note: el.note.value,
+    feeling: feelingValue(),
   });
 
   if (!result.ok) return showError(firstErrorMessage(result));
@@ -2103,6 +2106,32 @@ function handleSubmit(event) {
   showWarnings(result.warnings);
 
   render({ announceUnlocks: true });
+}
+
+/**
+ * Das angetippte Gefühl, oder '' wenn keins.
+ *
+ * Fünf Radiofelder teilen sich einen Namen; das Formular fasst sie deshalb
+ * als eine Liste zusammen, deren `value` das angehakte Feld ist. Kein
+ * eigener Zustand in der App – das Markup weiss es bereits.
+ */
+function feelingValue() {
+  return el.form.elements.feeling.value;
+}
+
+/**
+ * Setzt die Radiogruppe – und nimmt das Häkchen weg, wenn es keinen Wert gibt.
+ *
+ * Jedes Feld einzeln, obwohl die Gruppe ein `value` hat: dessen Setzer hakt
+ * nur an, er hakt nie ab. Ein Wert, den es nicht gibt – und `undefined` ist
+ * so einer –, lässt ihn die Gruppe unverändert. Beim Wechsel von einem Lauf
+ * mit Gefühl auf einen ohne blieb damit das alte Häkchen stehen und wanderte
+ * beim Speichern in den falschen Lauf.
+ */
+function setFeelingValue(value) {
+  for (const feld of el.form.elements.feeling) {
+    feld.checked = feld.value === String(value);
+  }
 }
 
 /** Auffälligkeiten, die den Lauf nicht ungültig machen – siehe validateRun. */
@@ -2174,6 +2203,12 @@ function renderDetail() {
 
   el.detailCard.hidden = false;
   el.detailFacts.replaceChildren(...buildDetailFacts(run));
+
+  // textContent, nicht innerHTML: die Notiz ist Text des Nutzers und wird
+  // als Text angezeigt, egal was drinsteht.
+  el.detailNote.textContent = run.note ?? '';
+  el.detailNote.hidden = !run.note;
+
   el.routeContainer.replaceChildren(createRouteView(run));
 }
 
@@ -2191,6 +2226,10 @@ function buildDetailFacts(run) {
   // Auch ohne Dauer: eine von Hand eingetragene Pace steht für sich.
   const pace = runPaceMinPerKm(run);
   if (pace !== null) facts.push(['Pace', `${formatPace(pace)} min/km`]);
+
+  // Das Gefühl mit Zahl und Wort: die Zahl allein sagt niemandem, ob 2 gut
+  // oder schlecht war, das Wort allein verliert die Ordnung der Skala.
+  if (run.feeling) facts.push(['Gefühl', `${run.feeling} – ${feelingLabel(run.feeling)}`]);
 
   facts.push(['Erfasst', run.source === 'gps' ? 'GPS-Aufzeichnung' : 'von Hand']);
   facts.push(['Verdient', `${numberFormat.format(xpForDistance(run.distanceKm))} XP`]);
@@ -2302,6 +2341,8 @@ function startEditing(id) {
   // gerechnete, würde sie beim Speichern zur Angabe – und bliebe stehen,
   // wenn die Distanz sich ändert.
   el.pace.value = run.paceMinPerKm === undefined ? '' : formatPace(run.paceMinPerKm);
+  el.note.value = run.note ?? '';
+  setFeelingValue(run.feeling);
 
   clearError();
   renderFormMode();
