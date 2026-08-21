@@ -1,13 +1,13 @@
 # FunRun – Leitfaden & Roadmap
 
-> **Stand: 2026-08-21** · Grundlage: `KONTEXT.md` (Stand `funrun-v54`, 62 Trophäen, 27 Übungen)
+> **Stand: 2026-08-21** · Grundlage: `KONTEXT.md` (Stand `funrun-v55`, 62 Trophäen, 27 Übungen)
 >
 > **Fortschritt: A1, A2, A3, A4, B1, B2, B3, B4, C1, C2, C3 und C4 sind
 > erledigt und committet** – siehe §5.
 >
 > **Die Reihenfolge ist am 2026-08-21 neu geordnet.** Ziel ist jetzt
-> ausdrücklich: *die App benutzen, ausbauen später.* **C15 ist erledigt**,
-> der nächste Punkt ist **C8** (Kilometer-Splits). Die verbliebenen
+> ausdrücklich: *die App benutzen, ausbauen später.* **C15 und C8 sind
+> erledigt**, der nächste Punkt ist **C10** (helles Farbschema). Die verbliebenen
 > unsichtbaren Punkte stehen vertagt in §5, jeder mit der Bedingung, die ihn
 > wieder aufweckt.
 >
@@ -17,7 +17,7 @@
 
 **Wichtiger Vorbehalt:** Die Erstfassung dieses Plans war aus `KONTEXT.md`
 abgeleitet, nicht aus dem Quellcode. Was seither erledigt wurde (Block A, B1,
-B2, B3, B4, C1–C4, C15), ist am Code geprüft. Alles **Offene** ist es nicht – Punkte, die
+B2, B3, B4, C1–C4, C8, C15), ist am Code geprüft. Alles **Offene** ist es nicht – Punkte, die
 vor der Umsetzung eine Prüfung brauchen, sind mit **[prüfen]** markiert. Wer sie
 ohne Prüfung als Fakt weitergibt, baut auf Sand.
 
@@ -38,7 +38,7 @@ Tag · **L** = mehrere Sitzungen, braucht vorher eine eigene Skizze.
 ## 0. Wo wir stehen
 
 **Block A ist vollständig abgeschlossen.** Aus Block B sind B1, B2, B3 und B4
-erledigt, aus Block C die Punkte C1 bis C4 und C15. Alles davon ist committet.
+erledigt, aus Block C die Punkte C1 bis C4, C8 und C15. Alles davon ist committet.
 
 ```
 A. Hygiene              B. Struktur               C. Produkt (hier sind
@@ -50,7 +50,8 @@ A. Hygiene              B. Struktur               C. Produkt (hier sind
                               B2b, B5 vertagt      ✅ C2 Notiz & Gefühl
                                                    ✅ C4 Wetter
                                                    ✅ C15 Audio-Ansagen
-                                                  ⬅ C8 Kilometer-Splits
+                                                   ✅ C8 Kilometer-Splits
+                                                  ⬅ C10 Helles Farbschema
                                                     ○ C5–C14 offen
 ```
 
@@ -93,8 +94,14 @@ ich nicht zu Ende prüfen kann: ob die Stimme neben Musik durchkommt und bei
 gesperrtem Bildschirm noch spricht, entscheidet das Telefon. Das Ergebnis
 steht in §4.
 
-**Der nächste Punkt ist C8** – Kilometer-Splits aus der GPS-Spur. Die Zahl,
-die man nach dem Lauf als Erstes sucht; die Daten liegen längst da.
+**C8 ist erledigt – aber anders, als der Punkt es beschrieb.** „Die Daten
+liegen bereits vor" stimmte nicht: In der gespeicherten Strecke stehen nur
+Koordinaten, keine Zeiten. Aufgezeichnet wird jetzt beim Laufen statt
+hinterher gerechnet. **Der Preis: nur neue Läufe bekommen Splits.** Das
+Ergebnis steht in §4.
+
+**Der nächste Punkt ist C10** – ein helles Farbschema. Dunkel ist bei Sonne
+draussen schwer zu lesen, und die Vorarbeit ist getan.
 
 Die vollständige Reihenfolge mit Stand steht in **§5**.
 
@@ -119,6 +126,7 @@ Gruppiert nach dem, was der Nutzer erlebt, nicht nach Dateien.
 | Notiz und Gefühl (1–5) zum Lauf | `validation.js`, `storage.js`, `app.js` | neu (C2); wird noch nirgends ausgewertet |
 | Wetter zum Lauf: vier Kästchen | `validation.js`, `storage.js`, `app.js` | neu (C4); ohne Netz, wird noch nirgends ausgewertet |
 | Ansage bei jedem Kilometer | `speech.js`, `app.js` | neu (C15); **am Gerät ungeprüft** – siehe §4 |
+| Kilometer-Splits mit Balken | `tracker.js`, `app.js` | neu (C8); **nur für ab jetzt aufgezeichnete Läufe** |
 
 ### 1.2 Gamification
 
@@ -582,8 +590,8 @@ auf dem dunklen Hintergrund, `prefers-reduced-motion` für Animationen. **[prüf
 Ideen, nach Verhältnis von Nutzen zu Aufwand sortiert. Alles hier ist optional –
 FunRun ist heute schon eine vollständige App.
 
-**Stand:** C1 bis C4 und C15 ✅ erledigt · C5 bis C14 offen. Der nächste Punkt
-der Reihenfolge ist **C8**.
+**Stand:** C1 bis C4, C8 und C15 ✅ erledigt · der Rest offen. Der nächste
+Punkt der Reihenfolge ist **C10**.
 
 **Seit dem 2026-08-21 gibt dieser Block den Takt vor**, nicht mehr Block B –
 die Reihenfolge in §5 ist auf „benutzen zuerst" umgestellt. Die Sortierung
@@ -809,11 +817,72 @@ Argument für B1: was `app.js` selbst tut, prüft weiterhin niemand.
 |---|---|--:|---|
 | C6 | **Eigene Übungen anlegen.** `exercises.js` ist heute fest verdrahtet. Nutzerübungen brauchen einen eigenen Speichertopf und eine ID-Strategie, die nicht mit den festen kollidiert (z. B. Präfix `user:`). | M | `exercises.js`, `storage.js` (`laufapp.custom-exercises.v1`) |
 | C7 | **Trainingsplan-Vorlagen.** „5 km in 8 Wochen", „10 km Grundlage". Erzeugt fertige Sessions in die Zukunft. Hoher wahrgenommener Wert, weil es die leere Planungsseite füllt. | M | `training.js`, neues `plan-templates.js` |
-| C8 | **Segmente & Splits.** Kilometer-Splits aus der GPS-Spur berechnen und anzeigen. Die Daten liegen bereits vor – es fehlt nur die Auswertung. Das ist die Funktion, die ernsthafte Läufer erwarten. | M | `geo.js`, `stats.js`, `app.js` |
+| ✅ C8 | **Segmente & Splits.** Erledigt – siehe unten. Die Begründung des Punkts war falsch: die Daten lagen **nicht** vor. | M | `tracker.js`, `app.js`, `validation.js`, `storage.js` |
 | C9 | **Höhenmeter.** `watchPosition` liefert `altitude`. Ungenau (leicht ±10 m), aber über einen Lauf gemittelt brauchbar. **Ehrlich: GPS-Höhe ohne Barometer ist wackelig** – lieber als „ungefähr" beschriften als Präzision vortäuschen. | M | `geo.js`, `tracker.js`, `route.js` |
 | C10 | **Helles Farbschema.** Alle Werte hängen schon an Custom Properties – die Vorarbeit ist getan. `prefers-color-scheme` plus manueller Schalter. | M | `css/style.css` |
 | C11 | **Jahresrückblick.** Eine Seite „2026 in Zahlen" mit Teilen-Karte. Saisonal, aber emotional der stärkste Moment einer Lauf-App. | M | `stats.js`, `share-card.js` |
 | ✅ C15 | **Audio-Ansagen während des Laufs.** Erledigt – siehe unten. | M | `speech.js` (neu), `app.js`, `storage.js`, `index.html` |
+
+#### ✅ C8 · Kilometer-Splits
+
+**Zuerst der Befund, weil er den Punkt umschreibt:** „Die Daten liegen bereits
+vor – es fehlt nur die Auswertung." Das stimmte nicht. In `track` stehen
+**ausschliesslich Koordinaten**; der Zeitstempel jeder Position wird in
+`tracker.js` verworfen, sobald die Strecke daraus gewachsen ist
+(`track.push({ lat, lon })`), und `normalizeTrack()` in `route.js` würde
+alles Weitere ohnehin abstreifen. Aus einer gespeicherten Spur lässt sich kein
+Split rechnen: Man weiss, **wo** der Kilometer lag, aber nicht **wann**.
+
+**Zwei Wege standen offen:**
+
+| Weg | Kosten | Nutzt alten Läufen? |
+|---|---|---|
+| An jeden der bis zu 500 Punkte eine Zeit hängen | 500 Zahlen je Lauf, geändertes Datenformat, Export/Import mitziehen | **Nein** – alte Spuren haben auch dann keine Zeiten |
+| Die Übergänge beim Laufen mitschreiben | **eine** Zahl je Kilometer | Nein |
+
+Der zweite gewinnt: genauer, ein Bruchteil des Platzes, und da **keiner der
+beiden** alten Läufen hilft, kostet der Verzicht nichts. Gebaut ist er in
+`tracker.js` – der weiss Strecke und Uhr ohnehin und ist die einzige Stelle,
+die den Übergang überhaupt sehen kann.
+
+**Der Preis, offen benannt:** Läufe, die vor heute aufgezeichnet wurden, haben
+keine Splits und bekommen auch keine. Von Hand eingetragene und mit der
+Stoppuhr erfasste Läufe ebenso wenig – ohne Strecke gibt es keine Kilometer.
+Die Detailansicht blendet den Abschnitt dann aus, statt eine leere Liste zu
+zeigen.
+
+**Entscheidungen, die beim Bauen anfielen:**
+
+- **Der Tracker ist ab jetzt die einzige Stelle, die Kilometer zählt.** Die
+  Ansagen aus C15 zählten bis eben nebenher selbst; sie lesen jetzt dieselbe
+  Liste. Zwei Zähler wären zwei Stellen, die sich irgendwann widersprechen –
+  angesagt würde dann etwas anderes, als hinterher in der Detailansicht steht.
+  **Das war ein Umbau an C15, einen Punkt nach dessen Fertigstellung.** Er
+  gehört trotzdem hierher: Erst mit den Splits gab es überhaupt eine zweite
+  Quelle.
+- **Ein Sprung wird nachgetragen, nicht übersprungen.** Fehlten Einträge,
+  verschöben sich alle folgenden Nummern und der fünfte Kilometer stünde an
+  vierter Stelle. Die übersprungenen bekommen den Schnitt.
+- **Ein einziger Unsinn kippt die ganze Liste** (in `validateRun`). Eine Liste
+  mit Lücken hätte falsche Kilometernummern, und die sind schlimmer als gar
+  keine Splits.
+- **Beim Balken heisst lang schnell, nicht langsam.** Er zeigt das Tempo, nicht
+  die verbrauchte Zeit: Der schnellste Kilometer bekommt den vollen Balken.
+  Andersherum wäre der *langsamste* Kilometer der längste Neonstreifen – und
+  Neongrün ist in dieser App vier Dingen vorbehalten, die alle etwas
+  Erreichtes meinen. Den schlechtesten Kilometer damit auszuzeichnen, hiesse
+  die eigene Farbregel gegen sich selbst zu wenden.
+- **Die Splits überleben das Bearbeiten**, wie die Route: Das Formular kennt
+  sie nicht und darf sie deshalb nicht wegwerfen. Der Wächter aus C2 musste
+  dafür eine Ausnahmeliste bekommen – benannt und begründet, nicht stillschweigend.
+
+**Im Browser geprüft**, mit angehaltener Uhr und einem Punkt je Sekunde: drei
+Kilometer in 5:00, 6:00 und 4:30 ergeben **genau** `[300, 360, 270]`, und die
+Ansagen sagen dieselben Zahlen. Die zwei Sekunden Verzug aus C15 sind damit
+weg – nicht weil etwas genauer rechnet, sondern weil beide dieselbe Zahl
+lesen.
+
+955 → **969 Tests**.
 
 #### ✅ C15 · Ansagen während des Laufs
 
@@ -938,8 +1007,8 @@ klare Linie, mit der Bedingung, die sie wieder aufweckt.
 | Schritt | Was | Aufwand | Warum hier |
 |--:|---|--:|---|
 | 12 | **C15** Audio-Ansagen während des Laufs | M | ✅ erledigt – **aber am Gerät ungeprüft**, siehe §4 |
-| 13 | **C8** Kilometer-Splits aus der GPS-Spur | M | ⬅ **als Nächstes.** Die Zahl, die man nach dem Lauf als Erstes sucht. Die Daten liegen schon da, es fehlt nur die Auswertung |
-| 14 | **C10** Helles Farbschema | M | Dunkel ist bei Sonne draussen schwer zu lesen. Die Vorarbeit ist getan: alle Werte hängen an Custom Properties |
+| 13 | **C8** Kilometer-Splits | M | ✅ erledigt – **nur für ab jetzt aufgezeichnete Läufe**, siehe §4 |
+| 14 | **C10** Helles Farbschema | M | ⬅ **als Nächstes.** Dunkel ist bei Sonne draussen schwer zu lesen. Die Vorarbeit ist getan: alle Werte hängen an Custom Properties |
 | 15 | **C11** Jahresrückblick | M | Emotional der stärkste Moment einer Lauf-App – aber **saisonal**. Vor Dezember hat er wenig Wirkung |
 | 16 | **C7** Trainingsplan-Vorlagen · **C6** eigene Übungen · **C5** Läufe filtern · **C14** GPX-Import | M je | Nach Bedarf. **C5 erst, wenn die Lauf-Liste unübersichtlich wird** – das hängt an einer Zahl, die niemand kennt (siehe unten) |
 
@@ -992,6 +1061,8 @@ Ein Punkt = ein Commit (§6, Regel 1). So sind sie gefallen:
 | 23 | – | `1bd1388` | Haekchen-Runde nach B4 – die Messung als Ergebnis |
 | 24 | – | `849813d` | Die Reihenfolge neu geordnet: benutzen zuerst |
 | 25 | C15 | `18c4106` | Ansagen waehrend des Laufs |
+| 26 | – | `24b6b5c` | Haekchen-Runde nach C15 |
+| 27 | C8 | `b58687b` | Kilometer-Splits – aufgezeichnet statt nachgerechnet |
 
 **B1 hat drei Commits statt einem** – das ist keine Ausnahme von Regel 1 in §6,
 sondern stand so im Punkt selbst: einen Bereich pro Commit, nach jedem Commit
@@ -1099,6 +1170,9 @@ Fleißaufgabe, sondern der halbe Zweck dieser Datei.
 | 2026-08-21 | **B1** umgesetzt, kleine Variante, in drei Commits (`061d0ba`, `2378c00`, `96bfbf2`). `app.js` 4.132 → 3.091 Zeilen; neu sind `js/format.js` und `js/views/{dom,training,stats}.js`. §3 komplett neu geschrieben (Ergebnis statt Vorhaben, samt der Frage, ob der Rest folgt), §0 mit neuem Schaubild, §1.5 mit der Einordnung der Modul-Zahl, §5-Tabelle und Commit-Block nachgezogen. §1 bekam **keine** neue Zeile: B1 hat für den Nutzer nichts geändert, und eine Zeile dafür wäre eine Behauptung. 802 → 887 Tests, `sw` v47 → v50. Nächster Punkt: **C3**. |
 | 2026-08-21 | **C3** umgesetzt. Der Punkt war zu 90 % schon gebaut – Balken an 55 von 62 Trophäen seit `8c9308c`, und `KONTEXT.md` §7 sagte das seit `28b277a` wörtlich, während diese Datei das Gegenteil behauptete. Offen waren die sieben, bei denen ein Balken lügt; fünf haben jetzt eine Zeile (`standing`), zwei bleiben mit Begründung leer. §0/§1.2/§4/§5 nachgezogen, Aufwand von M auf S korrigiert. 887 → 895 Tests, `sw` v50 → v51. Nächste Punkte: **C2** und **C4**. |
 | 2026-08-21 | **C2** umgesetzt: Notiz und Gefühl pro Lauf. §1.1 um eine Zeile ergänzt, §0/§4/§5 nachgezogen. Zwei Fehler fand wieder nur der Browser – der zweite hätte ein Gefühl in den falschen Lauf geschrieben. 895 → 913 Tests, `sw` v51 → v52. Nächster Punkt: **C4**. |
+| 2026-08-21 | **C8** umgesetzt: Kilometer-Splits. §1.1 um eine Zeile ergänzt, §0/§4/§5 nachgezogen. 955 → 969 Tests, `sw` v54 → v55. Nächster Punkt: **C10**. |
+| 2026-08-21 | **Die Begründung von C8 war falsch, und zwar entscheidend.** „Die Daten liegen bereits vor" – nein: in der gespeicherten Strecke stehen nur Koordinaten, keine Zeiten. Aus einer alten Spur ist kein Split zu holen. Nach B4 der zweite Punkt, dessen Prämisse den Kontakt mit dem Code nicht überlebt hat. Beide Male stand die Prämisse ungeprüft da; beide Male hätte ein Blick in eine Datei genügt. |
+| 2026-08-21 | Aus C8 mitgenommen: **Die Splits haben C15 einen Zähler weggenommen.** Bis dahin zählten Ansage und Aufzeichnung unabhängig voneinander Kilometer. Das ist ein Umbau an einem Punkt, der einen Schritt vorher fertig gemeldet wurde – und richtig so: Erst mit den Splits gab es eine zweite Quelle, und zwei Quellen für dieselbe Zahl sind eine zu viel. |
 | 2026-08-21 | **C15** umgesetzt: Ansagen bei jedem Kilometer. Neues Modul `speech.js` mit Testdatei und `APP_SHELL`-Eintrag. §1.1 um eine Zeile ergänzt, §0/§4/§5 nachgezogen. 927 → 954 Tests, `sw` v53 → v54. Nächster Punkt: **C8**. |
 | 2026-08-21 | **Der erste Punkt, den ich nicht zu Ende prüfen kann.** Ob die Stimme neben Musik durchkommt, bei gesperrtem Bildschirm spricht und brauchbar klingt, entscheidet das Telefon – dafür gibt es keine Attrappe. Der Punkt gilt als gebaut, nicht als bestätigt; die drei offenen Fragen stehen ausformuliert in §4. |
 | 2026-08-21 | **Dieselbe Fehlerart wie bei C2, eine Ebene tiefer:** Der neue Schalter teilt sich seinen Speicherplatz mit der Aufzeichnungsart, und wer nur seinen eigenen Wert hineinschreibt, löscht den anderen – ohne Fehler, ohne Meldung. Diesmal vorher gesehen statt hinterher: gelesen und geschrieben wird im Ganzen, ein Test wacht darüber, und es ist gegengeprüft, dass er anschlägt. |

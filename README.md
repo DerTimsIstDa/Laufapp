@@ -364,6 +364,27 @@ jedem Gerät anders aussehen.
 gespeichert und angezeigt – mehr nicht. Das ist Absicht: eine Auswertung über
 drei Läufe wäre Zahlenspielerei.
 
+### Kilometer-Splits
+
+Nach einem aufgezeichneten Lauf zeigt die Detailansicht **jeden Kilometer
+einzeln** — mit Zeit und Balken. Der Balken misst gegen den eigenen besten
+Kilometer, und **lang heisst schnell**: Er zeigt das Tempo, nicht die
+verbrauchte Zeit. Andersherum wäre der langsamste Kilometer der längste
+Neonstreifen, und Neongrün gehört in dieser App vier Dingen, die alle etwas
+Erreichtes meinen.
+
+⚠️ **Nur für Läufe, die ab jetzt aufgezeichnet werden.** Der Grund steht im
+Datenmodell: In der gespeicherten Strecke stehen **nur Koordinaten, keine
+Zeiten** — der Zeitstempel jeder Position wird verworfen, sobald die Distanz
+daraus gewachsen ist. Aus einer alten Spur lässt sich kein Split rechnen: Man
+weiss, *wo* der Kilometer lag, aber nicht *wann*.
+
+Statt an jeden der bis zu 500 Streckenpunkte eine Zeit zu hängen, schreibt die
+Aufzeichnung die Kilometer-Übergänge live mit — eine Zahl je Kilometer statt
+500. Beides hilft alten Läufen nicht; das eine kostet ein Fünfhundertstel des
+Platzes. Von Hand eingetragene und mit der Stoppuhr erfasste Läufe haben
+ebenfalls keine Splits, weil sie keine Strecke haben.
+
 ### Ansagen beim Laufen
 
 Bei jedem vollen Kilometer sagt die App **„Ein Kilometer. 5 Minuten 42."** —
@@ -634,7 +655,7 @@ Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 node --test
 ```
 
-**954 Tests in 27 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
+**969 Tests in 27 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
 Testrunner von Node — keine Abhängigkeiten, kein Framework, nichts zu
 installieren.
 
@@ -645,15 +666,15 @@ installieren.
 | `tests/transfer.test.mjs` | 69 | Export-Roundtrip, kaputte und halbe Importdateien |
 | `tests/imports.test.mjs` | 60 | jeder Import-Pfad und -Name gegen den Dateibaum |
 | `tests/training.test.mjs` | 59 | Abschnitte, Intervall-Vorgabe, Abgleich, Plantreue und XP |
-| `tests/validation.test.mjs` | 74 | Pflicht- und Optionalfelder, erfundene Kalendertage, Gefühlsskala und Wetter |
-| `tests/storage.test.mjs` | 58 | Anlegen/Ändern/Löschen/Ersetzen, Neuberechnung, volles Fach, kein Feld geht verloren |
-| `tests/speech.test.mjs` | 22 | Wann angesagt wird und was – Kilometergrenze, GPS-Sprung, Sprachausgabe-Attrappe |
+| `tests/validation.test.mjs` | 80 | Pflicht- und Optionalfelder, erfundene Kalendertage, Gefühlsskala, Wetter, Splits |
+| `tests/storage.test.mjs` | 59 | Anlegen/Ändern/Löschen/Ersetzen, Neuberechnung, volles Fach, kein Feld geht verloren |
+| `tests/speech.test.mjs` | 23 | Wann angesagt wird und was – Kilometergrenze, GPS-Sprung, Sprachausgabe-Attrappe |
 | `tests/styles.test.mjs` | 53 | CSS- und Markup-Regeln, die Node nicht ausführen kann; Auswahlreihen gegen ihre Datenquelle |
 | `tests/exercise-log.test.mjs` | 37 | Tageslimit, Zähler, Kategorien für Vielseitig |
 | `tests/route.test.mjs` | 33 | Projektion, Seitenverhältnis, Geraden, Ausdünnen |
 | `tests/geo.test.mjs` | 32 | Haversine gegen bekannte Strecken, alle GPS-Filtergrenzen |
 | `tests/pwa.test.mjs` | 29 | Installationshinweis, Cache-Trennung, `APP_SHELL` vollständig |
-| `tests/tracker.test.mjs` | 25 | Start/Pause/Beenden, Fehlerfälle, Geolocation-Attrappe |
+| `tests/tracker.test.mjs` | 32 | Start/Pause/Beenden, Fehlerfälle, Geolocation-Attrappe, Kilometer-Splits |
 | `tests/format.test.mjs` | 25 | Zahlen, Daten, Zeiten – auch die Rundung genau auf der Hälfte |
 | `tests/interval.test.mjs` | 22 | Phasenwechsel, Restzeit, angebrochene Runden |
 | `tests/exercise-plan.test.mjs` | 20 | Tagesgrenze, Reihenfolge, Doppelte |
