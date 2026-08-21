@@ -39,6 +39,14 @@ const PACE_FAST_MIN_PER_KM = 5;
 const PACE_IMPROVEMENT_MIN = 0.5;
 
 /**
+ * Um diesen Faktor muss der längste Lauf übertroffen werden. Steht hier,
+ * weil ihn zwei Stellen brauchen: die Bedingung in buildRunStats und die
+ * Ziellinie, die der Trophäe angezeigt wird. Zwei Zahlen, die auseinander
+ * laufen können, wären ein Balken, der lügt.
+ */
+const LONG_RUN_FACTOR = 1.2;
+
+/**
  * @typedef {Object} Achievement
  * @property {string} id
  * @property {string} name
@@ -47,6 +55,38 @@ const PACE_IMPROVEMENT_MIN = 0.5;
  * @property {'meilenstein'|'herausforderung'|'uebung'} category
  * @property {(stats: RunStats) => boolean} check
  * @property {(stats: RunStats) => {current: number, target: number, unit: string}} [progress]
+ * @property {(stats: RunStats) => {label: string, current: number|null, target: number|null, kind: 'pace'|'distance'}} [standing]
+ */
+
+/*
+ * progress oder standing – und warum es beides gibt.
+ *
+ * `progress` ist der Balken: ein Zähler, der von null zum Ziel hochläuft. Er
+ * setzt voraus, dass "mehr" auch "näher dran" heißt.
+ *
+ * Für einen Teil der Herausforderungen stimmt das nicht:
+ *
+ * - Eine Pace läuft nach unten. Ein Balken "5,8 von 6" sähe aus wie fast
+ *   geschafft, wäre aber längst erfüllt.
+ * - Beim langen Atem wächst das Ziel mit dem Stand mit (120 % des bisher
+ *   längsten Laufs). Der Balken stünde für immer bei 83 % und bewegte sich
+ *   nie – einer, der sich nicht bewegt, sagt nichts.
+ *
+ * Für diese Fälle gibt es `standing`: zwei Zahlen als Zeile, ohne Balken.
+ * "Beste Pace: 6:12 · nötig: unter 6:00 min/km" ist wahr, und man sieht,
+ * wie weit es noch ist.
+ *
+ * Ohne beides bleiben nur `neue-bestzeit` und `comeback`. Bei der Bestzeit
+ * gibt es nichts zu zählen – sie fällt in dem Moment, in dem sie fällt. Und
+ * beim Comeback wäre ein Fortschritt die Aufforderung, länger nicht zu
+ * laufen. Diese zwei bleiben bewusst leer.
+ *
+ * `current: null` heißt "noch nichts gemessen" und ist etwas anderes als
+ * eine Null: wer keinen Lauf mit Dauer hat, steht nicht bei 0:00 min/km.
+ *
+ * `target: null` gibt es nur dort, wo das Ziel vom Stand abhängt: ohne
+ * ersten Lauf gibt es keine Ziellinie für den langen Atem. "nötig: ab
+ * 0,00 km" wäre eine Zahl, die niemandem etwas sagt.
  */
 
 /** @type {Achievement[]} */
@@ -412,9 +452,8 @@ export const ACHIEVEMENTS = [
     description: `Ein Lauf ab ${PACE_MIN_DISTANCE_KM} km schneller als 6:00 min/km.`,
     xp: 35,
     category: 'herausforderung',
-    // Kein Fortschrittsbalken: eine Pace läuft nach unten, ein Balken nach
-    // oben. "5,8 von 6" sähe aus wie fast geschafft, wäre aber schon erfüllt.
     check: (s) => underPace(s, PACE_STEADY_MIN_PER_KM),
+    standing: (s) => paceStanding(s.bestPaceMinPerKm, PACE_STEADY_MIN_PER_KM),
   },
   {
     id: 'zuegig',
@@ -423,6 +462,7 @@ export const ACHIEVEMENTS = [
     xp: 55,
     category: 'herausforderung',
     check: (s) => underPace(s, PACE_BRISK_MIN_PER_KM),
+    standing: (s) => paceStanding(s.bestPaceMinPerKm, PACE_BRISK_MIN_PER_KM),
   },
   {
     id: 'unter-fuenf',
@@ -431,6 +471,7 @@ export const ACHIEVEMENTS = [
     xp: 90,
     category: 'herausforderung',
     check: (s) => underPace(s, PACE_FAST_MIN_PER_KM),
+    standing: (s) => paceStanding(s.bestPaceMinPerKm, PACE_FAST_MIN_PER_KM),
   },
   {
     id: 'doppelschicht',
@@ -469,6 +510,8 @@ export const ACHIEVEMENTS = [
     // gehören nicht in eine Pace, die etwas über das Tempo aussagen soll.
     check: (s) =>
       s.bestIntervalWorkPace !== null && s.bestIntervalWorkPace < PACE_FAST_MIN_PER_KM,
+    standing: (s) =>
+      paceStanding(s.bestIntervalWorkPace, PACE_FAST_MIN_PER_KM, 'Beste Belastungs-Pace'),
   },
   {
     id: 'neue-bestzeit',
@@ -493,6 +536,14 @@ export const ACHIEVEMENTS = [
     xp: 60,
     category: 'herausforderung',
     check: (s) => s.hasLongRunBreakthrough,
+    // Das Ziel wandert mit: jeder längere Lauf hebt die Latte für den
+    // nächsten. Genau deshalb steht hier eine Zeile und kein Balken.
+    standing: (s) => ({
+      label: 'Längster Lauf',
+      current: s.maxDistanceKm > 0 ? s.maxDistanceKm : null,
+      target: s.maxDistanceKm > 0 ? s.maxDistanceKm * LONG_RUN_FACTOR : null,
+      kind: 'distance',
+    }),
   },
 
   // --- Übungen ------------------------------------------------------------
@@ -763,7 +814,7 @@ export function buildRunStats(runs) {
     }
 
     // Längster Lauf um 20 % übertroffen
-    if (longestSoFarKm > 0 && run.distanceKm >= longestSoFarKm * 1.2) {
+    if (longestSoFarKm > 0 && run.distanceKm >= longestSoFarKm * LONG_RUN_FACTOR) {
       stats.hasLongRunBreakthrough = true;
     }
     longestSoFarKm = Math.max(longestSoFarKm, run.distanceKm);
@@ -841,6 +892,15 @@ function underPace(stats, schwelle) {
   return stats.bestPaceMinPerKm !== null && stats.bestPaceMinPerKm < schwelle;
 }
 
+/**
+ * Der Stand einer Pace-Trophäe: die bisher beste Pace und die, die es
+ * bräuchte. `null` als Stand heißt "noch kein gewerteter Lauf" – das ist
+ * etwas anderes als eine langsame Pace und wird auch anders angezeigt.
+ */
+function paceStanding(best, schwelle, label = 'Beste Pace') {
+  return { label, current: best, target: schwelle, kind: 'pace' };
+}
+
 /** Grösster Wert einer Zähl-Map; 0 bei leerer Map. */
 function maxWert(zaehler) {
   return zaehler.size === 0 ? 0 : Math.max(...zaehler.values());
@@ -860,6 +920,7 @@ export function evaluateAchievements(runs, exerciseLog = []) {
     ...achievement,
     unlocked: achievement.check(stats),
     progress: achievement.progress ? achievement.progress(stats) : null,
+    standing: achievement.standing ? achievement.standing(stats) : null,
   }));
 }
 

@@ -2213,6 +2213,17 @@ button.heatmap-cell[aria-pressed="true"] {
   color: var(--muted);
 }
 
+/* Der Stand ohne Balken – gleiche Zeile im Raster, gleiche Schriftgrösse
+   wie der Text neben dem Balken, damit beide Formen ruhig nebeneinander
+   in derselben Liste stehen. */
+.trophy-standing {
+  grid-area: fuss;
+  margin-top: var(--space-2);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
 /* ---------------------------------------------------------------- Profil */
 
 .profile-hero {

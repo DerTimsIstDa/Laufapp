@@ -501,6 +501,107 @@ describe('Vollständigkeit', () => {
   });
 });
 
+describe('Angezeigter Stand', () => {
+  /** Der Stand einer einzelnen Trophäe nach diesen Läufen. */
+  const standVon = (runs, id) => evaluateAchievements(runs).find((a) => a.id === id).standing;
+
+  /**
+   * Die zwei, die bewusst nichts anzeigen – begründet im Kommentar über
+   * ACHIEVEMENTS. Wer eine davon streicht, muss den Stand nachliefern.
+   */
+  const OHNE_ANZEIGE = ['neue-bestzeit', 'comeback'];
+
+  test('jede offene Trophäe zeigt einen Stand – bis auf zwei', () => {
+    const stumm = evaluateAchievements([], [])
+      .filter((a) => a.progress === null && a.standing === null)
+      .map((a) => a.id)
+      .sort();
+
+    assert.deepEqual(stumm, [...OHNE_ANZEIGE].sort());
+  });
+
+  test('Balken und Zeile schliessen einander aus', () => {
+    for (const a of evaluateAchievements([], [])) {
+      assert.ok(
+        a.progress === null || a.standing === null,
+        `${a.id} hätte beides – die Kachel zeigt nur eines`
+      );
+    }
+  });
+
+  test('die Pace-Trophäen melden die beste Pace und ihre Schwelle', () => {
+    // 6 km in 39 Minuten: 6:30 min/km, also noch keine der drei Stufen.
+    const runs = [makeRun(0, 6, { durationMinutes: 39 })];
+
+    assert.deepEqual(standVon(runs, 'flott-unterwegs'), {
+      label: 'Beste Pace',
+      current: 6.5,
+      target: 6,
+      kind: 'pace',
+    });
+    assert.equal(standVon(runs, 'zuegig').target, 5.5);
+    assert.equal(standVon(runs, 'unter-fuenf').target, 5);
+  });
+
+  test('ohne gewerteten Lauf steht dort null, nicht eine Null', () => {
+    // Ohne Dauer gibt es keine Pace; 2 km blieben ausserdem unter der
+    // Mindestdistanz. Beides darf nicht als "0:00 min/km" durchgehen.
+    for (const runs of [[], [makeRun(0, 2, { durationMinutes: 10 })]]) {
+      assert.equal(standVon(runs, 'unter-fuenf').current, null);
+    }
+  });
+
+  test('Tempo im Intervall nimmt die Belastung, nicht den ganzen Lauf', () => {
+    const runs = [
+      makeRun(0, 8, {
+        durationMinutes: 48, // 6:00 min/km über das ganze Training
+        interval: { workSeconds: 60, restSeconds: 60, repeats: 5, completedRepeats: 5, gps: true, workPaceMinPerKm: 5.2 },
+      }),
+    ];
+
+    assert.deepEqual(standVon(runs, 'tempo-im-intervall'), {
+      label: 'Beste Belastungs-Pace',
+      current: 5.2,
+      target: 5,
+      kind: 'pace',
+    });
+  });
+
+  test('der lange Atem zeigt genau die Grenze, an der er auch greift', () => {
+    const bisher = [makeRun(0, 10)];
+    const stand = standVon(bisher, 'langer-atem');
+
+    assert.equal(stand.label, 'Längster Lauf');
+    assert.equal(stand.current, 10);
+    assert.equal(stand.kind, 'distance');
+
+    // Die angezeigte Zahl ist die Bedingung – nicht eine zweite, die daneben
+    // liegt. Genau darum steht der Faktor an einer Stelle.
+    assert.equal(has([...bisher, makeRun(50, stand.target)], 'langer-atem'), true);
+    assert.equal(has([...bisher, makeRun(50, stand.target - 0.01)], 'langer-atem'), false);
+  });
+
+  test('ohne Lauf hat der lange Atem weder Stand noch Ziel', () => {
+    // Das Ziel hängt am längsten Lauf. Ohne einen einzigen gibt es keins –
+    // eine 0 wäre eine Zahl, die aussieht wie eine Auskunft und keine ist.
+    assert.deepEqual(standVon([], 'langer-atem'), {
+      label: 'Längster Lauf',
+      current: null,
+      target: null,
+      kind: 'distance',
+    });
+  });
+
+  test('kein Stand meldet eine Null als Ziel', () => {
+    for (const runs of [[], [makeRun(0, 5)], [makeRun(0, 5, { durationMinutes: 25 })]]) {
+      for (const a of evaluateAchievements(runs)) {
+        if (a.standing === null) continue;
+        assert.notEqual(a.standing.target, 0, `${a.id}: Ziel 0`);
+      }
+    }
+  });
+});
+
 describe('Neue Kennzahlen aus den Läufen', () => {
   test('Läufe je Tag und je Woche', () => {
     // Zwei am selben Tag, danach zwei weitere in derselben Woche.

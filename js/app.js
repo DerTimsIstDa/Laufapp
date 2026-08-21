@@ -1079,8 +1079,12 @@ function createTrophyTile(achievement, unlockDate) {
     return kachel;
   }
 
-  // Nur Bedingungen mit klarem Zähler bekommen einen Balken.
+  // Nur Bedingungen mit klarem Zähler bekommen einen Balken. Wo ein Balken
+  // lügen würde – eine Pace läuft nach unten, das Ziel des langen Atems
+  // wandert mit –, steht stattdessen der Stand als Zeile. Warum welches
+  // wann: siehe den Kommentar über ACHIEVEMENTS in achievements.js.
   if (achievement.progress) kachel.append(createTrophyProgress(achievement.progress));
+  else if (achievement.standing) kachel.append(createTrophyStanding(achievement.standing));
   kachel.setAttribute('aria-label', `${achievement.name}: offen`);
 
   return kachel;
@@ -1108,6 +1112,50 @@ function createTrophyProgress(progress) {
 
   huelle.append(spur, zahl);
   return huelle;
+}
+
+/**
+ * Der Stand ohne Balken: "Beste Pace: 6:12 · nötig: unter 6:00 min/km".
+ *
+ * Ohne gemessenen Wert wird nicht geraten und keine Null hingeschrieben –
+ * dort steht, dass noch nichts vorliegt.
+ */
+function createTrophyStanding(standing) {
+  const zeile = document.createElement('span');
+  zeile.className = 'trophy-standing';
+
+  const wert = standing.current === null ? 'noch kein Wert' : formatStandingValue(standing);
+
+  // Ohne Ziellinie bleibt es beim Stand. Beim langen Atem hängt das Ziel am
+  // längsten Lauf – ohne einen einzigen stünde dort "nötig: ab 0,00 km".
+  zeile.textContent =
+    standing.target === null
+      ? `${standing.label}: ${wert}`
+      : `${standing.label}: ${wert} · nötig: ${formatStandingTarget(standing)}`;
+
+  return zeile;
+}
+
+/**
+ * Der Stand als blosse Zahl. Die Einheit steht einmal, hinten am Ziel –
+ * zweimal "min/km" in einer Zeile schiebt sie auf einem Telefon auf drei
+ * Zeilen, ohne ein Wort mehr zu sagen.
+ */
+function formatStandingValue(standing) {
+  return standing.kind === 'pace'
+    ? formatPace(standing.current)
+    : distanceFormat.format(standing.current);
+}
+
+/**
+ * Die Ziellinie mit dem Wörtchen, das die Richtung verrät: eine Pace muss
+ * darunter liegen, eine Distanz darüber. Ohne das liest sich "5:00 min/km"
+ * wie ein Zielwert, den man auch treffen könnte.
+ */
+function formatStandingTarget(standing) {
+  return standing.kind === 'pace'
+    ? `unter ${formatPace(standing.target)} min/km`
+    : `ab ${distanceFormat.format(standing.target)} km`;
 }
 
 /* ---------------------------------------------------------------- Profil */
