@@ -2,9 +2,8 @@
 
 > **Stand: 2026-08-21** · Grundlage: `KONTEXT.md` (Stand `funrun-v46`, 62 Trophäen, 27 Übungen)
 >
-> **Fortschritt: A1, A2, A3, A4 und B2 sind erledigt** – siehe §5. Die
-> Änderungen liegen fertig und getestet im Arbeitsverzeichnis, aber **noch
-> nicht committet**.
+> **Fortschritt: A1, A2, A3, A4 und B2 sind erledigt, committet und gepusht**
+> – siehe §5. Der nächste Punkt ist **C1** (Export-Erinnerung).
 >
 > Diese Datei beantwortet drei Fragen: **Was gibt es?**, **Was ist schwach?**,
 > **Was fehlt?** – und in welcher Reihenfolge das angegangen wird.
@@ -120,7 +119,8 @@ war toter Code, vermutlich beim Umbau der Profil-Statistik übrig geblieben.
 keine Wirkung hatte – die Regel aus §6 ist absolut formuliert, und Ausnahmen
 sind der Anfang vom Vergessen.
 
-**Offen:** Der Commit selbst. Siehe §7.
+**Commit:** `e99b96a`. `css/style.css` steckte auch in B2 und wurde auf die
+beiden Commits aufgeteilt – hier nur die gelöschte Regel.
 
 ### ✅ A2 · README auf Stand bringen · `README.md`
 
@@ -352,8 +352,8 @@ FunRun ist heute schon eine vollständige App.
 | 2 | **A3** Testzahl feststellen, **A4** APP_SHELL-Test | S+S | ✅ erledigt |
 | 3 | **A2** README auf Stand | M | ✅ erledigt |
 | 4 | **B2** Speicher-Fehlerpfade härten | M | ✅ erledigt |
-| — | **committen und pushen** | S | ⬅ **als Nächstes** |
-| 5 | **C1** Export-Erinnerung | S | offen |
+| — | **committen und pushen** | S | ✅ erledigt |
+| 5 | **C1** Export-Erinnerung | S | ⬅ **als Nächstes** |
 | 6 | **B3** Testlücken der jungen Module | M | offen |
 | 7 | **B1** app.js entflechten – **kleine Variante** (Training + Statistik) | M | offen |
 | 8 | **C3** Trophäen-Fortschritt | M | offen |
@@ -362,39 +362,42 @@ FunRun ist heute schon eine vollständige App.
 | 11 | **B2b** GPS-Fehlerpfade am Gerät prüfen | M | offen |
 | 12 | danach frei nach Lust: C5, C8, C10, C15 | – | offen |
 
-### Die vier Commits, die anstehen
+### Die vier Commits – erledigt am 2026-08-21
 
-Ein Punkt = ein Commit (§6, Regel 1). In dieser Reihenfolge:
+Ein Punkt = ein Commit (§6, Regel 1). So sind sie gefallen:
 
-```bash
-cd "C:\Users\tino2\OneDrive\Desktop\Laufapp"
+| # | Roadmap | Commit | Betreff |
+|--:|---|---|---|
+| 1 | A1 | `e99b96a` | Tote Regel fuer stat-note entfernt |
+| 2 | A2 | `56ecd94` | README auf den Stand des Codes gebracht |
+| 3 | A4 | `09217d2` | APP_SHELL gegen den Dateibaum pruefen |
+| 4 | B2 | `28b277a` | Fehlgeschlagenes Speichern wird sichtbar |
 
-# 1 – A1
-git add css/style.css
-git commit -m "Tote Regel fuer stat-note entfernt"
+`css/style.css` wurde **sauber getrennt**: die gelöschte Regel in Commit 1,
+die `.storage-hint`-Regel in Commit 4. Interaktives `git add -p` war dafür
+nicht nötig – der Hunk lässt sich als gefilterter Patch mit
+`git apply --cached` in den Index legen, das Ergebnis ist identisch. Der oben
+befürchtete Kompromiss ("Regel einen Commit zu früh im Baum") war also nicht
+nötig. **Für den nächsten Fall gemerkt:** eine Datei in zwei Commits zu
+trennen kostet nichts, auch ohne interaktives Git.
 
-# 2 – A2
-git add README.md
-git commit -m "README auf den Stand des Codes gebracht"
+`KONTEXT.md` und `ROADMAP.md` kamen mit Commit 4 in die Versionierung –
+beide beschreiben denselben Stand und liefen sonst auseinander.
 
-# 3 – A4
-git add tests/pwa.test.mjs
-git commit -m "APP_SHELL gegen den Dateibaum pruefen"
+**Gegengeprüft, statt es anzunehmen:**
 
-# 4 – B2
-git add js/storage.js js/app.js index.html tests/storage.test.mjs \
-        tests/helpers.mjs tests/styles.test.mjs sw.js KONTEXT.md
-git commit -m "Fehlgeschlagenes Speichern wird sichtbar"
+- Jeder der vier Commits ist für sich grün (706 / 706 / 711 / 725 Tests),
+  geprüft in einem temporären Worktree. Ohne das taugt ein späteres
+  `git bisect` nichts.
+- Der `APP_SHELL`-Test schlägt wirklich an: Datei in `js/` angelegt → rot,
+  entfernt → grün.
 
-git push
-```
-
-⚠️ `css/style.css` steckt in **zwei** der Änderungen: der toten Regel (Commit 1)
-und dem Stil der Speicher-Warnung (Commit 4). Wer sie sauber trennen will,
-braucht `git add -p`. Wem das zu fummelig ist, nimmt sie in Commit 1 komplett
-mit – dann steht die `.storage-hint`-Regel einen Commit zu früh im Baum, was
-niemandem wehtut, weil das Markup dazu erst in Commit 4 kommt und CSS ohne
-passendes Element nichts tut.
+**Dabei aufgefallen:** A3 oben behauptet, die 725 seien "in README und
+`KONTEXT.md` eingetragen". In `KONTEXT.md` ja – im README standen noch 706
+und die Tabellenzeilen für `styles` (38), `storage` (34) und `pwa` (24), also
+der Stand vor A4 und B2. Genau die Drift, gegen die A2 antritt. In Commit 2
+mitkorrigiert: 725 als Kopfzahl, 43 / 43 / 29 in der Tabelle, Tabelle neu
+absteigend sortiert. Die Tabellensumme stimmt jetzt mit `node --test` überein.
 
 **Die Logik dahinter:** Erst das, was bei Nichtstun teurer wird (A1, A2). Dann
 das, was Datenverlust verhindert (B2, C1) – denn eine Lauf-App, die Läufe
@@ -429,3 +432,4 @@ Zusätzlich zur Checkliste in `KONTEXT.md` §8:
 | Datum | Änderung |
 |---|---|
 | 2026-08-21 | Erstfassung, abgeleitet aus `KONTEXT.md` (Stand `funrun-v44`) |
+| 2026-08-21 | A1, A2, A4 und B2 committet und gepusht (`e99b96a` … `28b277a`). Kopf, §2 (A1), §5-Tabelle und der Commit-Block auf den Stand danach gezogen. `css/style.css` sauber getrennt statt zusammengelegt. Nächster Punkt: **C1**. |

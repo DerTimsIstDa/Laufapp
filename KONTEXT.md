@@ -325,26 +325,32 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Trophäen mit `progress()`: 55 von 62** · Trophäen-XP gesamt: **5055**
 - **`sw.js`: `funrun-v46`**
 - Letzte Commits (neueste zuerst, Stand des Repos):
-  1. Aktivitaetsraster und Pace-Verlauf im Profil, Feldhoehen begradigt
-  2. Intervall-Schirm reparieren, GPS-Wahl beim Aufzeichnen, Bestzeiten
-  3. Fuenf Intervall-Trophaeen, dazu die Pace der Belastungsphasen
-  4. Intervall-Stoppuhr: Ablauf, Toene und die runde Ansicht
-  5. Intervalle bekommen eine eigene Vorgabe statt generischer Abschnitte
+  1. Fehlgeschlagenes Speichern wird sichtbar
+  2. APP_SHELL gegen den Dateibaum pruefen
+  3. README auf den Stand des Codes gebracht
+  4. Tote Regel fuer stat-note entfernt
+  5. Aktivitaetsraster und Pace-Verlauf im Profil, Feldhoehen begradigt
 
-### ⚠️ Noch nicht committet (Stand dieser Sitzung)
+### Roadmap-Block A und B2 sind committet
 
-Im Arbeitsverzeichnis liegen fertige, getestete Änderungen aus drei Blöcken der
-Roadmap. Sie sind **noch nicht committet und nicht gepusht** – auf
-`dertimsistda.github.io` läuft weiterhin der Stand von `962ed2f`. Vor dem
-Weiterarbeiten `git status` prüfen.
+Die Änderungen aus A1, A2, A4 und B2 liegen seit dem 2026-08-21 in vier
+Commits auf `master` und sind gepusht; auf `dertimsistda.github.io` läuft
+`28b277a`. Das Arbeitsverzeichnis ist sauber.
 
-| Was | Dateien | Roadmap |
+| Roadmap | Commit | Was |
 |---|---|---|
-| Tote CSS-Regel `.stat dd.stat-note` entfernt | `css/style.css` | A1 |
-| README auf Stand gebracht (573 → 815 Zeilen) | `README.md` | A2 |
-| `APP_SHELL` gegen den Dateibaum geprüft (5 Tests) | `tests/pwa.test.mjs` | A4 |
-| Schreibfehler werden gemeldet statt geschluckt | `js/storage.js`, `js/app.js`, `index.html`, `css/style.css`, `tests/storage.test.mjs`, `tests/helpers.mjs`, `tests/styles.test.mjs` | B2 |
-| `CACHE_VERSION` auf v46 | `sw.js` | – |
+| A1 | `e99b96a` | Tote CSS-Regel `.stat dd.stat-note` entfernt |
+| A2 | `56ecd94` | README auf Stand gebracht (573 → 815 Zeilen) |
+| A4 | `09217d2` | `APP_SHELL` gegen den Dateibaum geprüft (5 Tests) |
+| B2 | `28b277a` | Schreibfehler werden gemeldet statt geschluckt; `CACHE_VERSION` auf v46 |
+
+`css/style.css` steckte in A1 und B2 und wurde auf beide Commits aufgeteilt –
+die gelöschte Regel in A1, die `.storage-hint`-Regel in B2. Jeder der vier
+Commits ist für sich grün geprüft (706 / 706 / 711 / 725 Tests), damit ein
+späteres `git bisect` nicht in einem kaputten Stand landet.
+
+**Nächster Punkt laut Roadmap §5: C1** – Export-Erinnerung im Profil, wenn der
+letzte Export mehr als 30 Tage her ist.
 
 **Hinweis zum Ordner:** Das Repo liegt unter OneDrive
 (`C:\Users\tino2\OneDrive\Desktop\Laufapp`). OneDrive und `.git` vertragen sich
@@ -378,7 +384,7 @@ sie schreibt. Ein Umzug nach `C:\Users\tino2\Projekte\Laufapp` steht aus.
 **Erledigt am 2026-08-21.** Das `README.md` wurde vollständig auf den Stand des
 Codes gebracht; alle Zahlen wurden dabei am Code nachgezählt, nicht aus dieser
 Datei übernommen. Die früher hier verzeichnete Drift (17 statt 62 Trophäen, 464
-statt 706 Tests, fehlende Abschnitte zu Intervall-Stoppuhr, Wochenziel,
+statt der damals 706 Tests, fehlende Abschnitte zu Intervall-Stoppuhr, Wochenziel,
 Teilen-Karte, Bestzeiten, Aktivitätsraster, Pace-Verlauf und Profilname) besteht
 nicht mehr.
 
@@ -422,3 +428,4 @@ Bugfix in einer Render-Funktion braucht keinen Eintrag.
 |---|---|
 | 2026-08-21 | Erstfassung: Stand nach „Aktivitaetsraster und Pace-Verlauf", `sw v44`, 62 Trophäen, 27 Übungen |
 | 2026-08-21 | Roadmap-Sitzung: `sw v46`, 725 Tests in 22 Dateien, `setStorageErrorHandler` in §4/§6, §7 um die uncommitteten Änderungen erweitert, §9 erledigt. **Korrigiert:** Session-Typen in §5 standen als Beschriftungen statt als IDs. |
+| 2026-08-21 | A1, A2, A4 und B2 committet und gepusht. §7: Warnblock „noch nicht committet" durch die vier Commits ersetzt, Commit-Liste nachgezogen. Beim Committen fiel auf, dass das README noch 706 Tests nannte statt 725 – die drei betroffenen Tabellenzeilen wurden in Commit `56ecd94` mitkorrigiert. |
