@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
 
 import {
   isStandalone,
@@ -170,6 +170,67 @@ describe('Service Worker hält sich an dasselbe Präfix', () => {
 
     const imSw = [...treffer[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
     assert.deepEqual(imSw, LEGACY_CACHE_PREFIXES);
+  });
+});
+
+/**
+ * APP_SHELL gegen den echten Dateibaum.
+ *
+ * Eine neue Datei anzulegen und sie im Service Worker zu vergessen ist der
+ * Fehler, den man erst offline bemerkt – die App startet, ein Modul fehlt, und
+ * der Import schlägt fehl. Beim Entwickeln fällt das nie auf, weil dort das
+ * Netz da ist.
+ *
+ * Der Test kennt keine Liste, er liest die Verzeichnisse. Nur so wächst er
+ * automatisch mit.
+ */
+describe('App-Shell ist vollständig', () => {
+  const wurzel = new URL('../', import.meta.url);
+  const sw = readFileSync(new URL('sw.js', wurzel), 'utf8');
+
+  const APP_SHELL = (() => {
+    const treffer = /const APP_SHELL = \[([^\]]*)\]/.exec(sw);
+    assert.ok(treffer, 'APP_SHELL steht nicht in sw.js');
+    return [...treffer[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  })();
+
+  /** Alle Dateien eines Verzeichnisses als Pfad in der Schreibweise der Shell. */
+  const dateienIn = (verzeichnis, endung) =>
+    readdirSync(new URL(verzeichnis, wurzel))
+      .filter((name) => name.endsWith(endung))
+      .map((name) => `./${verzeichnis}${name}`);
+
+  test('jedes Modul in js/ wird gecacht', () => {
+    for (const pfad of dateienIn('js/', '.js')) {
+      assert.ok(APP_SHELL.includes(pfad), `${pfad} fehlt in APP_SHELL – offline nicht verfügbar`);
+    }
+  });
+
+  test('jedes Icon und jedes Abzeichen wird gecacht', () => {
+    for (const pfad of [...dateienIn('icons/', '.png'), ...dateienIn('icons/badges/', '.png')]) {
+      assert.ok(APP_SHELL.includes(pfad), `${pfad} fehlt in APP_SHELL`);
+    }
+  });
+
+  test('das Grundgerüst wird gecacht', () => {
+    // './' und './index.html' sind nicht dasselbe: die Startadresse ohne
+    // Dateinamen ist ein eigener Cache-Eintrag.
+    for (const pfad of ['./', './index.html', './css/style.css', './manifest.json']) {
+      assert.ok(APP_SHELL.includes(pfad), `${pfad} fehlt in APP_SHELL`);
+    }
+  });
+
+  test('kein Eintrag zeigt ins Leere', () => {
+    // Ein Tippfehler lässt install() fehlschlagen – addAll() ist alles oder
+    // nichts. Dann wird gar nichts gecacht, nicht nur die eine Datei.
+    for (const pfad of APP_SHELL) {
+      if (pfad === './') continue;
+      assert.ok(existsSync(new URL(pfad.slice(2), wurzel)), `${pfad} gibt es nicht`);
+    }
+  });
+
+  test('kein Eintrag steht doppelt', () => {
+    assert.equal(new Set(APP_SHELL).size, APP_SHELL.length, 'APP_SHELL enthält Doppelte');
   });
 });
 
