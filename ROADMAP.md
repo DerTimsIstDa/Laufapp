@@ -1,6 +1,6 @@
 # FunRun – Leitfaden & Roadmap
 
-> **Stand: 2026-08-21** · Grundlage: `KONTEXT.md` (Stand `funrun-v46`, 62 Trophäen, 27 Übungen)
+> **Stand: 2026-08-21** · Grundlage: `KONTEXT.md` (Stand `funrun-v47`, 62 Trophäen, 27 Übungen)
 >
 > **Fortschritt: A1, A2, A3, A4, B2 und C1 sind erledigt, committet und
 > gepusht** – siehe §5. Der nächste Punkt ist **B3** (Testlücken der jungen
@@ -10,28 +10,35 @@
 > **Was fehlt?** – und in welcher Reihenfolge das angegangen wird.
 > `KONTEXT.md` beschreibt den Ist-Zustand, diese Datei den Weg nach vorn.
 
-**Wichtiger Vorbehalt:** Dieser Plan ist aus `KONTEXT.md` abgeleitet, nicht aus
-dem Quellcode. Punkte, die eine Prüfung am Code brauchen, sind mit **[prüfen]**
-markiert. Wer sie ohne Prüfung als Fakt weitergibt, baut auf Sand.
+**Wichtiger Vorbehalt:** Die Erstfassung dieses Plans war aus `KONTEXT.md`
+abgeleitet, nicht aus dem Quellcode. Was seither erledigt wurde (Block A, B2,
+C1), ist am Code geprüft. Alles **Offene** ist es nicht – Punkte, die vor der
+Umsetzung eine Prüfung brauchen, sind mit **[prüfen]** markiert. Wer sie ohne
+Prüfung als Fakt weitergibt, baut auf Sand.
 
 **Aufwandsskala:** **S** = eine Sitzung (< 2 h) · **M** = ein halber bis ganzer
 Tag · **L** = mehrere Sitzungen, braucht vorher eine eigene Skizze.
 
 ---
 
-## 0. Der kürzeste Weg durch dieses Dokument
+## 0. Wo wir stehen
 
-Wenn nur eine Stunde Zeit ist: **§2 Block A**, Punkt A1 und A2. Das sind die
-beiden Dinge, die bei Nichtstun teurer werden statt billiger.
-
-Reihenfolge insgesamt:
+**Block A ist vollständig abgeschlossen.** Aus Block B ist B2 erledigt, aus
+Block C der Punkt C1. Alles davon ist committet und gepusht.
 
 ```
-A. Hygiene (jetzt)      → B. Struktur (danach)   → C. Produkt (dann)
-   uncommittetes CSS       app.js entflechten       neue Funktionen
-   README-Drift            Testlücken schließen     aus §4
-   Testzahl klären         Fehlerpfade absichern
+A. Hygiene              B. Struktur (hier sind    C. Produkt
+   ✅ A1 CSS geklärt       wir gerade)               ✅ C1 Sicherungs-
+   ✅ A2 README            ⬅ B3 Testlücken             erinnerung
+   ✅ A3 Testzahl          ○ B1 app.js teilen        ○ C2–C15 offen
+   ✅ A4 APP_SHELL         ○ B4, B5, B2b
+                          ✅ B2 Speicherfehler
 ```
+
+**Der nächste Punkt ist B3** – Testlücken der jungen Module. Reine Testarbeit,
+kein Produktivcode, damit risikoarm.
+
+Die vollständige Reihenfolge mit Stand steht in **§5**.
 
 ---
 
@@ -44,7 +51,7 @@ Gruppiert nach dem, was der Nutzer erlebt, nicht nach Dateien.
 | Funktion | Träger | Reifegrad |
 |---|---|---|
 | Lauf manuell eintragen (Distanz, Datum, Uhrzeit, Dauer, Pace) | `validation.js`, `storage.js` | rund |
-| GPS-Aufzeichnung live über `watchPosition` | `tracker.js`, `geo.js` | rund, aber Fehlerpfade dünn **[prüfen]** |
+| GPS-Aufzeichnung live über `watchPosition` | `tracker.js`, `geo.js` | rund; Speicherfehler werden gemeldet (B2), GPS-Fehlerpfade offen (B2b) |
 | Stoppuhr ohne GPS | `stopwatch.js` | rund |
 | Intervall-Stoppuhr mit Phasen, Tönen, runder Ansicht | `interval.js`, `beep.js` | jung (zuletzt repariert) |
 | Tastensperre während der Aufzeichnung | `lock.js` | rund |
@@ -87,8 +94,10 @@ Gruppiert nach dem, was der Nutzer erlebt, nicht nach Dateien.
 | Funktion | Träger | Reifegrad |
 |---|---|---|
 | Export/Import als JSON, Legacy-Format wird gelesen | `transfer.js` | rund |
+| Erinnerung an die Sicherung nach 30 Tagen | `transfer.js`, `storage.js` | neu (C1) |
+| Warnung bei fehlgeschlagenem Speichern | `storage.js`, `app.js` | neu (B2) |
 | Teilen-Karte 1080×1350 auf Canvas | `share-card.js` | rund |
-| PWA: Installierbar, App-Shell-Cache, Update-Hinweis | `sw.js`, `pwa.js` | rund, aber manuell (A2) |
+| PWA: Installierbar, App-Shell-Cache, Update-Hinweis | `sw.js`, `pwa.js` | rund; `APP_SHELL` seit A4 testgeprüft, `CACHE_VERSION` weiterhin von Hand |
 | Profil: Name, Wochenziel | `storage.js` | minimal |
 
 **Das architektonische Tafelsilber:** 20 von 24 Modulen sind pur – kein DOM,
@@ -99,9 +108,12 @@ Rückschritt – auch wenn sie kurzfristig bequem ist.**
 
 ---
 
-## 2. Block A – Hygiene (jetzt, vor allem anderen)
+## 2. ✅ Block A – Hygiene (abgeschlossen)
 
-Das sind keine Features. Das sind die Dinge, die im Weg stehen.
+Das waren keine Features, sondern die Dinge, die im Weg standen. **Alle vier
+Punkte sind erledigt, committet und gepusht** – die Abschnitte hier bleiben als
+Protokoll stehen, damit nachvollziehbar ist, was gefunden und entschieden
+wurde.
 
 ### ✅ A1 · Uncommittetes CSS klären · `css/style.css`
 
@@ -179,7 +191,10 @@ Ein-Personen-Projekt mehr Aufwand als Nutzen. Der Test läuft dagegen immer.
 
 ---
 
-## 3. Block B – Struktur (nach Block A)
+## 3. Block B – Struktur (hier stehen wir)
+
+**Stand:** B2 ✅ erledigt · B1, B2b, B3, B4, B5 offen. Der nächste Punkt der
+Reihenfolge ist **B3**.
 
 ### B1 · `js/app.js` entflechten · **L** · `js/app.js` → neue Module
 
@@ -313,6 +328,8 @@ auf dem dunklen Hintergrund, `prefers-reduced-motion` für Animationen. **[prüf
 Ideen, nach Verhältnis von Nutzen zu Aufwand sortiert. Alles hier ist optional –
 FunRun ist heute schon eine vollständige App.
 
+**Stand:** C1 ✅ erledigt · C2 bis C15 offen.
+
 ### Naheliegend (hoher Nutzen, kleiner Aufwand)
 
 | # | Idee | Aufwand | Module |
@@ -405,7 +422,7 @@ nichts. Das ist genau der Punkt, den **B1** angeht.
 | 11 | **B2b** GPS-Fehlerpfade am Gerät prüfen | M | offen |
 | 12 | danach frei nach Lust: C5, C8, C10, C15 | – | offen |
 
-### Die vier Commits – erledigt am 2026-08-21
+### Die Commits – erledigt am 2026-08-21
 
 Ein Punkt = ein Commit (§6, Regel 1). So sind sie gefallen:
 
@@ -415,6 +432,8 @@ Ein Punkt = ein Commit (§6, Regel 1). So sind sie gefallen:
 | 2 | A2 | `56ecd94` | README auf den Stand des Codes gebracht |
 | 3 | A4 | `09217d2` | APP_SHELL gegen den Dateibaum pruefen |
 | 4 | B2 | `28b277a` | Fehlgeschlagenes Speichern wird sichtbar |
+| 5 | – | `1134dca` | Kontext und Roadmap auf den Stand nach dem Push |
+| 6 | C1 | `ddb579b` | Erinnerung an die Sicherung nach dreissig Tagen |
 
 `css/style.css` wurde **sauber getrennt**: die gelöschte Regel in Commit 1,
 die `.storage-hint`-Regel in Commit 4. Interaktives `git add -p` war dafür
@@ -459,14 +478,37 @@ Gewinn rechtfertigt den Bruch nicht.
 Zusätzlich zur Checkliste in `KONTEXT.md` §8:
 
 1. **Ein Punkt = ein Commit.** Keine Sammel-Commits über mehrere Roadmap-Punkte.
-2. **Vor dem Anfangen den Punkt hier abhaken**, nach dem Push `KONTEXT.md` §7
-   und §11 nachziehen.
-3. **Bei jedem neuen persistierten Feld:** `transfer.js` mitziehen, sonst geht
+2. **Bei jedem neuen persistierten Feld:** `transfer.js` mitziehen, sonst geht
    das Feld beim Export/Import verloren. Das ist der Fehler, den man erst
    bemerkt, wenn jemand seine Daten wiederherstellt.
-4. **Bei jedem neuen Modul:** Testdatei anlegen *und* `APP_SHELL` in `sw.js`
+3. **Bei jedem neuen Modul:** Testdatei anlegen *und* `APP_SHELL` in `sw.js`
    ergänzen. Beides, nicht eins.
-5. **[prüfen]-Punkte** werden am Code verifiziert, bevor sie eingeplant werden.
+4. **[prüfen]-Punkte** werden am Code verifiziert, bevor sie eingeplant werden.
+
+### Wenn ein Punkt fertig ist – die Häkchen-Runde
+
+Ein erledigter Punkt steht an **sechs** Stellen in diesem Dokument. Wer nur die
+offensichtliche abhakt, hinterlässt ein Dokument, das sich selbst widerspricht –
+und das ist schlimmer als gar kein Häkchen, weil man ihm dann nicht mehr traut.
+
+Die Runde, in dieser Reihenfolge:
+
+| # | Wo | Was |
+|--:|---|---|
+| 1 | **§5 Reihenfolge** | Zeile auf `✅ erledigt`, und den ⬅ **als Nächstes**-Pfeil eine Zeile weiterschieben |
+| 2 | **Der Punkt selbst** (§2/§3/§4) | `✅` vor die Überschrift, Aufwand raus, **Ergebnis** statt Vorhaben schreiben – was gefunden wurde, was entschieden wurde, was bewusst *nicht* gemacht wurde |
+| 3 | **Die Block-Überschrift** | War es der letzte offene Punkt des Blocks? Dann `✅` und „(abgeschlossen)". Sonst die Stand-Zeile darunter anpassen |
+| 4 | **§0 Wo wir stehen** | Schaubild und „nächster Punkt" nachziehen |
+| 5 | **§1 Bestandsaufnahme** | Neue Funktion als Zeile ergänzen, geänderte Reifegrade anpassen |
+| 6 | **§7 Änderungsverlauf** | Eine Zeile, was sich geändert hat |
+
+Danach `KONTEXT.md` §7 (Zahlen, Commits, Live-Stand) und §11 (Verlauf).
+
+**Warum das eine Liste ist und keine gute Absicht:** Bei der letzten Runde
+wurden §5 und die Einzelpunkte abgehakt, aber §0, die Block-Überschriften und
+§1 blieben stehen – das Dokument behauptete oben noch, Block A stünde bevor,
+während unten fünf Häkchen standen. Erledigtes zu markieren ist keine
+Fleißaufgabe, sondern der halbe Zweck dieser Datei.
 
 ---
 
@@ -475,5 +517,7 @@ Zusätzlich zur Checkliste in `KONTEXT.md` §8:
 | Datum | Änderung |
 |---|---|
 | 2026-08-21 | Erstfassung, abgeleitet aus `KONTEXT.md` (Stand `funrun-v44`) |
+| 2026-08-21 | Nachgezogen nach dem Push: Kopf auf `funrun-v47`, Commit-Tabelle um `1134dca` und C1 (`ddb579b`) ergänzt, §1 um Speicher-Warnung und Sicherungs-Erinnerung erweitert, GPS-Zeile auf den heutigen Stand gebracht. |
+| 2026-08-21 | **Häkchen-Runde nachgeholt:** §0 neu geschrieben (behauptete noch, Block A stünde bevor), Block-Überschriften in §2/§3/§4 mit Stand versehen, falscher A2-Verweis in §1.5 korrigiert. Die Runde steht jetzt als Regel in §6 – sechs Stellen, damit sie nicht wieder halb gemacht wird. |
 | 2026-08-21 | A1, A2, A4 und B2 committet und gepusht (`e99b96a` … `28b277a`). Kopf, §2 (A1), §5-Tabelle und der Commit-Block auf den Stand danach gezogen. `css/style.css` sauber getrennt statt zusammengelegt. Nächster Punkt: **C1**. |
 | 2026-08-21 | **C1** umgesetzt und gepusht. §4 um den Ergebnisabschnitt ergänzt, §5-Tabelle nachgezogen. Nächster Punkt: **B3**. |

@@ -333,11 +333,11 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
   4. APP_SHELL gegen den Dateibaum pruefen
   5. README auf den Stand des Codes gebracht
 
-### Roadmap-Block A und B2 sind committet
+### Roadmap-Block A, B2 und C1 sind committet
 
-Die Änderungen aus A1, A2, A4 und B2 liegen seit dem 2026-08-21 in vier
+Die Änderungen aus A1, A2, A4, B2 und C1 liegen seit dem 2026-08-21 in sechs
 Commits auf `master` und sind gepusht; auf `dertimsistda.github.io` läuft
-`28b277a`. Das Arbeitsverzeichnis ist sauber.
+`ddb579b`. Das Arbeitsverzeichnis ist sauber.
 
 | Roadmap | Commit | Was |
 |---|---|---|
@@ -345,10 +345,12 @@ Commits auf `master` und sind gepusht; auf `dertimsistda.github.io` läuft
 | A2 | `56ecd94` | README auf Stand gebracht (573 → 815 Zeilen) |
 | A4 | `09217d2` | `APP_SHELL` gegen den Dateibaum geprüft (5 Tests) |
 | B2 | `28b277a` | Schreibfehler werden gemeldet statt geschluckt; `CACHE_VERSION` auf v46 |
+| – | `1134dca` | `KONTEXT.md` und `ROADMAP.md` auf den Stand nach dem Push |
+| C1 | `ddb579b` | Erinnerung an die Sicherung nach 30 Tagen; `CACHE_VERSION` auf v47 |
 
 `css/style.css` steckte in A1 und B2 und wurde auf beide Commits aufgeteilt –
-die gelöschte Regel in A1, die `.storage-hint`-Regel in B2. Jeder der vier
-Commits ist für sich grün geprüft (706 / 706 / 711 / 725 Tests), damit ein
+die gelöschte Regel in A1, die `.storage-hint`-Regel in B2. Jeder Commit ist
+für sich grün geprüft (706 / 706 / 711 / 725 / – / 749 Tests), damit ein
 späteres `git bisect` nicht in einem kaputten Stand landet.
 
 **Nächster Punkt laut Roadmap §5: B3** – Testlücken der jungen Module
@@ -374,6 +376,10 @@ sie schreibt. Ein Umzug nach `C:\Users\tino2\Projekte\Laufapp` steht aus.
 7. `README.md` **und diese Datei** nachziehen (§10).
 8. Commit auf Deutsch, **ohne Umlaute** (bisheriger Stil), Betreffzeile knapp,
    Rumpf erklärt **warum** – nicht was. Dann `git push`, Pages zieht nach ~1 min.
+9. **Kam die Änderung aus `ROADMAP.md`? Dann die Häkchen-Runde drehen.** Ein
+   erledigter Punkt steht dort an sechs Stellen – die Liste steht in
+   `ROADMAP.md` §6. Nur §5 abzuhaken reicht nicht: dann widerspricht sich das
+   Dokument, und ein Plan, dem man nicht traut, ist keiner mehr.
 
 **Nie tun:** abgeleitete Werte (XP, Level, Trophäenstatus, Plantreue) speichern ·
 `localStorage`-Schlüssel umbenennen · eine Chart-Bibliothek einbauen ·
@@ -408,6 +414,8 @@ Struktur, API, Datenmodell, Regeln oder Zahlen geändert hat. Ein bloßer
 Bugfix in einer Render-Funktion braucht keinen Eintrag.
 
 **Was aktualisieren, kurz die Runde drehen:**
+- **Zuerst:** Kam die Arbeit aus `ROADMAP.md`? Dann dort die Häkchen-Runde nach
+  §6 drehen – sechs Stellen, nicht nur die Reihenfolge-Tabelle.
 - Kopfzeile: Datum und `CACHE_VERSION`
 - §3 bei neuem/entferntem Modul · §4 bei neuen oder geänderten Exports
 - §5 bei neuem Feld oder Schlüssel · §6 bei neuer Regel oder Konstante
@@ -432,3 +440,5 @@ Bugfix in einer Render-Funktion braucht keinen Eintrag.
 | 2026-08-21 | Roadmap-Sitzung: `sw v46`, 725 Tests in 22 Dateien, `setStorageErrorHandler` in §4/§6, §7 um die uncommitteten Änderungen erweitert, §9 erledigt. **Korrigiert:** Session-Typen in §5 standen als Beschriftungen statt als IDs. |
 | 2026-08-21 | A1, A2, A4 und B2 committet und gepusht. §7: Warnblock „noch nicht committet" durch die vier Commits ersetzt, Commit-Liste nachgezogen. Beim Committen fiel auf, dass das README noch 706 Tests nannte statt 725 – die drei betroffenen Tabellenzeilen wurden in Commit `56ecd94` mitkorrigiert. |
 | 2026-08-21 | **C1** umgesetzt: Erinnerung an die Sicherung. Neu in §4 `exportReminder()` und `loadLastExport`/`saveLastExport`, in §5 der Schlüssel `laufapp.export.v1`. `sw v47`, 749 Tests. |
+| 2026-08-21 | §7 nachgezogen: C1 und `1134dca` in der Commit-Tabelle ergänzt, Live-Stand auf `ddb579b` korrigiert (stand noch auf `28b277a`). |
+| 2026-08-21 | §8 um Schritt 9 und §10 um die Häkchen-Runde ergänzt: ein erledigter Roadmap-Punkt muss an sechs Stellen markiert werden, nicht nur in der Reihenfolge-Tabelle. |
