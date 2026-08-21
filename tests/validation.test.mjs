@@ -370,6 +370,48 @@ describe('weatherLabel', () => {
   });
 });
 
+describe('validateRun – Kilometer-Splits', () => {
+  test('eine Liste von Sekunden kommt durch', () => {
+    const result = validateRun(input({ splits: [302, 318, 295] }));
+
+    assert.equal(result.ok, true);
+    assert.deepEqual(result.run.splits, [302, 318, 295]);
+  });
+
+  test('gerundet wird auf ganze Sekunden', () => {
+    assert.deepEqual(validateRun(input({ splits: [301.4, 301.6] })).run.splits, [301, 302]);
+  });
+
+  test('ohne Splits kein Feld', () => {
+    for (const splits of [undefined, null, [], 'drei', 42]) {
+      const result = validateRun(input({ splits }));
+      assert.equal(result.ok, true, `${JSON.stringify(splits)} sollte gültig sein`);
+      assert.equal('splits' in result.run, false, `${JSON.stringify(splits)} legt ein Feld an`);
+    }
+  });
+
+  test('ein einziger Unsinn kippt die ganze Liste', () => {
+    // Eine Liste mit Lücken hätte falsche Kilometernummern – der fünfte
+    // stünde an vierter Stelle. Das ist schlimmer als gar keine Splits.
+    for (const splits of [[302, 0, 295], [302, -5], [302, NaN], [302, 'schnell'], [302, null]]) {
+      const result = validateRun(input({ splits }));
+      assert.equal(result.ok, true, 'der Lauf soll gültig bleiben');
+      assert.equal('splits' in result.run, false, `${JSON.stringify(splits)} kam durch`);
+    }
+  });
+
+  test('unbrauchbare Splits machen den Lauf nicht ungültig', () => {
+    // Wie bei der Strecke: sie sind eine Zugabe der Aufzeichnung, keine
+    // Angabe des Nutzers. Was niemand eintippen kann, soll ihn auch nicht an
+    // der Eingabe hindern.
+    assert.equal(validateRun(input({ splits: ['unsinn'] })).ok, true);
+  });
+
+  test('eine absurd lange Liste fällt weg', () => {
+    assert.equal('splits' in validateRun(input({ splits: Array(2000).fill(300) })).run, false);
+  });
+});
+
 describe('validateRun – aufgezeichnete Strecke', () => {
   const track = [[52.5, 13.4], [52.51, 13.41]];
 

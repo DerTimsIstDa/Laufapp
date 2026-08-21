@@ -289,7 +289,7 @@ let letzteAnsage = null;
 function maybeAnnounce(state) {
   if (!trackGps || !isVoiceOn()) return;
 
-  const ansage = nextAnnouncement(state, letzteAnsage);
+  const ansage = nextAnnouncement(state.splits, letzteAnsage);
   if (ansage === null) return;
 
   letzteAnsage = ansage;
@@ -2266,7 +2266,55 @@ function renderDetail() {
   el.detailNote.textContent = run.note ?? '';
   el.detailNote.hidden = !run.note;
 
+  el.splitsContainer.replaceChildren(...createSplitRows(run.splits));
+  el.splitsSection.hidden = !run.splits?.length;
+
   el.routeContainer.replaceChildren(createRouteView(run));
+}
+
+/**
+ * Die Kilometer-Splits als Liste mit Balken.
+ *
+ * **Lang heisst schnell, nicht langsam.** Der Balken zeigt das Tempo, nicht
+ * die verbrauchte Zeit: Der schnellste Kilometer bekommt den vollen Balken,
+ * ein doppelt so langsamer den halben. Andersherum – Balkenlänge gleich
+ * Zeitaufwand – wäre der *langsamste* Kilometer der längste Neonstreifen,
+ * und Neongrün ist in dieser App vier Dingen vorbehalten, die alle etwas
+ * Erreichtes meinen. Den schlechtesten Kilometer damit auszuzeichnen, hiesse
+ * die eigene Farbregel gegen sich selbst zu wenden.
+ *
+ * Gemessen wird gegen den eigenen besten Kilometer und nicht gegen eine
+ * feste Skala: Bei einem gleichmässigen Lauf lägen alle Balken sonst fast
+ * gleich lang nebeneinander und zeigten nichts.
+ */
+function createSplitRows(splits) {
+  if (!splits?.length) return [];
+
+  const schnellster = Math.min(...splits);
+
+  return splits.map((sekunden, index) => {
+    const zeile = document.createElement('li');
+    zeile.className = 'split';
+
+    const nummer = document.createElement('span');
+    nummer.className = 'split-km';
+    nummer.textContent = `${index + 1}.`;
+
+    const spur = document.createElement('span');
+    spur.className = 'split-track';
+
+    const balken = document.createElement('span');
+    balken.className = 'split-bar';
+    balken.style.width = `${(schnellster / sekunden) * 100}%`;
+    spur.append(balken);
+
+    const zeit = document.createElement('span');
+    zeit.className = 'split-time';
+    zeit.textContent = `${formatPace(sekunden / 60)} min/km`;
+
+    zeile.append(nummer, spur, zeit);
+    return zeile;
+  });
 }
 
 function buildDetailFacts(run) {
@@ -2686,6 +2734,9 @@ function handleTrackStop() {
     // Ausgedünnt gespeichert: der localStorage ist knapp, und für die kleine
     // Vorschau reicht ein Punkt alle paar Meter.
     track: toStorageTrack(summary.track),
+    // Eine Zahl je Kilometer – anders als bei der Strecke ist hier nichts
+    // auszudünnen.
+    splits: summary.splits,
   });
 
   el.trackStatus.textContent =

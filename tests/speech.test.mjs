@@ -17,71 +17,74 @@ import {
  * Ansagen während des Laufs.
  *
  * Die Rechnung – *was* gesagt wird – ist pur und wird hier an ihren Grenzen
- * geprüft: 0,99 gegen 1,00 km, ein GPS-Sprung über zwei Kilometer, eine
- * rückwärts laufende Strecke. Das *Sprechen* läuft gegen eine Attrappe;
- * geprüft wird, was tatsächlich an den Browser gegangen wäre.
+ * geprüft: der erste Kilometer, ein Sprung über zwei, eine stummgeschaltete
+ * Strecke dazwischen. Gezählt wird dabei nicht hier: welcher Kilometer voll
+ * ist, sagt die Split-Liste des Trackers. Das *Sprechen* läuft gegen eine
+ * Attrappe; geprüft wird, was an den Browser gegangen wäre.
  *
  * Was hier **nicht** geprüft werden kann: ob die Ansage auf einem Telefon
  * neben Musik zu hören ist und ob sie bei gesperrtem Bildschirm noch kommt.
  * Das entscheidet das Betriebssystem, und dafür gibt es keine Attrappe.
  */
 
-const zustand = (distanceKm, elapsedMs) => ({ distanceKm, elapsedMs });
+/** Die Ansage liest die Split-Liste des Trackers: Sekunden je vollem km. */
+const nachAnsage = (km) => ({ km, elapsedMs: null, text: '' });
+
 const minuten = (m) => m * 60_000;
 
 describe('nextAnnouncement – wann eine Ansage fällig ist', () => {
   test('vor dem ersten vollen Kilometer schweigt sie', () => {
-    for (const km of [0, 0.5, 0.99, 0.999]) {
-      assert.equal(nextAnnouncement(zustand(km, minuten(5))), null, `${km} km hat angesagt`);
-    }
+    assert.equal(nextAnnouncement([]), null);
   });
 
-  test('genau auf dem Kilometer wird angesagt', () => {
-    const ansage = nextAnnouncement(zustand(1, minuten(5)));
+  test('der erste volle Kilometer wird angesagt', () => {
+    const ansage = nextAnnouncement([302]);
 
     assert.equal(ansage.km, 1);
-    assert.equal(ansage.elapsedMs, minuten(5));
+    assert.equal(ansage.text, 'Ein Kilometer. 5 Minuten 2.');
   });
 
   test('derselbe Kilometer wird nicht zweimal angesagt', () => {
-    const erste = nextAnnouncement(zustand(1.0, minuten(5)));
-
-    for (const km of [1.0, 1.4, 1.99]) {
-      assert.equal(nextAnnouncement(zustand(km, minuten(9)), erste), null, `${km} km doppelt`);
-    }
+    assert.equal(nextAnnouncement([302], nachAnsage(1)), null);
   });
 
   test('der nächste Kilometer wird wieder angesagt', () => {
-    const erste = nextAnnouncement(zustand(1.02, minuten(5)));
-    const zweite = nextAnnouncement(zustand(2.01, minuten(10)), erste);
+    const zweite = nextAnnouncement([302, 318], nachAnsage(1));
 
     assert.equal(zweite.km, 2);
+    assert.equal(zweite.text, '2 Kilometer. 5 Minuten 18.');
   });
 
-  test('ein GPS-Sprung wird zu einer Ansage zusammengefasst', () => {
-    // Nach einem Tunnel springt die Strecke von 1,2 auf 3,4 km. Zwei Ansagen
-    // im selben Atemzug wären Lärm, und die Zeit für den übersprungenen
-    // Kilometer weiss ohnehin niemand: angesagt wird der Schnitt.
-    const erste = nextAnnouncement(zustand(1.0, minuten(5)));
-    const sprung = nextAnnouncement(zustand(3.4, minuten(17)), erste);
+  test('ein Sprung wird zu einer Ansage zusammengefasst', () => {
+    // Nach einem Tunnel trägt der Tracker die übersprungenen Kilometer mit
+    // dem Schnitt nach. Zwei Ansagen im selben Atemzug wären Lärm.
+    const sprung = nextAnnouncement([302, 360, 360], nachAnsage(1));
 
     assert.equal(sprung.km, 3);
-    // Zwölf Minuten für zwei Kilometer sind sechs Minuten je Kilometer.
     assert.equal(sprung.text, '3 Kilometer. 6 Minuten.');
   });
 
-  test('eine rückwärts laufende Strecke sagt nichts an', () => {
-    // Kommt nicht vor, wäre aber der Fall, in dem eine Ansage am meisten
-    // verwirrte: zwei Kilometer, nachdem schon drei gesagt wurden.
-    const dritte = nextAnnouncement(zustand(3.0, minuten(18)));
+  test('stummgeschaltete Kilometer gehen in den Schnitt ein', () => {
+    // Wer mitten im Lauf ausschaltet und später wieder ein: die erste Ansage
+    // danach nennt den Schnitt über alles seit der letzten gehörten. Eine
+    // Zeit für einen Kilometer, dessen Beginn niemand angesagt hat, wäre
+    // erfunden.
+    const wieder = nextAnnouncement([300, 300, 300, 360], nachAnsage(1));
 
-    assert.equal(nextAnnouncement(zustand(2.5, minuten(19)), dritte), null);
+    assert.equal(wieder.km, 4);
+    assert.equal(wieder.text, '4 Kilometer. 5 Minuten 20.');
+  });
+
+  test('eine kürzer gewordene Liste sagt nichts an', () => {
+    assert.equal(nextAnnouncement([302], nachAnsage(3)), null);
   });
 
   test('Unsinn als Eingabe schweigt, statt zu raten', () => {
-    for (const s of [null, undefined, {}, zustand(NaN, 1000), zustand(2, NaN)]) {
-      assert.equal(nextAnnouncement(s), null, `${JSON.stringify(s)} hat angesagt`);
+    for (const eingabe of [null, undefined, {}, 'drei', 5]) {
+      assert.equal(nextAnnouncement(eingabe), null, `${JSON.stringify(eingabe)} hat angesagt`);
     }
+
+    assert.equal(nextAnnouncement([NaN]), null, 'NaN kam durch');
   });
 
   test('die Schrittweite ist ein Kilometer', () => {

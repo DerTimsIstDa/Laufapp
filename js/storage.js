@@ -140,6 +140,7 @@ function melde(key, was, err) {
  *   note?: string,
  *   feeling?: 1 | 2 | 3 | 4 | 5,
  *   weather?: 'sonne' | 'wolken' | 'regen' | 'schnee',
+ *   splits?: number[],
  *   source?: 'manual' | 'gps'
  * }} Run
  */
@@ -193,6 +194,7 @@ export function addRun(
     source,
     track,
     interval,
+    splits,
   }
 ) {
   const run = { id: createId(), distanceKm, date };
@@ -212,6 +214,7 @@ export function addRun(
   if (source) run.source = source;
   if (interval) run.interval = interval;
   if (track?.length) run.track = track;
+  if (splits?.length) run.splits = splits;
 
   const next = [run, ...runs].sort(byDateDesc);
   saveRuns(next);
@@ -253,6 +256,9 @@ export function updateRun(
   // deshalb auch nicht wegwerfen.
   if (existing.interval) updated.interval = existing.interval;
   if (existing.track?.length) updated.track = existing.track;
+  // Wie die Route: die Splits entstehen beim Aufzeichnen, das Formular kennt
+  // sie nicht und darf sie deshalb nicht wegwerfen.
+  if (existing.splits?.length) updated.splits = existing.splits;
 
   const next = runs.map((run) => (run.id === id ? updated : run)).sort(byDateDesc);
   saveRuns(next);

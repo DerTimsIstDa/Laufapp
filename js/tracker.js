@@ -26,6 +26,7 @@ const POSITION_TIMEOUT_MS = 20_000;
  * @property {number} pointCount     akzeptierte Punkte
  * @property {number} rejectedCount  wegen schlechter Qualität verworfen
  * @property {number} stillCount     zu kleine Bewegung (Normalfall, kein Fehler)
+ * @property {number[]} splits      Sekunden je vollem Kilometer, in Reihenfolge
  */
 
 export function createTracker({ onUpdate, onError, filter = DEFAULT_FILTER } = {}) {
@@ -47,6 +48,24 @@ export function createTracker({ onUpdate, onError, filter = DEFAULT_FILTER } = {
 
   /** Angenommene Punkte der Strecke – Grundlage für die Routenanzeige. */
   let track = [];
+
+  /**
+   * Sekunden je vollem Kilometer.
+   *
+   * **Warum hier und nicht später aus der Strecke gerechnet:** In `track`
+   * stehen nur Koordinaten, keine Zeiten – der Zeitstempel jeder Position
+   * wird verworfen, sobald die Strecke daraus gewachsen ist. Wer Splits
+   * nachträglich wollte, müsste an jeden der bis zu 500 Punkte eine Zeit
+   * hängen. Hier kosten dieselben Auskünfte eine Zahl je Kilometer.
+   *
+   * Der Kilometer gilt in dem Moment als voll, in dem die Strecke ihn
+   * überschreitet – also bei der nächsten Positionsmeldung danach, nicht
+   * exakt auf der Marke. Bei einem Fix je Sekunde ist das eine Sekunde
+   * Verzug, und sie pflanzt sich nicht fort: gemessen wird von Übergang zu
+   * Übergang.
+   */
+  let splits = [];
+  let letzterUebergangMs = 0;
 
   /* ------------------------------------------------------------- Öffentlich */
 
@@ -107,7 +126,7 @@ export function createTracker({ onUpdate, onError, filter = DEFAULT_FILTER } = {
    *
    * @returns {?{
    *   distanceKm: number, durationMinutes: number, startedAt: Date,
-   *   pointCount: number, track: {lat: number, lon: number}[]
+   *   pointCount: number, track: {lat: number, lon: number}[], splits: number[]
    * }}
    */
   function stop() {
@@ -120,6 +139,7 @@ export function createTracker({ onUpdate, onError, filter = DEFAULT_FILTER } = {
       startedAt,
       pointCount,
       track,
+      splits: [...splits],
     };
 
     reset();
@@ -146,6 +166,7 @@ export function createTracker({ onUpdate, onError, filter = DEFAULT_FILTER } = {
       pointCount,
       rejectedCount,
       stillCount,
+      splits: [...splits],
     };
   }
 
@@ -187,6 +208,8 @@ export function createTracker({ onUpdate, onError, filter = DEFAULT_FILTER } = {
     rejectedCount = 0;
     stillCount = 0;
     track = [];
+    splits = [];
+    letzterUebergangMs = 0;
   }
 
   function handlePosition(position) {
@@ -207,6 +230,7 @@ export function createTracker({ onUpdate, onError, filter = DEFAULT_FILTER } = {
       lastPoint = point;
       pointCount++;
       track.push({ lat: point.lat, lon: point.lon });
+      erfasseSplits();
     } else if (result.reason === 'jitter') {
       // Normalfall: bei 1 Fix/Sekunde liegt ein Laufschritt oft unter der
       // Mindeststrecke. Der Bezugspunkt bleibt stehen, die Distanz wird beim
@@ -217,6 +241,28 @@ export function createTracker({ onUpdate, onError, filter = DEFAULT_FILTER } = {
     }
 
     emit();
+  }
+
+  /**
+   * Trägt jeden vollen Kilometer nach, der seit der letzten Meldung fiel.
+   *
+   * Eine Schleife und keine einzelne Prüfung: Springt die Strecke nach einem
+   * Tunnel über mehrere Kilometer, fehlten sonst Einträge und alle folgenden
+   * Nummern verschöben sich – der fünfte Kilometer stünde an vierter Stelle.
+   * Die übersprungenen bekommen den Schnitt, weil ihre Übergänge niemand
+   * gesehen hat.
+   */
+  function erfasseSplits() {
+    const voll = Math.floor(distanceKm);
+    if (voll <= splits.length) return;
+
+    const jetzt = getElapsedMs();
+    const offen = voll - splits.length;
+    const proKm = (jetzt - letzterUebergangMs) / offen;
+
+    for (let i = 0; i < offen; i++) splits.push(Math.round(proKm / 1000));
+
+    letzterUebergangMs = jetzt;
   }
 
   function handleError(error) {

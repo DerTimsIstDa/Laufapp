@@ -184,6 +184,111 @@ describe('Beenden', () => {
   });
 });
 
+describe('Kilometer-Splits', () => {
+  /**
+   * Die Uhr des Trackers ist `Date.now()`, nicht der Zeitstempel der
+   * Position – gemessen wird, wie lange der Läufer unterwegs war, nicht was
+   * das GPS-Gerät meldet. Für die Splits muss sie deshalb steuerbar sein.
+   */
+  let echteNow;
+  let jetzt;
+
+  const stelleUhr = (sekunden) => {
+    jetzt = 1_700_000_000_000 + sekunden * 1000;
+  };
+
+  beforeEach(() => {
+    echteNow = Date.now;
+    stelleUhr(0);
+    Date.now = () => jetzt;
+  });
+
+  afterEach(() => {
+    Date.now = echteNow;
+  });
+
+  /**
+   * Läuft bis `bisMeter`, wobei die Uhr auf `beiSekunde` steht.
+   *
+   * Die Marken liegen bewusst ein paar Meter **über** dem vollen Kilometer:
+   * Der Umrechnungsfaktor der Attrappe (ein Grad ≈ 111,19 km) ist gerundet,
+   * 1000 „Meter" ergeben in der Haversine-Rechnung 999,9. Genau auf der Marke
+   * zu füttern hiesse, den Rundungsfehler der Attrappe zu prüfen statt den
+   * Tracker.
+   */
+  const laufeBis = (bisMeter, beiSekunde) => {
+    stelleUhr(beiSekunde);
+    gps.feed({ meters: bisMeter, seconds: beiSekunde });
+  };
+
+  test('ohne vollen Kilometer bleibt die Liste leer', () => {
+    tracker.start();
+    laufeBis(0, 0);
+    laufeBis(990, 300);
+
+    assert.deepEqual(tracker.getState().splits, []);
+  });
+
+  test('jeder volle Kilometer bekommt seine Sekunden', () => {
+    tracker.start();
+    laufeBis(0, 0);
+    laufeBis(1010, 300); // erster km in 5:00
+    assert.deepEqual(tracker.getState().splits, [300]);
+
+    laufeBis(2010, 660); // zweiter km in 6:00
+    assert.deepEqual(tracker.getState().splits, [300, 360]);
+  });
+
+  test('gemessen wird von Übergang zu Übergang, nicht ab dem Start', () => {
+    // Sonst schleppte ein langsamer erster Kilometer alle folgenden mit.
+    tracker.start();
+    laufeBis(0, 0);
+    laufeBis(1010, 600); // erster km sehr langsam
+    laufeBis(2010, 900); // zweiter km in 5:00
+
+    assert.deepEqual(tracker.getState().splits, [600, 300]);
+  });
+
+  test('ein Sprung über mehrere Kilometer hinterlässt keine Lücke', () => {
+    // Fehlten Einträge, verschöben sich alle folgenden Nummern: der dritte
+    // Kilometer stünde an zweiter Stelle.
+    tracker.start();
+    laufeBis(0, 0);
+    laufeBis(3400, 900); // Tunnel: drei Kilometer auf einmal, 15 Minuten
+
+    assert.deepEqual(tracker.getState().splits, [300, 300, 300]);
+  });
+
+  test('das Ergebnis enthält die Splits', () => {
+    tracker.start();
+    laufeBis(0, 0);
+    laufeBis(2010, 620);
+
+    assert.deepEqual(tracker.stop().splits, [310, 310]);
+  });
+
+  test('ein neuer Lauf fängt bei null an', () => {
+    tracker.start();
+    laufeBis(0, 0);
+    laufeBis(1010, 300);
+    tracker.stop();
+
+    tracker.start();
+    assert.deepEqual(tracker.getState().splits, []);
+  });
+
+  test('der Zustand gibt eine Kopie heraus', () => {
+    // Sonst schriebe die Anzeige in die Messung hinein.
+    tracker.start();
+    laufeBis(0, 0);
+    laufeBis(1010, 300);
+
+    tracker.getState().splits.push(999);
+
+    assert.deepEqual(tracker.getState().splits, [300]);
+  });
+});
+
 describe('Fehler', () => {
   test('abgelehnter Standortzugriff bricht die Aufzeichnung ab', () => {
     const fehler = [];

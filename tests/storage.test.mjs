@@ -105,6 +105,17 @@ describe('updateRun', () => {
     assert.equal('feeling' in next[0], false);
   });
 
+  test('die Splits überleben das Bearbeiten, obwohl das Formular sie nicht kennt', () => {
+    // Wie die Route: sie entstehen beim Aufzeichnen. Ein bearbeiteter Lauf
+    // soll seine Kilometerzeiten behalten, auch wenn nur das Datum korrigiert
+    // wurde.
+    const runs = addRun([], { distanceKm: 3, date: '2026-08-14', splits: [302, 318, 295] });
+
+    const next = updateRun(runs, runs[0].id, { distanceKm: 3, date: '2026-08-15' });
+
+    assert.deepEqual(next[0].splits, [302, 318, 295]);
+  });
+
   test('Notiz und Gefühl überleben das Bearbeiten', () => {
     // updateRun zählt die Felder einzeln auf, statt den Lauf zu übernehmen.
     // Ein vergessenes Feld wäre nach dem ersten Bearbeiten stillschweigend
@@ -185,14 +196,22 @@ describe('Kein Feld geht auf dem Weg in den Speicher verloren', () => {
       note: 'Gegenwind auf dem Rückweg',
       feeling: 4,
       weather: 'wolken',
+      splits: [302, 318],
       source: 'manual',
     });
 
     assert.equal(geprueft.ok, true, 'die Vorlage selbst muss gültig sein');
     // Wäre hier nur das Pflichtfeld übrig, prüften die Tests unten nichts.
-    assert.ok(Object.keys(geprueft.run).length >= 9, 'die Vorlage deckt zu wenige Felder ab');
+    assert.ok(Object.keys(geprueft.run).length >= 10, 'die Vorlage deckt zu wenige Felder ab');
     return geprueft.run;
   };
+
+  /**
+   * Felder, die beim Bearbeiten aus dem **bestehenden** Lauf kommen und nicht
+   * aus dem Formular. Sie entstehen beim Aufzeichnen; das Formular kennt sie
+   * nicht und darf sie deshalb weder setzen noch wegwerfen.
+   */
+  const AUS_DER_AUFZEICHNUNG = ['source', 'splits'];
 
   test('addRun speichert jedes Feld, das validateRun durchlässt', () => {
     const geprueft = vollstaendig();
@@ -209,7 +228,7 @@ describe('Kein Feld geht auf dem Weg in den Speicher verloren', () => {
     const [gespeichert] = updateRun(runs, runs[0].id, geprueft);
 
     for (const feld of Object.keys(geprueft)) {
-      if (feld === 'source') continue; // die stammt vom bestehenden Lauf, nicht vom Formular
+      if (AUS_DER_AUFZEICHNUNG.includes(feld)) continue;
       assert.deepEqual(gespeichert[feld], geprueft[feld], `${feld} ging beim Bearbeiten verloren`);
     }
   });

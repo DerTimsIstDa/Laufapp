@@ -397,6 +397,13 @@ export function validateRun(input) {
     }
   }
 
+  // Aus derselben Überlegung wie bei der Strecke: unbrauchbare Splits machen
+  // den Lauf nicht ungültig. Sie sind eine Zugabe der Aufzeichnung, keine
+  // Angabe des Nutzers – und was niemand eintippen kann, soll ihn auch nicht
+  // an der Eingabe hindern.
+  const splits = normalizeSplits(input.splits);
+  if (splits.length > 0) run.splits = splits;
+
   // Eine unbrauchbare Strecke macht den Lauf nicht ungültig – sie fällt
   // stillschweigend weg, dann zeigt die Detailansicht eben keine Route.
   const track = normalizeTrack(input.track);
@@ -405,6 +412,28 @@ export function validateRun(input) {
   }
 
   return { ok: true, run, warnings };
+}
+
+/**
+ * Sekunden je vollem Kilometer, aussortiert.
+ *
+ * Genommen wird nur, was eine Zeit sein kann: endliche Zahlen über null.
+ * Steht ein einziger Unsinn in der Liste, fällt die ganze Liste – eine Liste
+ * mit Lücken hätte falsche Kilometernummern, und die sind schlimmer als gar
+ * keine Splits.
+ */
+function normalizeSplits(splits) {
+  if (!Array.isArray(splits) || splits.length === 0) return [];
+  if (splits.length > MAX_DISTANCE_KM) return [];
+
+  const geprueft = [];
+  for (const wert of splits) {
+    const zahl = Number(wert);
+    if (!Number.isFinite(zahl) || zahl <= 0) return [];
+    geprueft.push(Math.round(zahl));
+  }
+
+  return geprueft;
 }
 
 /** Erste Fehlermeldung eines Ergebnisses – für die einzeilige Anzeige. */

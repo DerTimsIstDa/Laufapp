@@ -199,6 +199,8 @@ export const el = {
   detailFacts: document.getElementById('detail-facts'),
   detailNote: document.getElementById('detail-note'),
   detailClose: document.getElementById('detail-close'),
+  splitsSection: document.getElementById('detail-splits'),
+  splitsContainer: document.getElementById('splits-container'),
   routeContainer: document.getElementById('route-container'),
 
   planXpTotal: document.getElementById('plan-xp-total'),

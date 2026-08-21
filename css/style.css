@@ -682,6 +682,58 @@ form > .field {
   grid-column: 1 / -1;
 }
 
+/* ------------------------------------------------------------- Splits */
+
+.splits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.split {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Feste Breite für Nummer und Zeit, damit die Balken dazwischen auf einer
+   gemeinsamen Kante beginnen und enden – sonst vergleicht man Längen, die
+   verschieden weit links anfangen. */
+.split-km {
+  flex: none;
+  width: 1.75rem;
+  text-align: right;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--dim);
+}
+
+.split-track {
+  flex: 1;
+  min-width: 0;
+  height: 0.5rem;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.split-bar {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: var(--radius-pill);
+}
+
+.split-time {
+  flex: none;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--body);
+}
+
 /* Die Notiz in der Detailansicht. Kursiv, weil sie als einzige Zeile dort
    nicht gemessen, sondern geschrieben wurde. */
 .detail-note {

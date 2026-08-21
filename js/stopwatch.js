@@ -108,6 +108,10 @@ export function createStopwatch({ onUpdate } = {}) {
       pointCount: 0,
       rejectedCount: 0,
       stillCount: 0,
+      // Ohne Strecke gibt es keine Kilometer und damit keine Splits. Leer
+      // statt fehlend: der Zustand hat dieselbe Form wie beim Tracking, und
+      // ein Test wacht darüber.
+      splits: [],
     };
   }
 

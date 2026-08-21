@@ -29,41 +29,48 @@ export const ANNOUNCE_STEP_KM = 1;
 
 /**
  * @typedef {Object} Announcement
- * @property {number} km         der erreichte volle Kilometer
- * @property {number} elapsedMs  Stand der Uhr bei der Ansage
- * @property {string} text       was gesprochen wird
+ * @property {number} km        der erreichte volle Kilometer
+ * @property {?number} elapsedMs seit die Splits vom Tracker kommen ungenutzt
+ * @property {string} text      was gesprochen wird
  */
 
 /**
  * Ist eine Ansage fällig? `null`, wenn nicht.
  *
+ * **Gezählt wird nicht hier.** Welcher Kilometer voll ist und wie lange er
+ * gedauert hat, weiss der Tracker – er führt die Liste `splits` mit einer
+ * Zahl je vollem Kilometer. Diese Funktion liest sie nur. Zwei Stellen, die
+ * unabhängig voneinander Kilometer zählen, wären zwei Stellen, die sich
+ * irgendwann widersprechen; angesagt würde dann etwas anderes, als hinterher
+ * in der Detailansicht steht.
+ *
  * `previous` ist die zuletzt gemachte Ansage oder `null` vor der ersten.
- * Daraus ergibt sich die Zeit für die seither gelaufene Strecke – die Uhr
- * selbst muss nicht mitgezählt werden.
  *
  * **Ein Sprung wird zusammengefasst.** Kommt die Strecke nach einem Tunnel
  * von 1,2 auf 3,4 km, wird einmal „3 Kilometer" gesagt und nicht zweimal
- * hintereinander. Zwei Ansagen im selben Atemzug sind Lärm, und die Zeit für
- * den übersprungenen Kilometer weiss ohnehin niemand – angesagt wird deshalb
- * der Schnitt über die Kilometer, die seit der letzten Ansage dazukamen.
+ * hintereinander: Zwei Ansagen im selben Atemzug sind Lärm. Gesagt wird der
+ * Schnitt über die Kilometer, die seit der letzten Ansage dazukamen.
  *
- * @param {{distanceKm: number, elapsedMs: number}} state
+ * @param {number[]} splits  Sekunden je vollem Kilometer, in Reihenfolge
  * @param {?Announcement} previous
  * @returns {?Announcement}
  */
-export function nextAnnouncement(state, previous = null) {
-  const gelaufen = Number(state?.distanceKm);
-  const uhr = Number(state?.elapsedMs);
-  if (!Number.isFinite(gelaufen) || !Number.isFinite(uhr)) return null;
+export function nextAnnouncement(splits, previous = null) {
+  if (!Array.isArray(splits)) return null;
 
-  const km = Math.floor(gelaufen / ANNOUNCE_STEP_KM) * ANNOUNCE_STEP_KM;
+  const km = splits.length;
   const vorigeKm = previous?.km ?? 0;
   if (km <= vorigeKm || km < ANNOUNCE_STEP_KM) return null;
 
-  const vorigeMs = previous?.elapsedMs ?? 0;
-  const proKm = (uhr - vorigeMs) / (km - vorigeKm);
+  // Der Schnitt über alles seit der letzten Ansage – bei einem Sprung über
+  // mehrere Kilometer, bei stummgeschalteter Ansage über die verpassten.
+  const neue = splits.slice(vorigeKm, km);
+  const summe = neue.reduce((a, b) => a + Number(b), 0);
+  if (!Number.isFinite(summe)) return null;
 
-  return { km, elapsedMs: uhr, text: announcementText(km, proKm) };
+  const proKmMs = (summe * 1000) / neue.length;
+
+  return { km, elapsedMs: null, text: announcementText(km, proKmMs) };
 }
 
 /**
