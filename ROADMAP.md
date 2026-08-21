@@ -1,13 +1,14 @@
 # FunRun – Leitfaden & Roadmap
 
-> **Stand: 2026-08-21** · Grundlage: `KONTEXT.md` (Stand `funrun-v55`, 62 Trophäen, 27 Übungen)
+> **Stand: 2026-08-21** · Grundlage: `KONTEXT.md` (Stand `funrun-v56`, 62 Trophäen, 27 Übungen)
 >
 > **Fortschritt: A1, A2, A3, A4, B1, B2, B3, B4, C1, C2, C3 und C4 sind
 > erledigt und committet** – siehe §5.
 >
 > **Die Reihenfolge ist am 2026-08-21 neu geordnet.** Ziel ist jetzt
-> ausdrücklich: *die App benutzen, ausbauen später.* **C15 und C8 sind
-> erledigt**, der nächste Punkt ist **C10** (helles Farbschema). Die verbliebenen
+> ausdrücklich: *die App benutzen, ausbauen später.* **C15, C8 und C10 sind
+> erledigt**, der nächste Punkt ist **C11** (Jahresrückblick) – der aber
+> saisonal ist, siehe §5. Die verbliebenen
 > unsichtbaren Punkte stehen vertagt in §5, jeder mit der Bedingung, die ihn
 > wieder aufweckt.
 >
@@ -17,7 +18,7 @@
 
 **Wichtiger Vorbehalt:** Die Erstfassung dieses Plans war aus `KONTEXT.md`
 abgeleitet, nicht aus dem Quellcode. Was seither erledigt wurde (Block A, B1,
-B2, B3, B4, C1–C4, C8, C15), ist am Code geprüft. Alles **Offene** ist es nicht – Punkte, die
+B2, B3, B4, C1–C4, C8, C10, C15), ist am Code geprüft. Alles **Offene** ist es nicht – Punkte, die
 vor der Umsetzung eine Prüfung brauchen, sind mit **[prüfen]** markiert. Wer sie
 ohne Prüfung als Fakt weitergibt, baut auf Sand.
 
@@ -38,7 +39,8 @@ Tag · **L** = mehrere Sitzungen, braucht vorher eine eigene Skizze.
 ## 0. Wo wir stehen
 
 **Block A ist vollständig abgeschlossen.** Aus Block B sind B1, B2, B3 und B4
-erledigt, aus Block C die Punkte C1 bis C4, C8 und C15. Alles davon ist committet.
+erledigt, aus Block C die Punkte C1 bis C4, C8, C10 und C15. Alles davon ist
+committet.
 
 ```
 A. Hygiene              B. Struktur               C. Produkt (hier sind
@@ -51,7 +53,8 @@ A. Hygiene              B. Struktur               C. Produkt (hier sind
                                                    ✅ C4 Wetter
                                                    ✅ C15 Audio-Ansagen
                                                    ✅ C8 Kilometer-Splits
-                                                  ⬅ C10 Helles Farbschema
+                                                   ✅ C10 Helles Schema
+                                                  ⬅ C11 Jahresrückblick
                                                     ○ C5–C14 offen
 ```
 
@@ -100,8 +103,16 @@ Koordinaten, keine Zeiten. Aufgezeichnet wird jetzt beim Laufen statt
 hinterher gerechnet. **Der Preis: nur neue Läufe bekommen Splits.** Das
 Ergebnis steht in §4.
 
-**Der nächste Punkt ist C10** – ein helles Farbschema. Dunkel ist bei Sonne
-draussen schwer zu lesen, und die Vorarbeit ist getan.
+**C10 ist erledigt – und die Vorarbeit war nur halb getan.** „Alle Werte
+hängen schon an Custom Properties" stimmte für 38 Werte; **23 weitere Farben
+standen daneben mitten im Regelwerk**, und genau die machen ein Umschalten
+unmöglich. Sie sind jetzt Token, und ein Test lässt keine 24. mehr durch. Das
+Ergebnis steht in §4.
+
+**Der nächste Punkt ist C11** – aber der ist saisonal: ein Jahresrückblick im
+August wirkt nicht. Wer im August weiterbauen will, nimmt besser **C5**
+(Läufe filtern) oder **C7** (Trainingsplan-Vorlagen). Die Reihenfolge in §5
+sagt es genauer.
 
 Die vollständige Reihenfolge mit Stand steht in **§5**.
 
@@ -127,6 +138,7 @@ Gruppiert nach dem, was der Nutzer erlebt, nicht nach Dateien.
 | Wetter zum Lauf: vier Kästchen | `validation.js`, `storage.js`, `app.js` | neu (C4); ohne Netz, wird noch nirgends ausgewertet |
 | Ansage bei jedem Kilometer | `speech.js`, `app.js` | neu (C15); **am Gerät ungeprüft** – siehe §4 |
 | Kilometer-Splits mit Balken | `tracker.js`, `app.js` | neu (C8); **nur für ab jetzt aufgezeichnete Läufe** |
+| Helles und dunkles Farbschema, dem Gerät folgend | `css/style.css`, `app.js`, `storage.js` | neu (C10); Kontraste nachgemessen, alle über 4,5:1 |
 
 ### 1.2 Gamification
 
@@ -590,8 +602,8 @@ auf dem dunklen Hintergrund, `prefers-reduced-motion` für Animationen. **[prüf
 Ideen, nach Verhältnis von Nutzen zu Aufwand sortiert. Alles hier ist optional –
 FunRun ist heute schon eine vollständige App.
 
-**Stand:** C1 bis C4, C8 und C15 ✅ erledigt · der Rest offen. Der nächste
-Punkt der Reihenfolge ist **C10**.
+**Stand:** C1 bis C4, C8, C10 und C15 ✅ erledigt · der Rest offen. Der
+nächste Punkt der Reihenfolge ist **C11** – saisonal, siehe §5.
 
 **Seit dem 2026-08-21 gibt dieser Block den Takt vor**, nicht mehr Block B –
 die Reihenfolge in §5 ist auf „benutzen zuerst" umgestellt. Die Sortierung
@@ -819,9 +831,86 @@ Argument für B1: was `app.js` selbst tut, prüft weiterhin niemand.
 | C7 | **Trainingsplan-Vorlagen.** „5 km in 8 Wochen", „10 km Grundlage". Erzeugt fertige Sessions in die Zukunft. Hoher wahrgenommener Wert, weil es die leere Planungsseite füllt. | M | `training.js`, neues `plan-templates.js` |
 | ✅ C8 | **Segmente & Splits.** Erledigt – siehe unten. Die Begründung des Punkts war falsch: die Daten lagen **nicht** vor. | M | `tracker.js`, `app.js`, `validation.js`, `storage.js` |
 | C9 | **Höhenmeter.** `watchPosition` liefert `altitude`. Ungenau (leicht ±10 m), aber über einen Lauf gemittelt brauchbar. **Ehrlich: GPS-Höhe ohne Barometer ist wackelig** – lieber als „ungefähr" beschriften als Präzision vortäuschen. | M | `geo.js`, `tracker.js`, `route.js` |
-| C10 | **Helles Farbschema.** Alle Werte hängen schon an Custom Properties – die Vorarbeit ist getan. `prefers-color-scheme` plus manueller Schalter. | M | `css/style.css` |
+| ✅ C10 | **Helles Farbschema.** Erledigt – siehe unten. „Die Vorarbeit ist getan" stimmte zur Hälfte. | M | `css/style.css`, `app.js`, `storage.js`, `index.html` |
 | C11 | **Jahresrückblick.** Eine Seite „2026 in Zahlen" mit Teilen-Karte. Saisonal, aber emotional der stärkste Moment einer Lauf-App. | M | `stats.js`, `share-card.js` |
 | ✅ C15 | **Audio-Ansagen während des Laufs.** Erledigt – siehe unten. | M | `speech.js` (neu), `app.js`, `storage.js`, `index.html` |
+
+#### ✅ C10 · Helles Farbschema
+
+**Gebaut:** drei Zustände – dem Gerät folgen (Vorgabe), ausdrücklich hell,
+ausdrücklich dunkel. Die Wahl steht im Profil, wirkt sofort und überlebt das
+Schliessen. Die Systemleiste des Telefons färbt sich mit.
+
+**Der Befund zuerst:** „Alle Werte hängen schon an Custom Properties – die
+Vorarbeit ist getan." Für 38 Werte stimmte das. Daneben standen **23 weitere
+Farben** mitten im Regelwerk – und ausgerechnet die sind es, an denen ein
+Umschalten scheitert. Ein weisses `rgba(255, 255, 255, 0.07)` als aufgesetzte
+Fläche ist auf Weiss schlicht unsichtbar, und **niemand bemerkt es, solange
+niemand umschaltet.** Alle 23 sind jetzt Token.
+
+**Der Akzent wird dunkler, nicht durchsichtiger.** `#c4f000` auf Weiss sind
+1,4:1 – als Schrift unlesbar, als Fläche ausgewaschen. Im hellen Schema steht
+deshalb `#5a7600`. Das kostet den Neon-Charakter, und das ist der Preis dafür,
+dass die App bei Sonne draussen lesbar bleibt. **Wer den Neon-Look will,
+bleibt bei Dunkel** – deshalb wird nichts erzwungen, sondern gewählt.
+
+**Im Browser nachgemessen statt behauptet** – alle Werte im hellen Schema:
+
+| Paar | Kontrast |
+|---|--:|
+| Text auf Grund | 16,6:1 |
+| Fliesstext auf Grund | 9,0:1 |
+| gedämpft auf Grund | 5,6:1 |
+| schwach auf Grund | 4,6:1 |
+| Akzent auf Grund | 4,8:1 |
+| Akzent auf einer Karte | 5,2:1 |
+| Schrift auf dem Akzent | 5,2:1 |
+
+Jeder Wert über den 4,5:1 der WCAG-Stufe AA – die Untergrenze, die im dunklen
+Schema schon als Regel am `--dim` steht.
+
+**Entscheidungen, die beim Bauen anfielen:**
+
+- **Kein reines Weiss als Grund** (`#f4f5f2`). Draussen bei Sonne blendet es,
+  und genau dort wird diese Fassung gebraucht. Die Karten sind weiss, der
+  Grund darunter nicht – so bleibt die Schichtung sichtbar, die im dunklen
+  Schema über die Helligkeit läuft.
+- **Der Medienblock trägt ein `:not([data-theme="dark"])`.** Ohne das würde
+  eine ausdrückliche Entscheidung für Dunkel auf einem hellen System
+  überstimmt.
+- **Einen eigenen Dark-Block braucht es nicht.** Das `:not()` schliesst den
+  Medienblock bereits aus, und dann gilt wieder das `:root` von oben. Er wäre
+  eine Regel, die nichts tut – erst geschrieben, dann nachgedacht, dann
+  gelöscht.
+- **`'system'` entfernt das Merkmal, statt eines zu setzen.** Nur *ohne*
+  `data-theme` greift die Medienabfrage. Ein `data-theme="system"` wäre ein
+  Wert, den kein Selektor kennt, und die App bliebe stumm dunkel.
+- **Eigener Speichertopf** (`laufapp.display.v1`), nicht im Export: Eine
+  Sicherung beschreibt die Läufe, nicht die Vorlieben dieses einen Geräts. Wer
+  auf dem Telefon dunkel und am Rechner hell will, soll das dürfen.
+
+**Der Test, der C10 am Leben hält:** Er verbietet **jede** Farbe ausserhalb der
+Token-Blöcke. Ohne ihn wandert bei der nächsten Funktion wieder ein
+`rgba(255,255,255,…)` ins Regelwerk, und das helle Schema verrottet Zeile für
+Zeile, ohne dass etwas rot wird. Dazu drei weitere: keine Farbe darf ihre
+**einzige** Definition im hellen Block haben, das helle Schema darf keine
+Grössen anfassen, und es muss jede Farbe des dunklen überschreiben.
+Gegengeprüft, dass der erste anschlägt.
+
+**Und ein Fehler, den zum fünften Mal erst der Browser zeigte – diesmal ein
+bereits dokumentierter.** `const THEME_COLORS` stand beim
+Farbschema-Abschnitt statt beim übrigen Modulzustand. `init()` läuft am
+Modulanfang und griff darauf zu, bevor die Deklaration initialisiert war:
+**ReferenceError für die ganze App.** Exakt der Fehler aus C1, dort in diesem
+Dokument aufgeschrieben, hier wiederholt.
+
+Bitterer noch: Beim **Messen** fiel er nicht auf. Die Kontrastmessung liest
+die CSS-Variablen und braucht die App gar nicht – grüne Zahlen über einer
+toten Seite. Aufgefallen ist er erst, als das Klicken auf „Hell" nichts tat.
+**Eine Messung, die auch an einer kaputten App gelingt, misst nicht, was man
+glaubt.**
+
+969 → **981 Tests**.
 
 #### ✅ C8 · Kilometer-Splits
 
@@ -1008,9 +1097,9 @@ klare Linie, mit der Bedingung, die sie wieder aufweckt.
 |--:|---|--:|---|
 | 12 | **C15** Audio-Ansagen während des Laufs | M | ✅ erledigt – **aber am Gerät ungeprüft**, siehe §4 |
 | 13 | **C8** Kilometer-Splits | M | ✅ erledigt – **nur für ab jetzt aufgezeichnete Läufe**, siehe §4 |
-| 14 | **C10** Helles Farbschema | M | ⬅ **als Nächstes.** Dunkel ist bei Sonne draussen schwer zu lesen. Die Vorarbeit ist getan: alle Werte hängen an Custom Properties |
-| 15 | **C11** Jahresrückblick | M | Emotional der stärkste Moment einer Lauf-App – aber **saisonal**. Vor Dezember hat er wenig Wirkung |
-| 16 | **C7** Trainingsplan-Vorlagen · **C6** eigene Übungen · **C5** Läufe filtern · **C14** GPX-Import | M je | Nach Bedarf. **C5 erst, wenn die Lauf-Liste unübersichtlich wird** – das hängt an einer Zahl, die niemand kennt (siehe unten) |
+| 14 | **C10** Helles Farbschema | M | ✅ erledigt |
+| 15 | **C7** Trainingsplan-Vorlagen · **C6** eigene Übungen · **C5** Läufe filtern · **C14** GPX-Import | M je | ⬅ **als Nächstes, nach Bedarf.** **C5 erst, wenn die Lauf-Liste unübersichtlich wird** – das hängt an einer Zahl, die niemand kennt (siehe unten) |
+| 16 | **C11** Jahresrückblick | M | Emotional der stärkste Moment einer Lauf-App – aber **saisonal**. Im August gebaut, wirkt er im August nicht. **Ab November**, dann trifft er auf ein volles Jahr |
 
 ### Später: erst beim Ausbauen
 
@@ -1063,6 +1152,8 @@ Ein Punkt = ein Commit (§6, Regel 1). So sind sie gefallen:
 | 25 | C15 | `18c4106` | Ansagen waehrend des Laufs |
 | 26 | – | `24b6b5c` | Haekchen-Runde nach C15 |
 | 27 | C8 | `b58687b` | Kilometer-Splits – aufgezeichnet statt nachgerechnet |
+| 28 | – | `278bb04` | Haekchen-Runde nach C8 |
+| 29 | C10 | `29eddae` | Ein helles Farbschema – und die Vorarbeit, die angeblich getan war |
 
 **B1 hat drei Commits statt einem** – das ist keine Ausnahme von Regel 1 in §6,
 sondern stand so im Punkt selbst: einen Bereich pro Commit, nach jedem Commit
@@ -1170,6 +1261,10 @@ Fleißaufgabe, sondern der halbe Zweck dieser Datei.
 | 2026-08-21 | **B1** umgesetzt, kleine Variante, in drei Commits (`061d0ba`, `2378c00`, `96bfbf2`). `app.js` 4.132 → 3.091 Zeilen; neu sind `js/format.js` und `js/views/{dom,training,stats}.js`. §3 komplett neu geschrieben (Ergebnis statt Vorhaben, samt der Frage, ob der Rest folgt), §0 mit neuem Schaubild, §1.5 mit der Einordnung der Modul-Zahl, §5-Tabelle und Commit-Block nachgezogen. §1 bekam **keine** neue Zeile: B1 hat für den Nutzer nichts geändert, und eine Zeile dafür wäre eine Behauptung. 802 → 887 Tests, `sw` v47 → v50. Nächster Punkt: **C3**. |
 | 2026-08-21 | **C3** umgesetzt. Der Punkt war zu 90 % schon gebaut – Balken an 55 von 62 Trophäen seit `8c9308c`, und `KONTEXT.md` §7 sagte das seit `28b277a` wörtlich, während diese Datei das Gegenteil behauptete. Offen waren die sieben, bei denen ein Balken lügt; fünf haben jetzt eine Zeile (`standing`), zwei bleiben mit Begründung leer. §0/§1.2/§4/§5 nachgezogen, Aufwand von M auf S korrigiert. 887 → 895 Tests, `sw` v50 → v51. Nächste Punkte: **C2** und **C4**. |
 | 2026-08-21 | **C2** umgesetzt: Notiz und Gefühl pro Lauf. §1.1 um eine Zeile ergänzt, §0/§4/§5 nachgezogen. Zwei Fehler fand wieder nur der Browser – der zweite hätte ein Gefühl in den falschen Lauf geschrieben. 895 → 913 Tests, `sw` v51 → v52. Nächster Punkt: **C4**. |
+| 2026-08-21 | **C10** umgesetzt: helles Farbschema, dem Gerät folgend, mit Wahl im Profil. §1.1 um eine Zeile ergänzt, §0/§4/§5 nachgezogen. 969 → 981 Tests, `sw` v55 → v56. |
+| 2026-08-21 | **Der dritte Punkt in Folge, dessen Prämisse nicht hielt** – nach B4 und C8 jetzt C10: „die Vorarbeit ist getan" galt für 38 Werte, während 23 Farben daneben im Regelwerk standen. Dreimal dasselbe Muster: ein Satz, der beim Schreiben plausibel klang und nie am Code geprüft wurde. Der Unterschied diesmal: Ein Test hält die Prämisse ab jetzt wahr, statt sie nur zu berichtigen. |
+| 2026-08-21 | **Zum fünften Mal ein Fehler, den nur der Browser zeigte – und diesmal ein wiederholter.** `THEME_COLORS` in der temporalen Todeszone, exakt der C1-Fehler, der in diesem Dokument steht. Dass er trotz Aufschreibens wiederkam, ist das Argument für einen Test statt einer Notiz. Dazu die eigentliche Lehre: Die Kontrastmessung war grün, weil sie CSS-Variablen liest und die App nicht braucht. **Eine Messung, die auch an einer kaputten App gelingt, misst nicht, was man glaubt.** |
+| 2026-08-21 | **C11 ist in §5 nach hinten gerückt.** Ein Jahresrückblick, im August gebaut, wirkt im August nicht – das stand schon als „saisonal" im Punkt, wurde beim Ordnen aber trotzdem vor die alltäglicheren Punkte gesetzt. Jetzt trägt er ein Datum statt eines Adjektivs: ab November. |
 | 2026-08-21 | **C8** umgesetzt: Kilometer-Splits. §1.1 um eine Zeile ergänzt, §0/§4/§5 nachgezogen. 955 → 969 Tests, `sw` v54 → v55. Nächster Punkt: **C10**. |
 | 2026-08-21 | **Die Begründung von C8 war falsch, und zwar entscheidend.** „Die Daten liegen bereits vor" – nein: in der gespeicherten Strecke stehen nur Koordinaten, keine Zeiten. Aus einer alten Spur ist kein Split zu holen. Nach B4 der zweite Punkt, dessen Prämisse den Kontakt mit dem Code nicht überlebt hat. Beide Male stand die Prämisse ungeprüft da; beide Male hätte ein Blick in eine Datei genügt. |
 | 2026-08-21 | Aus C8 mitgenommen: **Die Splits haben C15 einen Zähler weggenommen.** Bis dahin zählten Ansage und Aufzeichnung unabhängig voneinander Kilometer. Das ist ein Umbau an einem Punkt, der einen Schritt vorher fertig gemeldet wurde – und richtig so: Erst mit den Splits gab es eine zweite Quelle, und zwei Quellen für dieselbe Zahl sind eine zu viel. |

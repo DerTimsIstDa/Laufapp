@@ -1,6 +1,6 @@
 # FunRun – Projektkontext (Gedächtnisdatei)
 
-> **Stand: 2026-08-21** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v55`
+> **Stand: 2026-08-21** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v56`
 >
 > **Diese Datei ist das Gedächtnis des Projekts.** Sie ersetzt das Einlesen des
 > Quellcodes beim Start eines neuen Chats. Wird sie nicht gepflegt, ist sie
@@ -14,7 +14,7 @@
    Datenmodell und Regeln. Sie genügt für Planung, Beratung und Diskussion.
 2. **Erst konkret werden, dann Dateien laden.** Für eine Änderung nur die
    Dateien lesen, die die Modulkarte (§3) für das Anliegen nennt – plus die
-   zugehörige Testdatei. `js/app.js` ist seit B1 3.301 statt 4.132 Zeilen, aber
+   zugehörige Testdatei. `js/app.js` ist seit B1 3.375 statt 4.132 Zeilen, aber
    immer noch zu lang zum Am-Stück-Lesen: dort gezielt nach Funktionsnamen oder
    Kommentarmarken aus §4 greifen. Die Ansichten unter `js/views/` sind klein
    genug, um ganz gelesen zu werden.
@@ -77,12 +77,12 @@ schaut nie in beide.
 
 | Datei | Zeilen | Zuständig für | Anfassen wenn … |
 |---|--:|---|---|
-| `js/app.js` | 3301 | Verdrahtung und die noch nicht herausgelösten Bereiche | Start, Läufe, Übungen, Trophäen, Profil, Intervall, Teilen, Export |
+| `js/app.js` | 3375 | Verdrahtung und die noch nicht herausgelösten Bereiche | Start, Läufe, Übungen, Trophäen, Profil, Intervall, Teilen, Export |
 | `js/views/training.js` | 498 | Trainingsformular, Planliste, Löschrückfrage | irgendetwas am Trainingsplan |
 | `js/views/stats.js` | 422 | Profil-Kennzahlen, Aktivitätsraster, Pace-Verlauf, Bestzeiten, Trophäen-Übersicht | irgendetwas an der Statistik im Profil |
 | `js/views/dom.js` | 242 | die `getElementById`-Verweise (`el`), `SVG_NS`, `createSvg` | ein neues Element im Markup |
 | `js/format.js` | 85 | rein: Zahlen, Daten, Zeiten in Anzeigeform | eine neue Formatierung |
-| `js/storage.js` | 737 | Laden/Speichern/Ändern aller Datentöpfe | neues persistiertes Feld, neuer Datentopf |
+| `js/storage.js` | 786 | Laden/Speichern/Ändern aller Datentöpfe | neues persistiertes Feld, neuer Datentopf |
 | `js/achievements.js` | 997 | Trophäen-Definitionen + `buildRunStats()` | neue Trophäe, neue Kennzahl für Bedingungen, Stand einer offenen Trophäe |
 | `js/training.js` | 590 | geplante Einheiten, Intervall-Vorgaben, Abgleich mit Läufen | Trainingsplan, Plantreue-XP |
 | `js/stats.js` | 551 | Summen, Serien, Zeitreihen, Aktivitätsraster, Pace-Trend, Bestzeiten | Statistik, Diagramme |
@@ -315,6 +315,7 @@ Formatierung → `js/format.js`.
 | `laufapp.profile.v1` | `{ name, weeklyGoal, goalSince }` |
 | `laufapp.recording.v1` | `{ gps: boolean, voice: boolean }` – Aufzeichnungsart (Voreinstellung **false**) und Ansagen beim Laufen (Voreinstellung **true**). ⚠️ **Zwei Schalter, ein Eintrag:** gelesen und geschrieben wird im Ganzen, sonst löscht einer den anderen. Wandert **nicht** in die Exportdatei |
 | `laufapp.export.v1` | `{ lastExport: "JJJJ-MM-TT" }` – Tag der letzten Sicherung. Wandert **nicht** in die Exportdatei: beschreibt die Gewohnheit des Browsers, nicht die Daten |
+| `laufapp.display.v1` | `{ theme: 'system' | 'light' | 'dark' }` – gewähltes Farbschema, Vorgabe **system**. Wandert **nicht** in die Exportdatei: eine Sicherung beschreibt die Läufe, nicht die Vorlieben eines Geräts |
 | `laufapp.installHint.dismissed` | Installationsbanner weggeklickt |
 
 ### Objekte
@@ -417,6 +418,14 @@ lässt eine neue Trophäe ohne beides nicht durch; die Ausnahmeliste hat genau
 zwei Einträge (`neue-bestzeit`, `comeback`) und ist über `ACHIEVEMENTS`
 begründet. `current: null` heißt „noch nichts gemessen" und ist nicht `0`.
 
+⚠️ **Farben gehören ausschliesslich in die Token-Blöcke** von `css/style.css`
+(`:root` und die zwei hellen). Eine Farbe mitten im Regelwerk lässt sich nicht
+umschalten – sie bleibt im hellen Schema stehen, wo sie hingehörte, als alles
+dunkel war, und **niemand bemerkt es, solange niemand umschaltet.** Vor C10
+standen dort 23 solche Werte. Ein Test in `styles.test.mjs` lässt keinen 24.
+mehr durch. Neue Farbe heisst: neues Token in `:root`, Gegenstück im hellen
+Block.
+
 **Zahleneingaben sind `type="text"` + `inputmode`**, nie `type="number"` –
 sonst frisst der Browser „0,4". Gelesen wird ausschließlich mit `parseNumber()`
 (nimmt Komma und Punkt, liefert `null` statt 0 bei Leerstring).
@@ -451,7 +460,7 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Übungen: 27** in 5 Kategorien (`warmup`, `drills`, `kraft`, `mobility`, `regeneration`)
 - **Bereiche/Tabs: 5** – `start`, `exercises`, `training`, `trophies`, `profile`
   (`data-view` / `#view-…` in `index.html`)
-- **Tests: 969** in 27 Dateien (`node --test`, alle grün)
+- **Tests: 981** in 27 Dateien (`node --test`, alle grün)
 - **Trophäen mit Anzeige: 60 von 62** – 55 mit Balken (`progress()`), 5 mit
   Zeile (`standing()`, seit C3). Ohne beides nur `neue-bestzeit` und
   `comeback`; warum, steht als Kommentar über `ACHIEVEMENTS`. Trophäen-XP
@@ -459,19 +468,19 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Module: 29** – 26 in `js/`, 3 in `js/views/`
 - **Werkzeuge: 1** – `tools/mess-history.mjs` (kein Teil der App: nicht in
   `APP_SHELL`, keine Testdatei; siehe den Dateikopf dort)
-- **`js/app.js`: 3301 Zeilen**, 142 Funktionen (vor B1: 4132)
-- **`sw.js`: `funrun-v55`**
+- **`js/app.js`: 3375 Zeilen**, 145 Funktionen (vor B1: 4132)
+- **`sw.js`: `funrun-v56`**
 - Letzte Commits (neueste zuerst, Stand des Repos):
-  1. Kilometer-Splits – aufgezeichnet statt nachgerechnet
-  2. Haekchen-Runde nach C15
-  3. Ansagen waehrend des Laufs
-  4. Die Reihenfolge neu geordnet: benutzen zuerst
-  5. Haekchen-Runde nach B4 – die Messung als Ergebnis
+  1. Ein helles Farbschema – und die Vorarbeit, die angeblich getan war
+  2. Haekchen-Runde nach C8
+  3. Kilometer-Splits – aufgezeichnet statt nachgerechnet
+  4. Haekchen-Runde nach C15
+  5. Ansagen waehrend des Laufs
 
-### Roadmap-Block A, B1, B2, B3, B4, C1 bis C4, C8 und C15 sind committet
+### Roadmap-Block A, B1, B2, B3, B4, C1 bis C4, C8, C10 und C15 sind committet
 
-Die Änderungen aus A1, A2, A4, B1, B2, B3, B4, C1 bis C4, C8 und C15 liegen
-seit dem 2026-08-21 auf `master`; `dertimsistda.github.io` liefert immer den letzten
+Die Änderungen aus A1, A2, A4, B1, B2, B3, B4, C1 bis C4, C8, C10 und C15
+liegen seit dem 2026-08-21 auf `master`; `dertimsistda.github.io` liefert immer den letzten
 Stand von `master`. Das Arbeitsverzeichnis ist sauber.
 
 > **Zur Tabelle:** Der Commit, der diese Zeilen schreibt, kann nicht in ihr
@@ -509,6 +518,8 @@ Stand von `master`. Das Arbeitsverzeichnis ist sauber.
 | C15 | `18c4106` | `js/speech.js` neu samt Testdatei und `APP_SHELL`; `CACHE_VERSION` auf v54 |
 | – | `24b6b5c` | Häkchen-Runde nach C15 |
 | C8 | `b58687b` | `splits` in `tracker.js`, `validation.js`, `storage.js`; `CACHE_VERSION` auf v55 |
+| – | `278bb04` | Häkchen-Runde nach C8; die track-Warnung in §5 |
+| C10 | `29eddae` | 23 Farben zu Token gemacht, helles Schema, `laufapp.display.v1`; `CACHE_VERSION` auf v56 |
 
 `css/style.css` steckte in A1 und B2 und wurde auf beide Commits aufgeteilt –
 die gelöschte Regel in A1, die `.storage-hint`-Regel in B2. Jeder Commit ist
@@ -625,6 +636,7 @@ Bugfix in einer Render-Funktion braucht keinen Eintrag.
 | 2026-08-21 | Ebenfalls beim Nachzählen aufgefallen und in §4 vermerkt: `Statistik` ist die **letzte** Kommentarmarke in `app.js` und begrenzt deshalb nichts – Lauf-Liste, Fehleranzeige und Service-Worker stehen mit unter ihr. Das war schon vor B1 so und stand nirgends. |
 | 2026-08-21 | Nach dem Push nachgezogen: §7 sagte „noch nicht gepusht" – seit `102107b` auf `origin/master` stimmt das nicht mehr. Genau die Sorte Satz, die nur so lange wahr ist, bis jemand den nächsten Schritt tut; deshalb steht hier weiterhin kein Live-Hash. |
 | 2026-08-21 | **C3** umgesetzt: `standing()` für die fünf Trophäen, bei denen ein Fortschrittsbalken lügen würde. Neu in §6 die Regel, dass jede offene Trophäe einen Stand zeigt; §3 und §4 mit neuen Zeilenzahlen und Marken. 887 → **895 Tests**, `sw` v50 → v51. |
+| 2026-08-21 | **C10** umgesetzt: helles Farbschema. Neu in §5 der Schlüssel `laufapp.display.v1` und in §6 die Regel, dass Farben nur in den Token-Blöcken stehen. 969 → **981 Tests**, `sw` v55 → v56. |
 | 2026-08-21 | **C8** umgesetzt: Kilometer-Splits. Neu in §5 das Feld `splits` am `Run` **und** die Warnung, dass in `track` keine Zeiten stehen – aus einer gespeicherten Spur ist nichts Zeitliches nachzurechnen. 954 → **969 Tests**, `sw` v54 → v55. |
 | 2026-08-21 | Die neue Warnung in §5 steht dort, weil die Roadmap das Gegenteil behauptete: „Die Daten liegen bereits vor – es fehlt nur die Auswertung." Nach B4 der zweite Punkt, dessen Prämisse den Kontakt mit dem Code nicht überlebt hat. Diese Datei hatte die Antwort die ganze Zeit – `track?  // [[lat, lon], …]` –, nur stand nicht dabei, was daraus folgt. |
 | 2026-08-21 | **C15** umgesetzt: Ansagen bei jedem Kilometer. Neu in §3 und §4 das Modul `speech.js`, in §5 der zweite Schalter im Aufzeichnungs-Eintrag samt Warnung. 925 → **954 Tests in 27 Dateien**, `sw` v53 → v54. |

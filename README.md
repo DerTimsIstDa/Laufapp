@@ -616,7 +616,31 @@ Dunkel, reduziert, sportlich. Alle Werte stehen als Custom Properties oben in
 ändert dort einen Token statt dreißig Regeln.
 
 - **Hintergrund** `#0d0f12`, Karten und Flächen in abgestuften Grautönen
-- **Neongrün** `#c4f000` als einziger Akzent, bewusst sparsam: Fortschritt,
+### Hell und dunkel
+
+Die App kennt beide Schemata und folgt standardmässig dem Gerät. Im Profil
+lässt sich das überstimmen: **Wie das Gerät · Hell · Dunkel**. Die Wahl gilt
+sofort, überlebt das Schliessen und bleibt auf diesem Gerät — sie wandert
+nicht in die Exportdatei, denn eine Sicherung beschreibt die Läufe, nicht die
+Vorlieben eines Telefons.
+
+⚠️ **Im hellen Schema ist der Akzent kein Neongrün.** `#c4f000` auf Weiss sind
+1,4:1 — als Schrift unlesbar, als Fläche ausgewaschen. Dort steht `#5a7600`.
+Das kostet den Neon-Charakter, und es ist der Preis dafür, dass die App bei
+Sonne draussen lesbar bleibt. **Wer den Neon-Look will, wählt Dunkel** —
+deshalb wird nichts erzwungen.
+
+Alle Kontraste im hellen Schema sind nachgemessen und liegen über den 4,5:1
+der WCAG-Stufe AA: Text 16,6:1 · Fliesstext 9,0:1 · gedämpft 5,6:1 · schwach
+4,6:1 · Akzent auf dem Grund 4,8:1 · Schrift auf dem Akzent 5,2:1.
+
+⚠️ **Für alle, die hier Farben ergänzen:** Sie gehören **ausschliesslich** in
+die Token-Blöcke ganz oben in `css/style.css`. Eine Farbe mitten im Regelwerk
+lässt sich nicht umschalten und bleibt im hellen Schema stehen, wo sie
+hingehörte, als alles dunkel war — und niemand bemerkt es, solange niemand
+umschaltet. Ein Test lässt keine durch.
+
+- **Neongrün** `#c4f000` als einziger Akzent im dunklen Schema, bewusst sparsam: Fortschritt,
   freigeschaltete Trophäen, Streckenlinie, primäre Aktion. Käme es überall
   vor, hebt es nichts mehr hervor.
 - **Text** weiß für Überschriften und Werte, helles Grau für Fließtext
@@ -655,7 +679,7 @@ Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 node --test
 ```
 
-**969 Tests in 27 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
+**981 Tests in 27 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
 Testrunner von Node — keine Abhängigkeiten, kein Framework, nichts zu
 installieren.
 
@@ -667,9 +691,9 @@ installieren.
 | `tests/imports.test.mjs` | 60 | jeder Import-Pfad und -Name gegen den Dateibaum |
 | `tests/training.test.mjs` | 59 | Abschnitte, Intervall-Vorgabe, Abgleich, Plantreue und XP |
 | `tests/validation.test.mjs` | 80 | Pflicht- und Optionalfelder, erfundene Kalendertage, Gefühlsskala, Wetter, Splits |
-| `tests/storage.test.mjs` | 59 | Anlegen/Ändern/Löschen/Ersetzen, Neuberechnung, volles Fach, kein Feld geht verloren |
+| `tests/storage.test.mjs` | 64 | Anlegen/Ändern/Löschen/Ersetzen, Neuberechnung, volles Fach, kein Feld geht verloren |
 | `tests/speech.test.mjs` | 23 | Wann angesagt wird und was – Kilometergrenze, GPS-Sprung, Sprachausgabe-Attrappe |
-| `tests/styles.test.mjs` | 53 | CSS- und Markup-Regeln, die Node nicht ausführen kann; Auswahlreihen gegen ihre Datenquelle |
+| `tests/styles.test.mjs` | 60 | CSS- und Markup-Regeln, die Node nicht ausführen kann; Auswahlreihen gegen ihre Datenquelle; keine Farbe ausserhalb der Token |
 | `tests/exercise-log.test.mjs` | 37 | Tageslimit, Zähler, Kategorien für Vielseitig |
 | `tests/route.test.mjs` | 33 | Projektion, Seitenverhältnis, Geraden, Ausdünnen |
 | `tests/geo.test.mjs` | 32 | Haversine gegen bekannte Strecken, alle GPS-Filtergrenzen |
