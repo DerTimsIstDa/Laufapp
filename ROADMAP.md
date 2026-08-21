@@ -3,9 +3,12 @@
 > **Stand: 2026-08-21** · Grundlage: `KONTEXT.md` (Stand `funrun-v53`, 62 Trophäen, 27 Übungen)
 >
 > **Fortschritt: A1, A2, A3, A4, B1, B2, B3, B4, C1, C2, C3 und C4 sind
-> erledigt und committet** – siehe §5. **B4 hat einen Nachfolger geboren:**
-> die Messung sagt, dass die Historie behoben werden muss – als **B4b**, und
-> das ist der nächste Punkt.
+> erledigt und committet** – siehe §5.
+>
+> **Die Reihenfolge ist am 2026-08-21 neu geordnet.** Ziel ist jetzt
+> ausdrücklich: *die App benutzen, ausbauen später.* Der nächste Punkt ist
+> **C15** (Audio-Ansagen). Die verbliebenen unsichtbaren Punkte stehen
+> vertagt in §5, jeder mit der Bedingung, die ihn wieder aufweckt.
 >
 > Diese Datei beantwortet drei Fragen: **Was gibt es?**, **Was ist schwach?**,
 > **Was fehlt?** – und in welcher Reihenfolge das angegangen wird.
@@ -42,10 +45,11 @@ A. Hygiene              B. Struktur               C. Produkt (hier sind
    ✅ A2 README            ✅ B2 Speicherfehler       ✅ C1 Sicherungs-
    ✅ A3 Testzahl          ✅ B3 Testlücken             erinnerung
    ✅ A4 APP_SHELL         ✅ B4 history.js gemessen  ✅ C3 Trophäen-
-                        ⬅ B4b Historie beheben        Fortschritt
-                           ○ B5, B2b               ✅ C2 Notiz & Gefühl
+                           ⏸ B4b, B1-Rest,              Fortschritt
+                              B2b, B5 vertagt      ✅ C2 Notiz & Gefühl
                                                    ✅ C4 Wetter
-                                                    ○ C5–C15 offen
+                                                  ⬅ C15 Audio-Ansagen
+                                                    ○ C5–C14 offen
 ```
 
 **B1 ist in der kleinen Variante umgesetzt**: Trainingsformular und Statistik
@@ -73,11 +77,17 @@ Wächter aus C2 haben die Lücke vorher gemeldet. Das Ergebnis steht in §4.
 **B4 ist gemessen, und die Antwort ist unbequem.** Die Grenze lautete: unter
 50 ms ist es kein Problem und der Punkt wird gestrichen. Gemessen wurden bei
 **200 Läufen und 600 Übungen 314 ms** – auf einem Rechner, nicht auf einem
-Telefon. Bei 1.000 Läufen sind es siebeneinhalb Sekunden. Der Punkt wird also
-nicht gestrichen, sondern bekommt einen Nachfolger: **B4b**, das Beheben.
+Telefon. Der Punkt wird also nicht gestrichen, sondern bekommt einen
+Nachfolger: **B4b**. Zwei Annahmen der alten Beschreibung waren dabei falsch;
+was daraus wurde, steht in §3.
 
-Zwei Annahmen der alten B4-Beschreibung waren dabei falsch – beide standen
-dort ungeprüft. Was daraus geworden ist, steht in §3.
+**Gemessen wurde allerdings mit erfundenen Läufen.** Wie viele Tim wirklich
+hat, steht nirgends – und genau davon hängt ab, ob B4b eine Frage ist oder
+keine. Deshalb steht der Punkt in §5 vertagt, mit dem Nachsehen als Bedingung.
+
+**Der nächste Punkt ist C15** – Audio-Ansagen während des Laufs. Nach zwölf
+Punkten, von denen die Hälfte unsichtbar war, der erste, den man **während**
+des Laufens hat statt danach.
 
 Die vollständige Reihenfolge mit Stand steht in **§5**.
 
@@ -565,7 +575,12 @@ Ideen, nach Verhältnis von Nutzen zu Aufwand sortiert. Alles hier ist optional 
 FunRun ist heute schon eine vollständige App.
 
 **Stand:** C1 bis C4 ✅ erledigt · C5 bis C15 offen. Der nächste Punkt der
-Reihenfolge steht in Block B: **B4**.
+Reihenfolge ist **C15**.
+
+**Seit dem 2026-08-21 gibt dieser Block den Takt vor**, nicht mehr Block B –
+die Reihenfolge in §5 ist auf „benutzen zuerst" umgestellt. Die Sortierung
+unten nach Aufwand bleibt, weil sie beim Abschätzen hilft; welcher Punkt dran
+ist, entscheidet aber §5.
 
 ### Naheliegend (hoher Nutzen, kleiner Aufwand)
 
@@ -790,19 +805,40 @@ Argument für B1: was `app.js` selbst tut, prüft weiterhin niemand.
 | C9 | **Höhenmeter.** `watchPosition` liefert `altitude`. Ungenau (leicht ±10 m), aber über einen Lauf gemittelt brauchbar. **Ehrlich: GPS-Höhe ohne Barometer ist wackelig** – lieber als „ungefähr" beschriften als Präzision vortäuschen. | M | `geo.js`, `tracker.js`, `route.js` |
 | C10 | **Helles Farbschema.** Alle Werte hängen schon an Custom Properties – die Vorarbeit ist getan. `prefers-color-scheme` plus manueller Schalter. | M | `css/style.css` |
 | C11 | **Jahresrückblick.** Eine Seite „2026 in Zahlen" mit Teilen-Karte. Saisonal, aber emotional der stärkste Moment einer Lauf-App. | M | `stats.js`, `share-card.js` |
+| C15 | **Audio-Ansagen während des Laufs.** „1 Kilometer, 5:42." Über `SpeechSynthesis` – im Browser eingebaut, keine Abhängigkeit. Passt zu `beep.js`. Praktisch der größte Zugewinn beim tatsächlichen Laufen. | M | `tracker.js`, neues `speech.js` |
 
 ### Groß / später
+
+> **C15 stand bis zum 2026-08-21 hier und ist nach „Mittelfristig" gezogen.**
+> Er war der einzige **M** in einer Liste von **L**, und die Überschrift
+> „gross/später" hat ihn kleiner aussehen lassen, als er ist – ausgerechnet
+> den Punkt, der beim tatsächlichen Laufen am meisten bringt. Eine Sortierung
+> nach Aufwand darf keine Sortierung nach Wichtigkeit vortäuschen.
 
 | # | Idee | Aufwand | Bemerkung |
 |---|---|--:|---|
 | C12 | **Kartenansicht der Route** | L | Braucht Kartenkacheln → externe Abhängigkeit + Netzwerk. **Widerspricht dem Prinzip „keine Abhängigkeiten".** Nur machen, wenn dieses Prinzip bewusst aufgegeben wird. Die SVG-Route ohne Karte ist der ehrlichere Kompromiss. |
 | C13 | **Geräteübergreifende Synchronisierung** | L | Braucht ein Backend. Ändert das Projekt fundamental (Konten, Datenschutz, Betriebskosten, DSGVO). **Meine Einschätzung: nicht machen.** Der Export/Import deckt 90 % des Bedarfs zu 1 % der Kosten. |
 | C14 | **Import aus Strava / Garmin / GPX** | L→M | GPX-Import allein ist **M** und braucht kein Konto – nur einen XML-Parser für eine Datei, die der Nutzer selbst hochlädt. Das ist die 80/20-Variante und passt zur Architektur. Volle API-Anbindung wäre L und bricht die Abhängigkeitsfreiheit. |
-| C15 | **Audio-Ansagen während des Laufs** | M | „1 Kilometer, 5:42." Über `SpeechSynthesis` – im Browser eingebaut, keine Abhängigkeit. Passt zu `beep.js`. Praktisch der größte Zugewinn beim tatsächlichen Laufen. |
 
 ---
 
 ## 5. Empfohlene Reihenfolge
+
+**Am 2026-08-21 neu geordnet, nach einer Frage von Tim: „Was genau ist der
+Mehrwert von dem allen?"** Die Antwort auf die Gegenfrage war: *die App
+benutzen, und irgendwann danach ausbauen.* Danach richtet sich diese Liste
+jetzt – und zwar ausdrücklich, statt sie weiter Punkt für Punkt abzuarbeiten,
+nur weil sie so dastand.
+
+**Was das ändert:** Von zwölf erledigten Punkten waren **sechs für den Nutzer
+unsichtbar** (A2, A3, A4, B1, B3, B4). Das war zur Hälfte richtig – ohne A1
+bis A4 und B2 stünde hier ein Baustellenschild – und zur Hälfte eine
+Investition, die sich nur bei fortgesetzter Entwicklung auszahlt. Die
+verbleibenden unsichtbaren Punkte wandern deshalb nach hinten, hinter eine
+klare Linie, mit der Bedingung, die sie wieder aufweckt.
+
+### Erledigt
 
 | Schritt | Was | Aufwand | Stand |
 |--:|---|--:|---|
@@ -810,17 +846,41 @@ Argument für B1: was `app.js` selbst tut, prüft weiterhin niemand.
 | 2 | **A3** Testzahl feststellen, **A4** APP_SHELL-Test | S+S | ✅ erledigt |
 | 3 | **A2** README auf Stand | M | ✅ erledigt |
 | 4 | **B2** Speicher-Fehlerpfade härten | M | ✅ erledigt |
-| — | **committen und pushen** | S | ✅ erledigt |
 | 5 | **C1** Export-Erinnerung | S | ✅ erledigt |
 | 6 | **B3** Testlücken der jungen Module | M | ✅ erledigt |
-| 7 | **B1** app.js entflechten – **kleine Variante** (Training + Statistik) | M | ✅ erledigt |
+| 7 | **B1** app.js entflechten – **kleine Variante** | M | ✅ erledigt |
 | 8 | **C3** Trophäen-Fortschritt | S | ✅ erledigt |
 | 9 | **C2** Notiz & Gefühl | S | ✅ erledigt |
 | 10 | **C4** Wetter | S | ✅ erledigt |
 | 11 | **B4** history.js messen | S | ✅ erledigt |
-| 12 | **B4b** Historie beheben – aus der Messung entstanden | M | ⬅ **als Nächstes** |
-| 13 | **B2b** GPS-Fehlerpfade am Gerät prüfen | M | offen |
-| 14 | danach frei nach Lust: C5, C8, C10, C15 | – | offen |
+
+### Jetzt: was man beim Laufen merkt
+
+| Schritt | Was | Aufwand | Warum hier |
+|--:|---|--:|---|
+| 12 | **C15** Audio-Ansagen während des Laufs | M | ⬅ **als Nächstes.** Der einzige Punkt der ganzen Liste, den man **während** des Laufens hat, nicht danach. „1 Kilometer, 5:42" über die eingebaute Sprachausgabe – keine Abhängigkeit, passt zu `beep.js` |
+| 13 | **C8** Kilometer-Splits aus der GPS-Spur | M | Die Zahl, die man nach dem Lauf als Erstes sucht. Die Daten liegen schon da, es fehlt nur die Auswertung |
+| 14 | **C10** Helles Farbschema | M | Dunkel ist bei Sonne draussen schwer zu lesen. Die Vorarbeit ist getan: alle Werte hängen an Custom Properties |
+| 15 | **C11** Jahresrückblick | M | Emotional der stärkste Moment einer Lauf-App – aber **saisonal**. Vor Dezember hat er wenig Wirkung |
+| 16 | **C7** Trainingsplan-Vorlagen · **C6** eigene Übungen · **C5** Läufe filtern · **C14** GPX-Import | M je | Nach Bedarf. **C5 erst, wenn die Lauf-Liste unübersichtlich wird** – das hängt an einer Zahl, die niemand kennt (siehe unten) |
+
+### Später: erst beim Ausbauen
+
+Nichts davon ist verworfen, alles davon ist **vertagt**. Jeder Punkt hat eine
+Bedingung, die ihn wieder aufweckt – ohne die wandert er nur von Liste zu
+Liste.
+
+| Was | Aufwand | Wacht auf, wenn … |
+|---|--:|---|
+| **B4b** Historie beheben | M | … die Lauf-Zahl es rechtfertigt. **Ungeklärt:** gemessen wurde mit erfundenen Läufen, Tims echte Zahl steht nirgends. Bei 40 Läufen sind es ~10 ms und der Punkt ist egal; bei 400 eine Sekunde auf dem Telefon. **Zuerst nachsehen, dann entscheiden** |
+| **B1** (Rest) app.js weiter entflechten | L | … das Bauen anfängt wehzutun. Die Kennzahl steht schon da: dreimal in Folge grüne Tests bei kaputter Oberfläche |
+| **B2b** GPS-Fehlerpfade am Gerät | M | … eine GPS-Aufzeichnung tatsächlich schiefgeht |
+| **B5** Barrierefreiheit | M | … jemand anders die App benutzt als Tim |
+
+**Die ehrliche Einordnung dazu:** B1 ist der einzige der vier, der beim Bauen
+Geld spart statt es zu kosten. Wer die C-Punkte oben in Folge baut, wird ihn
+irgendwann brauchen – die drei Fehler in Folge, die nur der Browser fand, sind
+die Rechnung dafür. Aber **erst dann**, und nicht als Vorleistung.
 
 ### Die Commits – erledigt am 2026-08-21
 
@@ -957,6 +1017,9 @@ Fleißaufgabe, sondern der halbe Zweck dieser Datei.
 | 2026-08-21 | **B1** umgesetzt, kleine Variante, in drei Commits (`061d0ba`, `2378c00`, `96bfbf2`). `app.js` 4.132 → 3.091 Zeilen; neu sind `js/format.js` und `js/views/{dom,training,stats}.js`. §3 komplett neu geschrieben (Ergebnis statt Vorhaben, samt der Frage, ob der Rest folgt), §0 mit neuem Schaubild, §1.5 mit der Einordnung der Modul-Zahl, §5-Tabelle und Commit-Block nachgezogen. §1 bekam **keine** neue Zeile: B1 hat für den Nutzer nichts geändert, und eine Zeile dafür wäre eine Behauptung. 802 → 887 Tests, `sw` v47 → v50. Nächster Punkt: **C3**. |
 | 2026-08-21 | **C3** umgesetzt. Der Punkt war zu 90 % schon gebaut – Balken an 55 von 62 Trophäen seit `8c9308c`, und `KONTEXT.md` §7 sagte das seit `28b277a` wörtlich, während diese Datei das Gegenteil behauptete. Offen waren die sieben, bei denen ein Balken lügt; fünf haben jetzt eine Zeile (`standing`), zwei bleiben mit Begründung leer. §0/§1.2/§4/§5 nachgezogen, Aufwand von M auf S korrigiert. 887 → 895 Tests, `sw` v50 → v51. Nächste Punkte: **C2** und **C4**. |
 | 2026-08-21 | **C2** umgesetzt: Notiz und Gefühl pro Lauf. §1.1 um eine Zeile ergänzt, §0/§4/§5 nachgezogen. Zwei Fehler fand wieder nur der Browser – der zweite hätte ein Gefühl in den falschen Lauf geschrieben. 895 → 913 Tests, `sw` v51 → v52. Nächster Punkt: **C4**. |
+| 2026-08-21 | **Die Reihenfolge in §5 ist neu geordnet** – nach Tims Frage „Was genau ist der Mehrwert von dem allen?". Die Antwort war: die App benutzen, ausbauen später. §5 hat jetzt drei Teile statt einer Liste: erledigt, was man beim Laufen merkt, und – hinter einer Linie – das Vertagte, jedes mit der Bedingung, die es wieder aufweckt. Ohne solche Bedingung wandert ein Punkt nur von Liste zu Liste. |
+| 2026-08-21 | Die Frage war berechtigt: **sechs der zwölf erledigten Punkte waren für den Nutzer unsichtbar** (A2, A3, A4, B1, B3, B4). Zur Hälfte richtig – ohne A1–A4 und B2 stünde hier ein Baustellenschild –, zur Hälfte eine Investition, die sich nur bei fortgesetzter Entwicklung auszahlt. Das gehört benannt und nicht weggeredet. |
+| 2026-08-21 | **C15 ist von „Gross / später" nach „Mittelfristig" gezogen.** Er war der einzige M zwischen lauter L, und die Überschrift hat ausgerechnet den Punkt kleiner aussehen lassen, der beim Laufen am meisten bringt. Eine Sortierung nach Aufwand darf keine nach Wichtigkeit vortäuschen. |
 | 2026-08-21 | **B4** gemessen – und die Grenze klar gerissen: 314 ms bei 200 Läufen und 600 Übungen statt der gesetzten 50 ms, auf einem Rechner. Der Punkt wird nicht gestrichen, sondern bekommt mit **B4b** einen Nachfolger. Das Messskript liegt als `tools/mess-history.mjs` im Baum, damit die Antwort nachprüfbar bleibt, wenn die Zahl der Läufe wächst. |
 | 2026-08-21 | **Zwei Annahmen der B4-Beschreibung waren falsch.** „Läuft bei jedem Rendern" – nein, nur bei offenem Trophäen-Bereich, und im Code steht sogar der Kommentar dazu. „Bei 200 Läufen unauffällig" – nein, um eine Grössenordnung daneben. Der Punkt war also gleichzeitig kleiner *und* schlimmer, als er dastand. Beides hätte ein Blick in den Code gezeigt; genau dafür steht die Regel im Kopf. |
 | 2026-08-21 | Die naheliegende billige Abhilfe für B4b – abbrechen, sobald alle Trophäen ihr Datum haben – wurde **mitgemessen und fällt aus**: es bleiben immer 16 bis 25 Trophäen offen, die Abbruchbedingung tritt nie ein. Eine halbe Stunde Messen hat einen Tag Einbau gespart. |
