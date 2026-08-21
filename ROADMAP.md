@@ -1,10 +1,9 @@
 # FunRun – Leitfaden & Roadmap
 
-> **Stand: 2026-08-21** · Grundlage: `KONTEXT.md` (Stand `funrun-v51`, 62 Trophäen, 27 Übungen)
+> **Stand: 2026-08-21** · Grundlage: `KONTEXT.md` (Stand `funrun-v52`, 62 Trophäen, 27 Übungen)
 >
-> **Fortschritt: A1, A2, A3, A4, B1, B2, B3, C1 und C3 sind erledigt und
-> committet** – siehe §5. Die nächsten Punkte sind **C2** (Notiz & Gefühl) und
-> **C4** (Wetter).
+> **Fortschritt: A1, A2, A3, A4, B1, B2, B3, C1, C2 und C3 sind erledigt und
+> committet** – siehe §5. Der nächste Punkt ist **C4** (Wetter).
 >
 > Diese Datei beantwortet drei Fragen: **Was gibt es?**, **Was ist schwach?**,
 > **Was fehlt?** – und in welcher Reihenfolge das angegangen wird.
@@ -12,7 +11,7 @@
 
 **Wichtiger Vorbehalt:** Die Erstfassung dieses Plans war aus `KONTEXT.md`
 abgeleitet, nicht aus dem Quellcode. Was seither erledigt wurde (Block A, B1,
-B2, B3, C1, C3), ist am Code geprüft. Alles **Offene** ist es nicht – Punkte, die
+B2, B3, C1, C2, C3), ist am Code geprüft. Alles **Offene** ist es nicht – Punkte, die
 vor der Umsetzung eine Prüfung brauchen, sind mit **[prüfen]** markiert. Wer sie
 ohne Prüfung als Fakt weitergibt, baut auf Sand.
 
@@ -33,7 +32,7 @@ Tag · **L** = mehrere Sitzungen, braucht vorher eine eigene Skizze.
 ## 0. Wo wir stehen
 
 **Block A ist vollständig abgeschlossen.** Aus Block B sind B1, B2 und B3
-erledigt, aus Block C die Punkte C1 und C3. Alles davon ist committet.
+erledigt, aus Block C die Punkte C1, C2 und C3. Alles davon ist committet.
 
 ```
 A. Hygiene              B. Struktur               C. Produkt (hier sind
@@ -42,8 +41,9 @@ A. Hygiene              B. Struktur               C. Produkt (hier sind
    ✅ A3 Testzahl          ✅ B3 Testlücken             erinnerung
    ✅ A4 APP_SHELL         ○ B4, B5, B2b            ✅ C3 Trophäen-
                                                       Fortschritt
-                                                 ⬅ C2 Notiz & Gefühl
-                                                    ○ C4–C15 offen
+                                                    ✅ C2 Notiz & Gefühl
+                                                 ⬅ C4 Wetter
+                                                    ○ C5–C15 offen
 ```
 
 **B1 ist in der kleinen Variante umgesetzt**: Trainingsformular und Statistik
@@ -57,8 +57,13 @@ denen ein Balken lügen würde – Pace läuft nach unten, das Ziel des langen A
 wandert mit. Fünf davon zeigen jetzt eine Zeile statt eines Balkens, zwei
 bleiben mit Begründung leer. Das Ergebnis steht in §4.
 
-**Die nächsten Punkte sind C2 und C4** – Notiz & Gefühl pro Lauf, dazu das
-Wetter. Beides klein, beides am Formular.
+**C2 ist erledigt** – Notiz und Gefühl stehen im Formular und in der
+Detailansicht. Zwei Fehler zeigte dabei wieder erst der Browser, nicht die
+Testsuite; einer davon hätte ein Gefühl in den falschen Lauf geschrieben.
+Beide sind jetzt von Tests abgedeckt, die keine Feldliste kennen und deshalb
+von allein mitwachsen. Das Ergebnis steht in §4.
+
+**Der nächste Punkt ist C4** – das Wetter zum Antippen, am selben Formular.
 
 Die vollständige Reihenfolge mit Stand steht in **§5**.
 
@@ -80,6 +85,7 @@ Gruppiert nach dem, was der Nutzer erlebt, nicht nach Dateien.
 | Bildschirm wach halten | `wake-lock.js` | rund; Fehlerpfade seit B3 geprüft |
 | Route als SVG aus der GPS-Spur | `route.js` | rund, max. 500 Punkte |
 | Lauf bearbeiten / löschen | `storage.js`, `app.js` | rund |
+| Notiz und Gefühl (1–5) zum Lauf | `validation.js`, `storage.js`, `app.js` | neu (C2); wird noch nirgends ausgewertet |
 
 ### 1.2 Gamification
 
@@ -470,15 +476,15 @@ auf dem dunklen Hintergrund, `prefers-reduced-motion` für Animationen. **[prüf
 Ideen, nach Verhältnis von Nutzen zu Aufwand sortiert. Alles hier ist optional –
 FunRun ist heute schon eine vollständige App.
 
-**Stand:** C1 und C3 ✅ erledigt · C2, C4 bis C15 offen. Die nächsten Punkte der
-Reihenfolge sind **C2** und **C4**.
+**Stand:** C1, C2 und C3 ✅ erledigt · C4 bis C15 offen. Der nächste Punkt der
+Reihenfolge ist **C4**.
 
 ### Naheliegend (hoher Nutzen, kleiner Aufwand)
 
 | # | Idee | Aufwand | Module |
 |---|---|--:|---|
 | ✅ C1 | **Erinnerung an die Sicherung.** Erledigt – siehe unten. | S | `transfer.js`, `storage.js`, `index.html`, `app.js` |
-| C2 | **Notiz und Gefühl pro Lauf.** Ein Freitextfeld und eine 1–5-Skala („wie war's?"). Öffnet später Auswertungen („Läufe, bei denen es sich gut anfühlte, waren im Schnitt 40 s/km langsamer"). | S | `validation.js`, `storage.js`, `app.js` |
+| ✅ C2 | **Notiz und Gefühl pro Lauf.** Erledigt – siehe unten. | S | `validation.js`, `storage.js`, `app.js`, `index.html` |
 | ✅ C3 | **Trophäen-Fortschritt anzeigen.** Erledigt – siehe unten. Der Balken war zu 90 % schon da. | S | `achievements.js`, `app.js`, `css/style.css` |
 | C4 | **Wetter zum Lauf – manuell.** Vier Symbole zum Antippen. Kein API-Aufruf, keine Abhängigkeit, kein Backend. Passt zur Architektur. | S | `validation.js`, `app.js` |
 | C5 | **Läufe filtern und suchen.** Nach Zeitraum, Distanzbereich, Quelle (GPS/manuell), Intervall. Wird ab ein paar hundert Läufen unverzichtbar. | M | `stats.js` oder neues `filter.js`, `app.js` |
@@ -592,6 +598,62 @@ und ohne Zeile macht die Suite rot – die Ausnahmeliste hat genau zwei Einträg
 Nachgeprüft, dass er anschlägt: ein `standing` entfernt → rot, zurück → grün.
 Dazu ein zweiter, der kein Ziel von `0` durchlässt. 887 → **895 Tests**.
 
+#### ✅ C2 · Notiz und Gefühl pro Lauf
+
+**Gebaut:** ein Textfeld über die ganze Formularbreite und fünf Chips für
+„Wie war's?". Beides optional. In der Detailansicht steht das Gefühl als Zahl
+mit Wort („4 – gut") zwischen den Kennzahlen, die Notiz als eigene Zeile
+darunter.
+
+**Entscheidungen, die beim Bauen anfielen:**
+
+- **Fünf Sprossen.** Drei sind zu grob – gut/geht/schlecht sagt nichts über
+  einen Verlauf. Sieben täuschen eine Genauigkeit vor, die ein Gefühl nicht
+  hat.
+- **Radiofelder, kein Schieberegler.** Ein Regler legt Zwischenwerte nahe, die
+  es nicht gibt. Eine 3,5 wird abgelehnt: wer sie zulässt, kann später nicht
+  mehr sagen, was er gezählt hat. Sichtbar sind es Chips, darunter liegen echte
+  Radiofelder – damit Tastatur und Vorlesehilfe die Gruppe als **eine** Frage
+  mit fünf Antworten begreifen.
+- **Die Beschriftungen stehen in `validation.js`**, neben der Skala, nicht in
+  der Anzeige. Was eine 2 bedeutet, gehört zur Bedeutung des Werts und nicht zu
+  seiner Darstellung – wer später auswertet, braucht dieselbe Zuordnung.
+- **200 Zeichen für die Notiz**, dieselbe Grenze wie bei der Notiz an einer
+  Trainingseinheit. Nicht weil die eine von der anderen abhinge, sondern damit
+  sich zwei Notizfelder in derselben App gleich verhalten. Und weil alles im
+  `localStorage` liegt: nach den GPS-Spuren ist ein Freitextfeld ohne Grenze
+  die zweite Stelle, an der das Fach volläuft.
+- **Die Einheit steht einmal.** Aus C3 mitgenommen und hier gleich angewandt.
+
+**Regel 2 aus §6 ist mitgezogen:** ein Roundtrip-Test hält fest, dass Notiz und
+Gefühl Export und Import überstehen. Ohne das wären sie genau dann weg, wenn
+jemand seine Daten wiederherstellt – der Fehler, den niemand mehr rechtzeitig
+bemerkt.
+
+**Zwei Fehler, die wieder erst der Browser zeigte** – `node --test` war beide
+Male grün:
+
+1. **`addRun` kannte die neuen Felder nicht.** `validateRun` liess sie durch,
+   `updateRun` behielt sie, aber beim *Anlegen* fielen sie heraus: kein Fehler,
+   keine Meldung, der Lauf wurde gespeichert – nur ohne Notiz. Beide Funktionen
+   zählen die Felder einzeln auf, statt den geprüften Lauf zu übernehmen; das
+   ist richtig so, denn nur dadurch verschwindet ein geleertes Feld auch
+   wirklich. Der Preis ist, dass ein neues Feld an **drei** Stellen gepflegt
+   werden muss und beim Vergessen stillschweigend verlorengeht.
+2. **Der `value`-Setzer einer Radiogruppe hakt nur an, er hakt nie ab.** Ein
+   Wert, den es nicht gibt – und `undefined` ist so einer –, lässt die Gruppe
+   unverändert. Beim Wechsel von einem Lauf mit Gefühl auf einen ohne blieb das
+   alte Häkchen stehen und wäre beim Speichern in den falschen Lauf gewandert.
+
+**Der Test, der Fehler 1 in Zukunft verhindert**, kennt keine Feldliste: er
+fragt `validateRun`, was ein Lauf haben darf, und prüft, dass `addRun` und
+`updateRun` jedes dieser Felder behalten. Damit wächst er von allein mit.
+Gegengeprüft, dass er anschlägt: eine Zeile aus `addRun` entfernt → rot,
+zurück → grün. 913 Tests.
+
+**Fehler 2 bleibt ungeprüft** – er steckt in `app.js`, und dort gibt es keine
+Tests. Das ist kein Versehen, sondern der offene Rest von **B1**: siehe §3.
+
 ### Mittelfristig
 
 | # | Idee | Aufwand | Module |
@@ -627,10 +689,11 @@ Dazu ein zweiter, der kein Ziel von `0` durchlässt. 887 → **895 Tests**.
 | 6 | **B3** Testlücken der jungen Module | M | ✅ erledigt |
 | 7 | **B1** app.js entflechten – **kleine Variante** (Training + Statistik) | M | ✅ erledigt |
 | 8 | **C3** Trophäen-Fortschritt | S | ✅ erledigt |
-| 9 | **C2** Notiz & Gefühl, **C4** Wetter | S+S | ⬅ **als Nächstes** |
-| 10 | **B4** history.js messen | S | offen |
-| 11 | **B2b** GPS-Fehlerpfade am Gerät prüfen | M | offen |
-| 12 | danach frei nach Lust: C5, C8, C10, C15 | – | offen |
+| 9 | **C2** Notiz & Gefühl | S | ✅ erledigt |
+| 10 | **C4** Wetter | S | ⬅ **als Nächstes** |
+| 11 | **B4** history.js messen | S | offen |
+| 12 | **B2b** GPS-Fehlerpfade am Gerät prüfen | M | offen |
+| 13 | danach frei nach Lust: C5, C8, C10, C15 | – | offen |
 
 ### Die Commits – erledigt am 2026-08-21
 
@@ -654,6 +717,8 @@ Ein Punkt = ein Commit (§6, Regel 1). So sind sie gefallen:
 | 14 | – | `102107b` | Haekchen-Runde nach B1 |
 | 15 | – | `bb66779` | Nach dem Push nachgezogen: der Hinweis auf den ausstehenden Push |
 | 16 | C3 | `414b55c` | Stand statt Balken, wo ein Balken luegen wuerde |
+| 17 | – | `351d5ad` | Haekchen-Runde nach C3 – und was sie zutage foerderte |
+| 18 | C2 | `12fd1cf` | Notiz und Gefuehl zu jedem Lauf |
 
 **B1 hat drei Commits statt einem** – das ist keine Ausnahme von Regel 1 in §6,
 sondern stand so im Punkt selbst: einen Bereich pro Commit, nach jedem Commit
@@ -760,5 +825,7 @@ Fleißaufgabe, sondern der halbe Zweck dieser Datei.
 | 2026-08-21 | Nachgezogen: `63fe111` in der Commit-Tabelle. §6 um die Ausnahme erweitert – ein Doku-Commit kann nicht in der eigenen Tabelle stehen, und ein Live-Hash in einer Datei ist ab dem nächsten Commit falsch. |
 | 2026-08-21 | **B1** umgesetzt, kleine Variante, in drei Commits (`061d0ba`, `2378c00`, `96bfbf2`). `app.js` 4.132 → 3.091 Zeilen; neu sind `js/format.js` und `js/views/{dom,training,stats}.js`. §3 komplett neu geschrieben (Ergebnis statt Vorhaben, samt der Frage, ob der Rest folgt), §0 mit neuem Schaubild, §1.5 mit der Einordnung der Modul-Zahl, §5-Tabelle und Commit-Block nachgezogen. §1 bekam **keine** neue Zeile: B1 hat für den Nutzer nichts geändert, und eine Zeile dafür wäre eine Behauptung. 802 → 887 Tests, `sw` v47 → v50. Nächster Punkt: **C3**. |
 | 2026-08-21 | **C3** umgesetzt. Der Punkt war zu 90 % schon gebaut – Balken an 55 von 62 Trophäen seit `8c9308c`, und `KONTEXT.md` §7 sagte das seit `28b277a` wörtlich, während diese Datei das Gegenteil behauptete. Offen waren die sieben, bei denen ein Balken lügt; fünf haben jetzt eine Zeile (`standing`), zwei bleiben mit Begründung leer. §0/§1.2/§4/§5 nachgezogen, Aufwand von M auf S korrigiert. 887 → 895 Tests, `sw` v50 → v51. Nächste Punkte: **C2** und **C4**. |
+| 2026-08-21 | **C2** umgesetzt: Notiz und Gefühl pro Lauf. §1.1 um eine Zeile ergänzt, §0/§4/§5 nachgezogen. Zwei Fehler fand wieder nur der Browser – der zweite hätte ein Gefühl in den falschen Lauf geschrieben. 895 → 913 Tests, `sw` v51 → v52. Nächster Punkt: **C4**. |
+| 2026-08-21 | **Zum dritten Mal in Folge grüne Tests, kaputte Oberfläche.** Nach C1 und C3 jetzt C2. Das ist kein Zufall mehr, sondern die Kennzahl von B1: solange `app.js` untestbar ist, sagt eine grüne Suite über die Oberfläche nichts. Der Punkt steht in §3 und wird mit jedem Mal teurer. |
 | 2026-08-21 | Der Vorbehalt im Kopf hat sich zum ersten Mal ausgezahlt und steht jetzt schärfer da: **vor jedem offenen Punkt erst den Code fragen.** C3 hätte sonst einen halben Tag für etwas veranschlagt, das fast fertig war. |
 | 2026-08-21 | Aus B1 mitgenommen, weil es dreimal passierte: Tests, die im Quelltext nach einer Regel suchen, dürfen keinen festen Dateipfad tragen – sie werden beim Verschieben nicht rot, sondern finden nichts und bleiben grün. Der Warnhinweis dazu steht bei B1 in §3. |

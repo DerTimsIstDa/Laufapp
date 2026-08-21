@@ -1,6 +1,6 @@
 # FunRun – Projektkontext (Gedächtnisdatei)
 
-> **Stand: 2026-08-21** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v51`
+> **Stand: 2026-08-21** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v52`
 >
 > **Diese Datei ist das Gedächtnis des Projekts.** Sie ersetzt das Einlesen des
 > Quellcodes beim Start eines neuen Chats. Wird sie nicht gepflegt, ist sie
@@ -14,7 +14,7 @@
    Datenmodell und Regeln. Sie genügt für Planung, Beratung und Diskussion.
 2. **Erst konkret werden, dann Dateien laden.** Für eine Änderung nur die
    Dateien lesen, die die Modulkarte (§3) für das Anliegen nennt – plus die
-   zugehörige Testdatei. `js/app.js` ist seit B1 3.139 statt 4.132 Zeilen, aber
+   zugehörige Testdatei. `js/app.js` ist seit B1 3.180 statt 4.132 Zeilen, aber
    immer noch zu lang zum Am-Stück-Lesen: dort gezielt nach Funktionsnamen oder
    Kommentarmarken aus §4 greifen. Die Ansichten unter `js/views/` sind klein
    genug, um ganz gelesen zu werden.
@@ -77,16 +77,16 @@ schaut nie in beide.
 
 | Datei | Zeilen | Zuständig für | Anfassen wenn … |
 |---|--:|---|---|
-| `js/app.js` | 3139 | Verdrahtung und die noch nicht herausgelösten Bereiche | Start, Läufe, Übungen, Trophäen, Profil, Intervall, Teilen, Export |
+| `js/app.js` | 3180 | Verdrahtung und die noch nicht herausgelösten Bereiche | Start, Läufe, Übungen, Trophäen, Profil, Intervall, Teilen, Export |
 | `js/views/training.js` | 498 | Trainingsformular, Planliste, Löschrückfrage | irgendetwas am Trainingsplan |
 | `js/views/stats.js` | 422 | Profil-Kennzahlen, Aktivitätsraster, Pace-Verlauf, Bestzeiten, Trophäen-Übersicht | irgendetwas an der Statistik im Profil |
 | `js/views/dom.js` | 242 | die `getElementById`-Verweise (`el`), `SVG_NS`, `createSvg` | ein neues Element im Markup |
 | `js/format.js` | 85 | rein: Zahlen, Daten, Zeiten in Anzeigeform | eine neue Formatierung |
-| `js/storage.js` | 653 | Laden/Speichern/Ändern aller Datentöpfe | neues persistiertes Feld, neuer Datentopf |
+| `js/storage.js` | 682 | Laden/Speichern/Ändern aller Datentöpfe | neues persistiertes Feld, neuer Datentopf |
 | `js/achievements.js` | 997 | Trophäen-Definitionen + `buildRunStats()` | neue Trophäe, neue Kennzahl für Bedingungen, Stand einer offenen Trophäe |
 | `js/training.js` | 590 | geplante Einheiten, Intervall-Vorgaben, Abgleich mit Läufen | Trainingsplan, Plantreue-XP |
 | `js/stats.js` | 551 | Summen, Serien, Zeitreihen, Aktivitätsraster, Pace-Trend, Bestzeiten | Statistik, Diagramme |
-| `js/validation.js` | 325 | Prüfung aller Eingaben, `parseNumber`, `parsePace` | neues Eingabefeld, neue Grenze |
+| `js/validation.js` | 390 | Prüfung aller Eingaben, `parseNumber`, `parsePace` | neues Eingabefeld, neue Grenze |
 | `js/exercises.js` | 297 | Übungsbibliothek (fest) + Filter | Übung ergänzen/ändern |
 | `js/transfer.js` | 348 | Export-/Importformat | Datenformat erweitern |
 | `js/tracker.js` | 249 | Live-Aufzeichnung über `watchPosition` | GPS-Aufzeichnung |
@@ -147,7 +147,8 @@ fassen das DOM an und laden in Node nicht; für sie gibt es zwei Tests, die den
 
 **`validation.js`** `MAX_DISTANCE_KM=1000` · `MAX_DURATION_MINUTES=1440` ·
 `MAX_NAME_LENGTH=30` · `MAX_WEEKLY_GOAL=14` · `MIN_PACE_MIN_PER_KM=2` ·
-`MAX_PACE_MIN_PER_KM=30` · `parseNumber(v)` · `isValidIsoDate(v)` ·
+`MAX_PACE_MIN_PER_KM=30` · `MAX_RUN_NOTE_LENGTH=200` · `FEELINGS` ·
+`feelingLabel(v)` · `parseNumber(v)` · `isValidIsoDate(v)` ·
 `normalizeName(v)` · `normalizeWeeklyGoal(v)` · `parsePace(v)` ·
 `parseDurationSeconds(v)` · `isValidTimeOfDay(v)` · `validateRun(input)` ·
 `firstErrorMessage(result)`
@@ -317,6 +318,8 @@ Run = {
   id, distanceKm, date,          // Pflicht; date = 'JJJJ-MM-TT'
   timeOfDay?,                    // 'HH:MM'
   durationMinutes?, paceMinPerKm?,
+  note?,                         // Freitext, max. 200 Zeichen (MAX_RUN_NOTE_LENGTH)
+  feeling?,                      // 1–5, die Skala steht als FEELINGS in validation.js
   source?,                       // 'gps' | 'manual'
   interval?,                     // bei Intervall-Läufen
   track?                         // [[lat, lon], …] max. 500 Punkte, 5 Nachkommastellen
@@ -336,7 +339,15 @@ Export = {
 ```
 
 `validateRun()` verwirft unbekannte Felder. `updateRun()` baut den Lauf neu auf,
-behält aber `id`, `source` und `track`. `updateSession()` behält `id` und
+behält aber `id`, `source` und `track`.
+
+⚠️ **Ein neues Feld am Lauf gehört an drei Stellen**: `validateRun()`,
+`addRun()` **und** `updateRun()`. Die beiden Speicherfunktionen zählen die
+Felder einzeln auf, statt den geprüften Lauf zu übernehmen – nur so
+verschwindet ein geleertes Feld auch wirklich. Wer eine Stelle vergisst,
+bekommt keinen Fehler: der Lauf wird gespeichert, nur eben ohne das Feld.
+Genau das ist bei C2 passiert. Zwei Tests in `storage.test.mjs` wachen
+seitdem darüber, und sie kennen keine Feldliste – sie fragen `validateRun`. `updateSession()` behält `id` und
 `createdAt`.
 
 ---
@@ -407,25 +418,25 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Übungen: 27** in 5 Kategorien (`warmup`, `drills`, `kraft`, `mobility`, `regeneration`)
 - **Bereiche/Tabs: 5** – `start`, `exercises`, `training`, `trophies`, `profile`
   (`data-view` / `#view-…` in `index.html`)
-- **Tests: 895** in 26 Dateien (`node --test`, alle grün)
+- **Tests: 913** in 26 Dateien (`node --test`, alle grün)
 - **Trophäen mit Anzeige: 60 von 62** – 55 mit Balken (`progress()`), 5 mit
   Zeile (`standing()`, seit C3). Ohne beides nur `neue-bestzeit` und
   `comeback`; warum, steht als Kommentar über `ACHIEVEMENTS`. Trophäen-XP
   gesamt: **5055**
 - **Module: 28** – 25 in `js/`, 3 in `js/views/`
-- **`js/app.js`: 3139 Zeilen**, 138 Funktionen (vor B1: 4132)
-- **`sw.js`: `funrun-v51`**
+- **`js/app.js`: 3180 Zeilen**, 140 Funktionen (vor B1: 4132)
+- **`sw.js`: `funrun-v52`**
 - Letzte Commits (neueste zuerst, Stand des Repos):
-  1. Stand statt Balken, wo ein Balken luegen wuerde
-  2. Nach dem Push nachgezogen: der Hinweis auf den ausstehenden Push
-  3. Haekchen-Runde nach B1
-  4. app.js entflechten: die Statistik heraus
-  5. app.js entflechten: das Trainingsformular heraus
+  1. Notiz und Gefuehl zu jedem Lauf
+  2. Haekchen-Runde nach C3 – und was sie zutage foerderte
+  3. Stand statt Balken, wo ein Balken luegen wuerde
+  4. Nach dem Push nachgezogen: der Hinweis auf den ausstehenden Push
+  5. Haekchen-Runde nach B1
 
-### Roadmap-Block A, B1, B2, B3, C1 und C3 sind committet
+### Roadmap-Block A, B1, B2, B3, C1, C2 und C3 sind committet
 
-Die Änderungen aus A1, A2, A4, B1, B2, B3, C1 und C3 liegen seit dem 2026-08-21
-auf `master`; `dertimsistda.github.io` liefert immer den letzten
+Die Änderungen aus A1, A2, A4, B1, B2, B3, C1, C2 und C3 liegen seit dem
+2026-08-21 auf `master`; `dertimsistda.github.io` liefert immer den letzten
 Stand von `master`. Das Arbeitsverzeichnis ist sauber.
 
 > **Zur Tabelle:** Der Commit, der diese Zeilen schreibt, kann nicht in ihr
@@ -452,6 +463,8 @@ Stand von `master`. Das Arbeitsverzeichnis ist sauber.
 | – | `102107b` | Häkchen-Runde nach B1 |
 | – | `bb66779` | §7 sagte „noch nicht gepusht", nachdem gepusht war |
 | C3 | `414b55c` | `standing()` für fünf Trophäen ohne sinnvollen Balken; `CACHE_VERSION` auf v51 |
+| – | `351d5ad` | Häkchen-Runde nach C3; Roadmap und Kontext widersprachen sich |
+| C2 | `12fd1cf` | Notiz und Gefühl am Lauf; `FEELINGS` in `validation.js`; `CACHE_VERSION` auf v52 |
 
 `css/style.css` steckte in A1 und B2 und wurde auf beide Commits aufgeteilt –
 die gelöschte Regel in A1, die `.storage-hint`-Regel in B2. Jeder Commit ist
@@ -568,4 +581,6 @@ Bugfix in einer Render-Funktion braucht keinen Eintrag.
 | 2026-08-21 | Ebenfalls beim Nachzählen aufgefallen und in §4 vermerkt: `Statistik` ist die **letzte** Kommentarmarke in `app.js` und begrenzt deshalb nichts – Lauf-Liste, Fehleranzeige und Service-Worker stehen mit unter ihr. Das war schon vor B1 so und stand nirgends. |
 | 2026-08-21 | Nach dem Push nachgezogen: §7 sagte „noch nicht gepusht" – seit `102107b` auf `origin/master` stimmt das nicht mehr. Genau die Sorte Satz, die nur so lange wahr ist, bis jemand den nächsten Schritt tut; deshalb steht hier weiterhin kein Live-Hash. |
 | 2026-08-21 | **C3** umgesetzt: `standing()` für die fünf Trophäen, bei denen ein Fortschrittsbalken lügen würde. Neu in §6 die Regel, dass jede offene Trophäe einen Stand zeigt; §3 und §4 mit neuen Zeilenzahlen und Marken. 887 → **895 Tests**, `sw` v50 → v51. |
+| 2026-08-21 | **C2** umgesetzt: Notiz und Gefühl am Lauf. Neu in §4 `MAX_RUN_NOTE_LENGTH`, `FEELINGS` und `feelingLabel()`; in §5 die zwei Felder am `Run` **und** die Warnung, dass ein neues Feld an drei Stellen gehört. 895 → **913 Tests**, `sw` v51 → v52. |
+| 2026-08-21 | Die Warnung in §5 steht dort, weil genau dieser Fehler passiert ist: `addRun()` kannte die neuen Felder nicht, und nichts hat es gemeldet – der Lauf wurde gespeichert, nur ohne Notiz. Diese Datei nannte bis dahin nur `updateRun()`, und das war die halbe Wahrheit. |
 | 2026-08-21 | **Diese Datei hatte recht und wurde überstimmt.** §7 führte seit `28b277a` die Zeile „Trophäen mit `progress()`: 55 von 62" – währenddessen stand C3 in der Roadmap als offener Punkt für M Aufwand. Niemand hat die beiden Dateien nebeneinandergelegt. Für die Roadmap ist daraus eine Regel geworden (erst den Code, sonst wenigstens die andere Datei); hier steht sie als Erinnerung, dass eine gepflegte Zahl nichts nützt, wenn sie keiner liest. |

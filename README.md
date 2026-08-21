@@ -324,6 +324,28 @@ Der Durchlauf kostet O(n²). Bei ein paar hundert Läufen ist das ein
 Wimpernschlag, und die Alternative wären zweiundsechzig handgeschriebene
 Fortschreibungen, die mit jeder neuen Regel wieder auseinanderlaufen.
 
+### Notiz und Gefühl
+
+Zu jedem Lauf lassen sich zwei Dinge festhalten, die kein Messgerät liefert:
+eine **Notiz** (200 Zeichen) und ein **Gefühl** auf einer Skala von 1 bis 5 –
+*mies, zäh, geht so, gut, stark*. Beides ist optional und steht danach in der
+Detailansicht.
+
+Warum genau fünf: Drei Stufen sind zu grob, um einen Verlauf zu zeigen; sieben
+täuschen eine Genauigkeit vor, die ein Gefühl nicht hat. Und warum Chips statt
+eines Schiebereglers: Ein Regler legt Zwischenwerte nahe, die es nicht gibt.
+Eine 3,5 wird abgelehnt – wer sie zulässt, kann später nicht mehr sagen, was
+er gezählt hat.
+
+Die Beschriftungen stehen als `FEELINGS` in `js/validation.js`, nicht in der
+Anzeige. Was eine 2 bedeutet, gehört zur Bedeutung des Werts, nicht zu seiner
+Darstellung: eine spätere Auswertung („Läufe, bei denen es sich gut anfühlte")
+braucht dieselbe Zuordnung.
+
+**Ausgewertet wird noch nichts.** Die Felder werden erfasst, gespeichert und
+angezeigt – mehr nicht. Das ist Absicht: eine Auswertung über drei Läufe wäre
+Zahlenspielerei.
+
 ## Wochenziel
 
 Im Profil lässt sich ein **Ziel von Läufen pro Woche** setzen (höchstens 14,
@@ -431,9 +453,17 @@ zu starten.
 ## Daten bearbeiten und sichern
 
 **Bearbeiten:** Der Stift an einem Lauf lädt ihn ins Formular. Distanz, Datum,
-Startzeit und Dauer lassen sich ändern; `id`, die GPS-Markierung und die
-Strecke bleiben erhalten. Geleerte Felder verschwinden auch wirklich aus dem
-Datensatz.
+Startzeit, Dauer, Notiz und Gefühl lassen sich ändern; `id`, die
+GPS-Markierung und die Strecke bleiben erhalten. Geleerte Felder verschwinden
+auch wirklich aus dem Datensatz.
+
+⚠️ **Für alle, die hier ein Feld ergänzen wollen:** `addRun()` und
+`updateRun()` in `js/storage.js` zählen die Felder eines Laufs **einzeln
+auf**, statt den geprüften Lauf zu übernehmen. Das ist der Preis dafür, dass
+ein geleertes Feld wirklich verschwindet. Wer eine der beiden Stellen
+vergisst, bekommt keinen Fehler – der Lauf wird gespeichert, nur ohne das
+Feld. Zwei Tests in `tests/storage.test.mjs` wachen darüber; sie fragen
+`validateRun`, was ein Lauf haben darf, und wachsen deshalb von allein mit.
 
 **Löschen** fragt nach: das × wechselt die Zeile in eine Rückfrage, gelöscht
 wird erst nach dem zweiten Klick.
@@ -563,7 +593,7 @@ Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 node --test
 ```
 
-**895 Tests in 26 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
+**913 Tests in 26 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
 Testrunner von Node — keine Abhängigkeiten, kein Framework, nichts zu
 installieren.
 
@@ -571,11 +601,11 @@ installieren.
 |---|--:|---|
 | `tests/achievements.test.mjs` | 89 | jede Bedingung knapp darunter und darauf, und dass jede offene Trophäe ihren Stand zeigt |
 | `tests/stats.test.mjs` | 77 | Summen, Serien mit Lücken, Raster, Pace-Verlauf, Bestzeiten |
-| `tests/transfer.test.mjs` | 68 | Export-Roundtrip, kaputte und halbe Importdateien |
+| `tests/transfer.test.mjs` | 69 | Export-Roundtrip, kaputte und halbe Importdateien |
 | `tests/imports.test.mjs` | 60 | jeder Import-Pfad und -Name gegen den Dateibaum |
 | `tests/training.test.mjs` | 59 | Abschnitte, Intervall-Vorgabe, Abgleich, Plantreue und XP |
-| `tests/validation.test.mjs` | 53 | Pflicht- und Optionalfelder, erfundene Kalendertage |
-| `tests/storage.test.mjs` | 50 | Anlegen/Ändern/Löschen/Ersetzen, Neuberechnung, volles Fach |
+| `tests/validation.test.mjs` | 67 | Pflicht- und Optionalfelder, erfundene Kalendertage, die Gefühlsskala |
+| `tests/storage.test.mjs` | 53 | Anlegen/Ändern/Löschen/Ersetzen, Neuberechnung, volles Fach, kein Feld geht verloren |
 | `tests/styles.test.mjs` | 48 | CSS- und Markup-Regeln, die Node nicht ausführen kann |
 | `tests/exercise-log.test.mjs` | 37 | Tageslimit, Zähler, Kategorien für Vielseitig |
 | `tests/route.test.mjs` | 33 | Projektion, Seitenverhältnis, Geraden, Ausdünnen |
