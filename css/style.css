@@ -980,13 +980,6 @@ textarea:focus {
   color: var(--text);
 }
 
-.stat dd.stat-note {
-  margin-top: 0;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--muted);
-}
-
 /* Zeitraum-Kopf: Beschriftung links, Umschalter rechts. Auf schmalen
    Schirmen bricht der Umschalter unter die Beschriftung. */
 .period-head {
