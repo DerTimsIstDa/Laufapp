@@ -133,6 +133,7 @@ export const el = {
   profileLevel: document.getElementById('profile-level'),
   profileXp: document.getElementById('profile-xp'),
   profileNext: document.getElementById('profile-next'),
+  themeChoices: [...document.querySelectorAll('[data-theme-choice]')],
   profileProgress: document.getElementById('profile-progress'),
   profileProgressFill: document.getElementById('profile-progress-fill'),
   profileProgressCaption: document.getElementById('profile-progress-caption'),

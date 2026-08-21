@@ -6,6 +6,7 @@ import {
   loadSessions, addSession, updateSession, removeSession, replaceSessions,
   loadGpsPreference, saveGpsPreference,
   loadVoicePreference, saveVoicePreference,
+  loadTheme, saveTheme, THEMES,
   loadLastExport, saveLastExport,
   saveExerciseLog, saveSessions, saveExercisePlan, saveProfile,
   setStorageErrorHandler,
@@ -655,6 +656,48 @@ describe('Ansagen ein und aus', () => {
       assert.equal(loadVoicePreference(), true, `${müll} hat die Vorgabe verändert`);
       assert.equal(loadGpsPreference(), false, `${müll} hat GPS eingeschaltet`);
     }
+  });
+});
+
+describe('Farbschema', () => {
+  test('ohne Wahl folgt die App dem Gerät', () => {
+    // "system" ist etwas anderes als "dark": Wer nie etwas gewählt hat, soll
+    // bekommen, was sein Betriebssystem sagt.
+    assert.equal(loadTheme(), 'system');
+  });
+
+  test('jede der drei Antworten bleibt stehen', () => {
+    for (const theme of THEMES) {
+      assert.equal(saveTheme(theme), theme);
+      assert.equal(loadTheme(), theme);
+    }
+  });
+
+  test('was es nicht gibt, wird zu „wie das Gerät"', () => {
+    for (const unsinn of ['hell', 'DARK', '', null, undefined, 42]) {
+      assert.equal(saveTheme(unsinn), 'system', `${JSON.stringify(unsinn)} kam durch`);
+      assert.equal(loadTheme(), 'system');
+    }
+  });
+
+  test('kaputter Inhalt wirft nicht', () => {
+    for (const muell of ['kein json', '"text"', 'null', '[]', '{"theme":"lila"}']) {
+      localStorage.setItem('laufapp.display.v1', muell);
+      assert.equal(loadTheme(), 'system', `${muell} hat die Vorgabe verändert`);
+    }
+  });
+
+  test('liegt in einem eigenen Topf, nicht bei der Aufzeichnung', () => {
+    // Beides sind Vorlieben dieses Geräts, aber sie haben nichts miteinander
+    // zu tun: Wer das Schema wechselt, soll nicht die Aufzeichnungsart
+    // verlieren.
+    saveGpsPreference(true);
+    saveVoicePreference(false);
+    saveTheme('light');
+
+    assert.equal(loadGpsPreference(), true);
+    assert.equal(loadVoicePreference(), false);
+    assert.deepEqual(store.read('laufapp.display.v1'), { theme: 'light' });
   });
 });
 

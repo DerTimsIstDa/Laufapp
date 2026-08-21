@@ -37,9 +37,43 @@
   --accent-glow: rgba(196, 240, 0, 0.28);
   --accent-ink: #0f1300;
 
+  --accent-hover: #d4ff1a;
+
   --danger: #ff5c5c;
   --danger-soft: rgba(255, 92, 92, 0.12);
   --danger-line: rgba(255, 92, 92, 0.38);
+  --danger-hover: #ff7373;
+  /* Rot als Schrift auf dunklem Grund: --danger selbst reisst bei 13px die
+     4,5:1, aufgehellt hält es sie. */
+  --danger-text: #ffb3b3;
+  /* Schrift auf rotem Grund. */
+  --danger-ink: #2a0505;
+
+  /* Aufgesetzte Flächen: dieselbe Rolle wie --sunken, aber durchscheinend –
+     sie sollen die Fläche darunter mitnehmen, nicht überdecken. Genau
+     deshalb standen sie bisher als weisses Weiss im Regelwerk und wären im
+     hellen Schema unsichtbar geworden. */
+  --fill-subtle: rgba(255, 255, 255, 0.05);
+  --fill-track: rgba(255, 255, 255, 0.07);
+  --fill-code: rgba(255, 255, 255, 0.08);
+
+  /* Eine Stufe über --surface, für den Kopf eines Verlaufs. */
+  --surface-raised: #191d24;
+
+  /* Die Tab-Leiste liegt über dem Inhalt. Mit Weichzeichner darf sie
+     durchscheinen, ohne muss sie decken. */
+  --bar: rgba(13, 15, 18, 0.94);
+  --bar-blur: rgba(13, 15, 18, 0.78);
+
+  --shadow-strong: rgba(0, 0, 0, 0.5);
+
+  /* Die drei Stufen des Aktivitätsrasters und die Füllung der Tastensperre –
+     Akzent mit Deckkraft. Im hellen Schema brauchen sie mehr davon, weil
+     eine schwache Tönung auf Weiss verschwindet. */
+  --heat-1: rgba(196, 240, 0, 0.18);
+  --heat-2: rgba(196, 240, 0, 0.4);
+  --heat-3: rgba(196, 240, 0, 0.68);
+  --unlock-fill: rgba(196, 240, 0, 0.22);
 
   /* Abstände – eine Skala, damit nichts krumm wird */
   --space-1: 0.25rem;
@@ -79,6 +113,154 @@
 
   --ease: cubic-bezier(0.2, 0.8, 0.3, 1);
 }
+
+/**
+ * Das helle Schema.
+ *
+ * Drei Zustände, und die Reihenfolge ist der ganze Trick:
+ *
+ * 1. `:root` oben ist **dunkel** – das bleibt die Voreinstellung und der
+ *    Zustand, in dem die App ohne jedes Zutun startet.
+ * 2. Steht das Betriebssystem auf hell und hat der Nutzer **nichts gewählt**,
+ *    greift der Medienblock. Das `:not([data-theme="dark"])` ist der Punkt:
+ *    Wer ausdrücklich Dunkel gewählt hat, behält es auch auf einem hellen
+ *    System.
+ * 3. Eine ausdrückliche Wahl (`data-theme`) sticht beides – in **beide**
+ *    Richtungen. Für Hell braucht es dafür den Block unten. Für Dunkel
+ *    braucht es **keinen**: `data-theme="dark"` schliesst den Medienblock
+ *    über sein `:not()` aus, und dann gilt wieder das `:root` von oben.
+ *    Ein eigener Dark-Block wäre eine Regel, die nichts tut.
+ *
+ * Keine Farbe hat ihre einzige Definition in diesen Blöcken. Sie überschreiben
+ * nur, was oben schon steht – sonst fehlte im dunklen Schema ein Wert, den
+ * niemand vermisst, bis er gebraucht wird.
+ */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+  color-scheme: light;
+
+  /* Flächen. Kein reines Weiss als Grund: draussen bei Sonne blendet es,
+     und genau dort wird diese Fassung gebraucht. Die Karten sind weiss,
+     der Grund darunter ist es nicht – so bleibt die Schichtung sichtbar,
+     die im dunklen Schema über die Helligkeit läuft. */
+  --bg: #f4f5f2;
+  --sunken: #e9ebe5;
+  --surface: #ffffff;
+  --surface-hover: #f0f1ec;
+  --surface-raised: #fbfcf9;
+  --line: #d9dcd3;
+  --line-strong: #bcc0b4;
+
+  --text: #14170f;
+  --body: #3f4539;
+  --muted: #5d6455;
+  /* Wie im dunklen Schema die Untergrenze: darunter reisst der Kontrast
+     bei 12px die 4,5:1. Auf dem Grund oben sind es 4,6:1. */
+  --dim: #6b7263;
+
+  /* **Nicht das Neongrün.** #c4f000 auf Weiss sind 1,4:1 – als Schrift
+     unlesbar, als Fläche ausgewaschen. Der Akzent wird deshalb dunkler,
+     nicht durchsichtiger: 4,7:1 auf dem Grund, 5,2:1 auf einer Karte.
+     Das kostet den Neon-Charakter, und das ist der Preis dafür, dass die
+     App bei Sonne lesbar bleibt. Wer den Neon-Look will, bleibt bei
+     Dunkel – deshalb bleibt die Wahl beim Nutzer und wird nicht erzwungen. */
+  --accent: #5a7600;
+  --accent-hover: #4a6100;
+  --accent-soft: rgba(90, 118, 0, 0.12);
+  --accent-line: rgba(90, 118, 0, 0.38);
+  --accent-glow: rgba(90, 118, 0, 0.26);
+  /* Schrift auf dem Akzent – hier hell statt dunkel, weil der Akzent es ist. */
+  --accent-ink: #ffffff;
+
+  --danger: #c62828;
+  --danger-hover: #a91f1f;
+  --danger-soft: rgba(198, 40, 40, 0.1);
+  --danger-line: rgba(198, 40, 40, 0.35);
+  --danger-text: #a01919;
+  --danger-ink: #ffffff;
+
+  /* Getönt statt aufgehellt: auf hellem Grund muss eine aufgesetzte Fläche
+     dunkler werden, sonst verschwindet sie. */
+  --fill-subtle: rgba(20, 23, 15, 0.05);
+  --fill-track: rgba(20, 23, 15, 0.1);
+  --fill-code: rgba(20, 23, 15, 0.07);
+
+  --bar: rgba(244, 245, 242, 0.94);
+  --bar-blur: rgba(244, 245, 242, 0.78);
+
+  --shadow-strong: rgba(20, 23, 15, 0.22);
+
+  /* Mehr Deckkraft als im Dunklen: eine schwache Tönung verschwindet auf
+     Weiss, während sie auf Schwarz noch zu sehen ist. */
+  --heat-1: rgba(90, 118, 0, 0.2);
+  --heat-2: rgba(90, 118, 0, 0.48);
+  --heat-3: rgba(90, 118, 0, 0.85);
+  --unlock-fill: rgba(90, 118, 0, 0.25);
+  }
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  /* Flächen. Kein reines Weiss als Grund: draussen bei Sonne blendet es,
+     und genau dort wird diese Fassung gebraucht. Die Karten sind weiss,
+     der Grund darunter ist es nicht – so bleibt die Schichtung sichtbar,
+     die im dunklen Schema über die Helligkeit läuft. */
+  --bg: #f4f5f2;
+  --sunken: #e9ebe5;
+  --surface: #ffffff;
+  --surface-hover: #f0f1ec;
+  --surface-raised: #fbfcf9;
+  --line: #d9dcd3;
+  --line-strong: #bcc0b4;
+
+  --text: #14170f;
+  --body: #3f4539;
+  --muted: #5d6455;
+  /* Wie im dunklen Schema die Untergrenze: darunter reisst der Kontrast
+     bei 12px die 4,5:1. Auf dem Grund oben sind es 4,6:1. */
+  --dim: #6b7263;
+
+  /* **Nicht das Neongrün.** #c4f000 auf Weiss sind 1,4:1 – als Schrift
+     unlesbar, als Fläche ausgewaschen. Der Akzent wird deshalb dunkler,
+     nicht durchsichtiger: 4,7:1 auf dem Grund, 5,2:1 auf einer Karte.
+     Das kostet den Neon-Charakter, und das ist der Preis dafür, dass die
+     App bei Sonne lesbar bleibt. Wer den Neon-Look will, bleibt bei
+     Dunkel – deshalb bleibt die Wahl beim Nutzer und wird nicht erzwungen. */
+  --accent: #5a7600;
+  --accent-hover: #4a6100;
+  --accent-soft: rgba(90, 118, 0, 0.12);
+  --accent-line: rgba(90, 118, 0, 0.38);
+  --accent-glow: rgba(90, 118, 0, 0.26);
+  /* Schrift auf dem Akzent – hier hell statt dunkel, weil der Akzent es ist. */
+  --accent-ink: #ffffff;
+
+  --danger: #c62828;
+  --danger-hover: #a91f1f;
+  --danger-soft: rgba(198, 40, 40, 0.1);
+  --danger-line: rgba(198, 40, 40, 0.35);
+  --danger-text: #a01919;
+  --danger-ink: #ffffff;
+
+  /* Getönt statt aufgehellt: auf hellem Grund muss eine aufgesetzte Fläche
+     dunkler werden, sonst verschwindet sie. */
+  --fill-subtle: rgba(20, 23, 15, 0.05);
+  --fill-track: rgba(20, 23, 15, 0.1);
+  --fill-code: rgba(20, 23, 15, 0.07);
+
+  --bar: rgba(244, 245, 242, 0.94);
+  --bar-blur: rgba(244, 245, 242, 0.78);
+
+  --shadow-strong: rgba(20, 23, 15, 0.22);
+
+  /* Mehr Deckkraft als im Dunklen: eine schwache Tönung verschwindet auf
+     Weiss, während sie auf Schwarz noch zu sehen ist. */
+  --heat-1: rgba(90, 118, 0, 0.2);
+  --heat-2: rgba(90, 118, 0, 0.48);
+  --heat-3: rgba(90, 118, 0, 0.85);
+  --unlock-fill: rgba(90, 118, 0, 0.25);
+}
+
 
 *,
 *::before,
@@ -142,13 +324,13 @@ body {
   gap: var(--space-1);
   padding: var(--space-1) var(--space-2);
   padding-bottom: calc(var(--space-1) + env(safe-area-inset-bottom, 0px));
-  background: rgba(13, 15, 18, 0.94);
+  background: var(--bar);
   border-top: 1px solid var(--line);
 }
 
 @supports (backdrop-filter: blur(1px)) {
   .tabbar {
-    background: rgba(13, 15, 18, 0.78);
+    background: var(--bar-blur);
     backdrop-filter: blur(12px);
   }
 }
@@ -361,7 +543,7 @@ strong {
 
 .hint code {
   padding: 0.1em 0.4em;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--fill-code);
   border-radius: var(--radius-sm);
   font-size: 0.9em;
 }
@@ -369,7 +551,7 @@ strong {
 /* ----------------------------------------------- Fortschritt (Blickfang) */
 
 .card:has(#progress-bar) {
-  background: linear-gradient(180deg, #191d24 0%, var(--surface) 60%);
+  background: linear-gradient(180deg, var(--surface-raised) 0%, var(--surface) 60%);
   border-color: var(--line-strong);
   padding: var(--space-5) var(--space-4);
 }
@@ -444,7 +626,7 @@ strong {
   height: 5.25rem;
   margin: var(--space-3) auto 0;
   /* Hebt das Abzeichen von der Karte ab, ohne die Grafik selbst anzufassen. */
-  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 6px 16px var(--shadow-strong));
 }
 
 .level-row > .muted {
@@ -511,7 +693,7 @@ button {
 }
 
 button:hover {
-  background: #d4ff1a;
+  background: var(--accent-hover);
   box-shadow: 0 0 16px var(--accent-glow);
 }
 
@@ -553,11 +735,11 @@ button.ghost:hover {
 
 button.danger {
   background: var(--danger);
-  color: #2a0505;
+  color: var(--danger-ink);
 }
 
 button.danger:hover {
-  background: #ff7373;
+  background: var(--danger-hover);
   box-shadow: 0 0 16px var(--danger-line);
 }
 
@@ -682,6 +864,20 @@ form > .field {
   grid-column: 1 / -1;
 }
 
+/* Die Wahl des Farbschemas steht unter dem Formular, nicht darin: Sie wird
+   sofort wirksam und nicht mit „Speichern" bestätigt. */
+.theme-field {
+  margin-top: var(--field-gap);
+}
+
+.theme-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
 /* ------------------------------------------------------------- Splits */
 
 .splits {
@@ -715,7 +911,7 @@ form > .field {
   flex: 1;
   min-width: 0;
   height: 0.5rem;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--fill-track);
   border-radius: var(--radius-pill);
   overflow: hidden;
 }
@@ -988,7 +1184,7 @@ textarea:focus {
   background: var(--danger-soft);
   border: 1px solid var(--danger-line);
   border-radius: var(--radius-sm);
-  color: #ffb3b3;
+  color: var(--danger-text);
   font-size: 0.8125rem;
 }
 
@@ -1118,7 +1314,7 @@ textarea:focus {
   position: absolute;
   inset: 0 auto 0 0;
   width: 0;
-  background: rgba(196, 240, 0, 0.22);
+  background: var(--unlock-fill);
   border-right: 2px solid var(--accent);
 }
 
@@ -1672,7 +1868,7 @@ textarea:focus {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--fill-subtle);
   color: var(--dim);
   font-size: 0.6875rem;
   line-height: 1;
@@ -1803,9 +1999,9 @@ textarea:focus {
    Lauf" soll nicht wie "ein bisschen" aussehen. */
 .heatmap {
   --heatmap-0: var(--sunken);
-  --heatmap-1: rgba(196, 240, 0, 0.18);
-  --heatmap-2: rgba(196, 240, 0, 0.4);
-  --heatmap-3: rgba(196, 240, 0, 0.68);
+  --heatmap-1: var(--heat-1);
+  --heatmap-2: var(--heat-2);
+  --heatmap-3: var(--heat-3);
   --heatmap-4: var(--accent);
 }
 
@@ -2047,7 +2243,7 @@ button.heatmap-cell[aria-pressed="true"] {
 .exercise-tag {
   display: inline-block;
   padding: 0.1rem 0.5rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--fill-subtle);
   border-radius: var(--radius-pill);
   font-size: 0.6875rem;
   font-weight: 600;
@@ -2220,7 +2416,7 @@ button.heatmap-cell[aria-pressed="true"] {
 }
 
 .plan-item.verpasst .plan-status {
-  color: #ffb3b3;
+  color: var(--danger-text);
   background: var(--danger-soft);
   border-color: var(--danger-line);
 }
@@ -2261,7 +2457,7 @@ button.heatmap-cell[aria-pressed="true"] {
   flex: 1 1 100%;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #ffb3b3;
+  color: var(--danger-text);
 }
 
 /* ------------------------------------------------------------- Trophäen */
@@ -2317,7 +2513,7 @@ button.heatmap-cell[aria-pressed="true"] {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--fill-subtle);
   color: var(--dim);
   font-size: 1.1rem;
 }
@@ -2381,7 +2577,7 @@ button.heatmap-cell[aria-pressed="true"] {
   flex: 1;
   min-width: 0;
   height: 0.4rem;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--fill-track);
   border-radius: var(--radius-pill);
   overflow: hidden;
 }
@@ -2415,7 +2611,7 @@ button.heatmap-cell[aria-pressed="true"] {
 
 .profile-hero {
   text-align: center;
-  background: linear-gradient(180deg, #191d24 0%, var(--surface) 65%);
+  background: linear-gradient(180deg, var(--surface-raised) 0%, var(--surface) 65%);
   border-color: var(--line-strong);
   padding: var(--space-5) var(--space-4);
 }
@@ -2596,7 +2792,7 @@ button.heatmap-cell[aria-pressed="true"] {
 }
 
 .goal-track {
-  stroke: rgba(255, 255, 255, 0.07);
+  stroke: var(--fill-track);
 }
 
 .goal-bar {
@@ -2729,7 +2925,7 @@ button.heatmap-cell[aria-pressed="true"] {
   flex: 1 1 100%;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #ffb3b3;
+  color: var(--danger-text);
 }
 
 /* --------------------------------------------------------------- Daten */

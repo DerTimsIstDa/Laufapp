@@ -70,6 +70,118 @@ describe('Auswahlreihen im Formular decken sich mit den Daten', () => {
   });
 });
 
+/**
+ * Farben gehören in die Token-Blöcke, nirgendwo sonst.
+ *
+ * Das ist die Bedingung, unter der es zwei Farbschemata überhaupt geben kann.
+ * Eine Farbe mitten im Regelwerk lässt sich nicht umschalten – sie bleibt im
+ * hellen Schema stehen, wo sie hingehörte, als alles dunkel war. Ein weisses
+ * `rgba(255,255,255,0.07)` als aufgesetzte Fläche ist auf Weiss schlicht
+ * unsichtbar, und niemand bemerkt es, solange niemand umschaltet.
+ *
+ * Vor C10 standen 23 solche Werte im Stylesheet – während die Roadmap
+ * behauptete, „alle Werte hängen schon an Custom Properties". Dieser Test
+ * sorgt dafür, dass die Behauptung ab jetzt stimmt.
+ */
+describe('Farben stehen nur in den Token-Blöcken', () => {
+  const ANFAENGE = [':root {', ":root:not([data-theme='dark']) {", ":root[data-theme='light'] {"];
+
+  /** Der Inhalt eines Blocks ab seinem Anfang bis zur schliessenden Klammer. */
+  const block = (anfang) => {
+    const von = css.indexOf(anfang);
+    if (von < 0) return '';
+
+    const bis = css.indexOf('}', von + anfang.length);
+    return css.slice(von, bis + 1);
+  };
+
+  const tokenBloecke = () => ANFAENGE.map(block).filter((b) => b !== '');
+
+  /** Das Stylesheet ohne die Token-Blöcke. */
+  const ohneToken = () => {
+    let rest = css;
+    for (const b of tokenBloecke()) rest = rest.replace(b, '');
+    return rest;
+  };
+
+  const farbenIn = (text) => [...new Set(text.match(/#[0-9a-fA-F]{3,8}|rgba?\([^)]*\)|hsla?\([^)]*\)/g) ?? [])];
+
+  test('die Token-Blöcke werden wirklich gefunden', () => {
+    // Ohne diese Prüfung wäre der Test unten auch dann grün, wenn die
+    // Blockerkennung nichts findet und deshalb alles als "Token" durchgeht.
+    const bloecke = tokenBloecke();
+
+    assert.equal(bloecke.length, ANFAENGE.length, 'ein Token-Block fehlt');
+    assert.ok(
+      bloecke.every((b) => b.includes('--bg:')),
+      'ein erkannter Block enthält kein --bg – die Erkennung greift daneben'
+    );
+  });
+
+  test('ausserhalb steht kein einziger Farbwert', () => {
+    const gefunden = farbenIn(ohneToken());
+
+    assert.deepEqual(
+      gefunden,
+      [],
+      `Diese Farben gehören in den Token-Block, sonst lassen sie sich nicht ` +
+        `umschalten: ${gefunden.join(', ')}`
+    );
+  });
+
+  test('in den Token-Blöcken stehen sie sehr wohl', () => {
+    // Der Gegenbeweis zum Test darüber: Fände die Suche generell keine
+    // Farben, wäre er aus dem falschen Grund grün.
+    for (const b of tokenBloecke()) {
+      assert.ok(farbenIn(b).length > 10, 'ein Token-Block ohne nennenswerte Farben');
+    }
+  });
+});
+
+describe('Das helle Schema überschreibt nur, was es schon gibt', () => {
+  const namenIn = (text) => [...text.matchAll(/(--[a-z0-9-]+):/g)].map((m) => m[1]);
+
+  const bis = (anfang) => {
+    const von = css.indexOf(anfang);
+    return css.slice(von, css.indexOf('}', von + anfang.length));
+  };
+
+  const dunkel = () => namenIn(bis(':root {'));
+  const hell = () => namenIn(bis(":root[data-theme='light'] {"));
+
+  test('keine Farbe hat ihre einzige Definition im hellen Block', () => {
+    // Sonst fehlte im dunklen Schema ein Wert, den niemand vermisst, bis er
+    // gebraucht wird.
+    const nurHell = hell().filter((name) => !dunkel().includes(name));
+
+    assert.deepEqual(nurHell, [], `nur im hellen Schema definiert: ${nurHell.join(', ')}`);
+  });
+
+  test('das helle Schema fasst Abstände und Formen nicht an', () => {
+    // Ein Farbschema ändert Farben. Wandert eine Grösse mit, hat die App zwei
+    // Layouts statt zwei Paletten – und nur eines davon wird je geprüft.
+    const groessen = hell().filter((n) => /^--(space|radius|field|label|share|font|ease)/.test(n));
+
+    assert.deepEqual(groessen, [], `Grössen im hellen Schema: ${groessen.join(', ')}`);
+  });
+
+  test('das helle Schema deckt die Farben des dunklen ab', () => {
+    // Eine Farbe, die oben steht und unten fehlt, bleibt im hellen Schema
+    // dunkel stehen – der Fehler, den man erst beim Umschalten sieht.
+    const FARBTOKEN = /^--(bg|sunken|surface|line|text|body|muted|dim|accent|danger|fill|bar|shadow|heat|unlock)/;
+    const fehlend = dunkel().filter((n) => FARBTOKEN.test(n) && !hell().includes(n));
+
+    assert.deepEqual(fehlend, [], `im hellen Schema nicht überschrieben: ${fehlend.join(', ')}`);
+  });
+
+  test('beide Schemata setzen color-scheme', () => {
+    // Ohne das bleiben Bildlaufleisten, Datums- und Auswahlfelder in der
+    // Farbe des jeweils anderen Schemas stehen.
+    assert.ok(bis(':root {').includes('color-scheme: dark'), 'das dunkle setzt es nicht');
+    assert.ok(bis(":root[data-theme='light'] {").includes('color-scheme: light'), 'das helle nicht');
+  });
+});
+
 describe('[hidden] sticht jede eigene display-Regel', () => {
   test('die Rücksetzregel steht im Stylesheet', () => {
     // Das eingebaute [hidden] des Browsers ist nur `display: none` mit

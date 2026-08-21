@@ -115,6 +115,7 @@ import {
   loadProfile, saveProfile,
   loadGpsPreference, saveGpsPreference,
   loadVoicePreference, saveVoicePreference,
+  loadTheme, saveTheme,
   loadLastExport, saveLastExport,
   setStorageErrorHandler,
 } from './storage.js';
@@ -262,6 +263,18 @@ const INTERVAL_RING = 2 * Math.PI * 110;
  */
 const RING_UMFANG = 2 * Math.PI * 52;
 
+/**
+ * Die Farbe der Systemleiste je Schema – muss zu `--bg` passen.
+ *
+ * Steht hier oben und nicht beim Farbschema-Abschnitt, obwohl sie dort
+ * hingehörte: `init()` läuft am Modulanfang und greift darüber auf diesen
+ * Wert zu. Eine `const` weiter unten ist zu diesem Zeitpunkt noch nicht
+ * initialisiert – das wirft einen ReferenceError, und zwar für die **ganze
+ * App**, nicht nur für das Farbschema. Genau dieser Fehler ist schon bei C1
+ * passiert; er steht dort in der Roadmap und ist hier wieder passiert.
+ */
+const THEME_COLORS = { dark: '#0d0f12', light: '#f4f5f2' };
+
 const tracker = createTracker({
   onUpdate: (state) => {
     maybeAnnounce(state);
@@ -401,6 +414,8 @@ function init() {
 
   // Erst der Schalterstand, dann setTrackGps – das blendet die Zeile ein oder
   // aus und braucht den Stand schon.
+  setupTheme();
+
   setVoiceOn(loadVoicePreference());
   el.trackVoice.checked = isVoiceOn();
   el.trackVoice.addEventListener('change', () => {
@@ -1212,6 +1227,65 @@ function formatStandingTarget(standing) {
   return standing.kind === 'pace'
     ? `unter ${formatPace(standing.target)} min/km`
     : `ab ${distanceFormat.format(standing.target)} km`;
+}
+
+/* ----------------------------------------------------------- Farbschema */
+
+function setupTheme() {
+  applyTheme(loadTheme());
+
+  for (const knopf of el.themeChoices) {
+    knopf.addEventListener('click', () => {
+      applyTheme(saveTheme(knopf.dataset.themeChoice));
+    });
+  }
+
+  // Bei „wie das Gerät" muss die Systemleiste mitwandern, wenn das
+  // Betriebssystem umschaltet – die App bekommt davon sonst nichts mit.
+  globalThis.matchMedia?.('(prefers-color-scheme: light)')?.addEventListener?.(
+    'change',
+    () => {
+      if (loadTheme() === 'system') applyThemeColor('system');
+    }
+  );
+}
+
+/**
+ * Setzt das Schema und markiert die Wahl.
+ *
+ * `'system'` **entfernt** das Merkmal, statt eines zu setzen: Nur ohne
+ * `data-theme` greift die Medienabfrage im Stylesheet, und nur dann folgt
+ * die App dem Gerät. Ein `data-theme="system"` wäre ein Wert, den kein
+ * einziger Selektor kennt – die App bliebe stumm dunkel.
+ */
+function applyTheme(theme) {
+  if (theme === 'system') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.dataset.theme = theme;
+
+  for (const knopf of el.themeChoices) {
+    const aktiv = knopf.dataset.themeChoice === theme;
+    knopf.className = aktiv ? 'chip active' : 'chip';
+    knopf.setAttribute('aria-pressed', String(aktiv));
+  }
+
+  applyThemeColor(theme);
+}
+
+/**
+ * Färbt die Systemleiste des Telefons.
+ *
+ * Ohne das bleibt oben ein dunkler Balken über einer hellen App stehen – die
+ * Farbe steht im Markup und weiss von der Umschaltung nichts.
+ */
+function applyThemeColor(theme) {
+  const marke = document.querySelector('meta[name="theme-color"]');
+  if (!marke) return;
+
+  const hell =
+    theme === 'light' ||
+    (theme === 'system' && globalThis.matchMedia?.('(prefers-color-scheme: light)').matches);
+
+  marke.setAttribute('content', hell ? THEME_COLORS.light : THEME_COLORS.dark);
 }
 
 /* ---------------------------------------------------------------- Profil */

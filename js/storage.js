@@ -19,6 +19,7 @@ const PROFILE_KEY = 'laufapp.profile.v1';
 const EXERCISE_PLAN_KEY = 'laufapp.exercise-plan.v1';
 const RECORDING_KEY = 'laufapp.recording.v1';
 const EXPORT_KEY = 'laufapp.export.v1';
+const DISPLAY_KEY = 'laufapp.display.v1';
 
 /* --------------------------------------------------- Schreiben ---- */
 
@@ -626,6 +627,54 @@ function leseAufzeichnung() {
 
 function schreibeAufzeichnung(aenderung) {
   schreibe(RECORDING_KEY, { ...leseAufzeichnung(), ...aenderung }, 'Die Aufzeichnungsart');
+}
+
+/* ------------------------------------------------------ Darstellung ---- */
+
+/** Die drei möglichen Antworten auf „hell oder dunkel?". */
+export const THEMES = ['system', 'light', 'dark'];
+
+/**
+ * Das gewählte Farbschema.
+ *
+ * `'system'` ist die Vorgabe und heisst: gar nicht eingreifen, sondern dem
+ * Betriebssystem folgen. Das ist etwas anderes als `'dark'` – wer nie etwas
+ * gewählt hat, soll morgens hell und abends dunkel bekommen, wenn sein Gerät
+ * das so macht.
+ *
+ * Liegt in einem eigenen Topf und **nicht** in der Exportdatei: Eine
+ * Sicherung beschreibt die Läufe, nicht die Vorlieben dieses einen Geräts.
+ * Wer auf dem Telefon dunkel und am Rechner hell will, soll das dürfen.
+ *
+ * @returns {'system'|'light'|'dark'}
+ */
+export function loadTheme() {
+  let raw;
+  try {
+    raw = localStorage.getItem(DISPLAY_KEY);
+  } catch {
+    return 'system';
+  }
+  if (!raw) return 'system';
+
+  try {
+    const gewaehlt = JSON.parse(raw)?.theme;
+    return THEMES.includes(gewaehlt) ? gewaehlt : 'system';
+  } catch {
+    return 'system';
+  }
+}
+
+/**
+ * @param {'system'|'light'|'dark'} theme
+ * @returns {'system'|'light'|'dark'} der tatsächlich gespeicherte Wert
+ */
+export function saveTheme(theme) {
+  const wert = THEMES.includes(theme) ? theme : 'system';
+
+  schreibe(DISPLAY_KEY, { theme: wert }, 'Das Farbschema');
+
+  return wert;
 }
 
 /* --------------------------------------------- Letzte Sicherung ---- */
