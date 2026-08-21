@@ -521,6 +521,36 @@ describe('Aktivitätsraster', () => {
     assert.equal(tage.filter((t) => t.runCount > 0).length, 1);
   });
 
+  test('der Jahreswechsel ist keine Lücke', () => {
+    // 18 Wochen zurück von Anfang Januar liegen zum grössten Teil im Vorjahr.
+    // Gerechnet wird in Tagesnummern, nicht in Datumsteilen – Silvester und
+    // Neujahr sind zwei benachbarte Felder wie jedes andere Paar auch.
+    const tage = activityCalendar(
+      [
+        { id: 'silvester', date: '2025-12-31', distanceKm: 6 },
+        { id: 'neujahr', date: '2026-01-01', distanceKm: 7 },
+      ],
+      { todayIso: HEUTE(0) }
+    );
+
+    const silvester = tage.findIndex((t) => t.date === '2025-12-31');
+
+    assert.ok(silvester >= 0, 'der 31.12. steht im Raster');
+    assert.equal(tage[silvester + 1].date, '2026-01-01', 'und direkt daneben der 01.01.');
+    assert.equal(tage[silvester].runCount, 1);
+    assert.equal(tage[silvester + 1].runCount, 1, 'die beiden Läufe landen nicht auf einem Tag');
+    assert.deepEqual([...new Set(tage.map((t) => t.date.slice(0, 4)))], ['2025', '2026']);
+  });
+
+  test('auch über den Jahreswechsel beginnt jede Woche montags', () => {
+    const tage = activityCalendar([], { todayIso: HEUTE(0) });
+
+    for (let i = 0; i < tage.length; i += 7) {
+      const wochentag = new Date(`${tage[i].date}T00:00:00Z`).getUTCDay();
+      assert.equal(wochentag, 1, `${tage[i].date} ist kein Montag`);
+    }
+  });
+
   test('kaputte Eingabe stürzt nicht ab', () => {
     for (const value of [null, undefined, 'text', [null, {}, { date: 5 }]]) {
       assert.doesNotThrow(() => activityCalendar(value, { todayIso: HEUTE(0) }));
@@ -546,6 +576,54 @@ describe('Pace im Verlauf', () => {
 
   test('drei Punkte sind die Untergrenze für eine Linie', () => {
     assert.equal(PACE_TREND_MIN_POINTS, 3);
+  });
+
+  test('zwei Zeiträume ergeben zwei Punkte – zu wenig für eine Linie', () => {
+    // paceTrend selbst hält nichts zurück; es liefert, was da ist. Die Grenze
+    // zieht die Anzeige. Geprüft wird deshalb, dass die Zahl stimmt, an der
+    // sie das entscheidet – ein Zeitraum weniger, und die Linie behauptete
+    // eine Richtung, die zwei Punkte nicht hergeben.
+    const zwei = paceTrend([lauf(0, 6), lauf(7, 5.5)]).points;
+    const drei = paceTrend([lauf(0, 6), lauf(7, 5.5), lauf(14, 5.4)]).points;
+
+    assert.equal(zwei.length, 2);
+    assert.ok(zwei.length < PACE_TREND_MIN_POINTS, 'zwei reichen nicht');
+
+    assert.equal(drei.length, 3);
+    assert.ok(drei.length >= PACE_TREND_MIN_POINTS, 'drei reichen');
+  });
+
+  test('zwei Läufe in derselben Woche sind nur ein Punkt', () => {
+    // Nicht die Zahl der Läufe entscheidet, sondern die der Zeiträume.
+    const trend = paceTrend([lauf(0, 6), lauf(1, 5.9), lauf(2, 5.8)]);
+
+    assert.equal(trend.points.length, 1);
+    assert.equal(trend.points[0].runCount, 3);
+  });
+
+  test('genau ein Vierteljahr Spannweite bleibt bei Wochen', () => {
+    // 12 Wochen sind die Grenze, und sie zählt noch zur Wochenansicht:
+    // day(0) und day(77) liegen elf Wochen auseinander, die Spannweite ist 12.
+    const trend = paceTrend([lauf(0, 6), lauf(40, 5.8), lauf(77, 5.5)]);
+
+    assert.equal(trend.period, 'week');
+    assert.equal(trend.points[0].start, '2025-12-29', 'ein Montag');
+  });
+
+  test('eine Woche mehr schaltet auf Monate um', () => {
+    const trend = paceTrend([lauf(0, 6), lauf(40, 5.8), lauf(84, 5.5)]);
+
+    assert.equal(trend.period, 'month');
+    assert.deepEqual(trend.points.map((p) => p.start), ['2026-01-01', '2026-02-01', '2026-03-01']);
+  });
+
+  test('die Monatsbeschriftung überlebt den Jahreswechsel', () => {
+    // Der Monatsindex ist Jahr × 12 + Monat; ein Rechenfehler beim Zerlegen
+    // ergäbe hier einen 13. Monat oder das falsche Jahr.
+    const trend = paceTrend([lauf(-98, 6), lauf(-40, 5.8), lauf(0, 5.5)]);
+
+    assert.equal(trend.period, 'month');
+    assert.deepEqual(trend.points.map((p) => p.start), ['2025-09-01', '2025-11-01', '2026-01-01']);
   });
 
   test('kurze Historie wird nach Wochen gebündelt', () => {

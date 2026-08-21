@@ -82,6 +82,42 @@ describe('Pause', () => {
     stopwatch.pause();
     assert.equal(stopwatch.getState().status, 'idle');
   });
+
+  test('zweimal Pause zählt die Zeit nicht doppelt', async () => {
+    // Ein zweiter Druck auf denselben Knopf – der Abschnitt darf nicht ein
+    // zweites Mal aufaddiert werden.
+    stopwatch.start();
+    await warte(30);
+
+    stopwatch.pause();
+    const erste = stopwatch.getState().elapsedMs;
+
+    await warte(30);
+    stopwatch.pause();
+
+    assert.equal(stopwatch.getState().elapsedMs, erste);
+    assert.equal(updates.filter((s) => s.status === 'paused').length, 1, 'nur eine Meldung');
+  });
+
+  test('Fortsetzen im Leerlauf tut nichts', () => {
+    stopwatch.resume();
+
+    assert.equal(stopwatch.getState().status, 'idle');
+    assert.equal(stopwatch.getState().elapsedMs, 0);
+    assert.deepEqual(updates, []);
+  });
+
+  test('Fortsetzen während der Aufzeichnung wirft die Zeit nicht weg', async () => {
+    // Ein versehentliches resume() setzte sonst den Beginn des laufenden
+    // Abschnitts neu – die bis dahin gelaufene Zeit wäre weg.
+    stopwatch.start();
+    await warte(40);
+
+    const vorher = stopwatch.getState().elapsedMs;
+    stopwatch.resume();
+
+    assert.ok(stopwatch.getState().elapsedMs >= vorher);
+  });
 });
 
 describe('Beenden', () => {
@@ -97,6 +133,31 @@ describe('Beenden', () => {
     assert.ok(summary.startedAt instanceof Date);
     assert.ok(summary.durationMinutes >= 0);
     assert.equal(stopwatch.getState().status, 'idle');
+  });
+
+  test('die Dauer kommt auf eine Zehntelminute gerundet', async () => {
+    // Das Formular danach erwartet Minuten mit einer Nachkommastelle; eine
+    // krumme Zahl wie 0.4833333 stünde sonst im Feld.
+    stopwatch.start();
+    await warte(30);
+
+    const summary = stopwatch.stop();
+
+    assert.equal(summary.durationMinutes, Math.round(summary.durationMinutes * 10) / 10);
+  });
+
+  test('die pausierte Zeit zählt beim Beenden nicht mit', async () => {
+    stopwatch.start();
+    await warte(30);
+    stopwatch.pause();
+
+    const beiPause = stopwatch.getState().elapsedMs;
+    await warte(60);
+    const summary = stopwatch.stop();
+
+    // Beendet wird aus der Pause heraus – die 60 ms Wartezeit dürfen nicht in
+    // der Bilanz landen.
+    assert.ok(summary.durationMinutes <= (beiPause + 5) / 60_000);
   });
 
   test('Beenden im Leerlauf liefert nichts', () => {

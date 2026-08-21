@@ -562,14 +562,14 @@ Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 node --test
 ```
 
-**749 Tests in 22 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
+**802 Tests in 24 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
 Testrunner von Node — keine Abhängigkeiten, kein Framework, nichts zu
 installieren.
 
 | Datei | Tests | prüft |
 |---|--:|---|
 | `tests/achievements.test.mjs` | 81 | jede Bedingung knapp darunter und darauf |
-| `tests/stats.test.mjs` | 70 | Summen, Serien mit Lücken, Raster, Pace-Verlauf, Bestzeiten |
+| `tests/stats.test.mjs` | 77 | Summen, Serien mit Lücken, Raster, Pace-Verlauf, Bestzeiten |
 | `tests/transfer.test.mjs` | 68 | Export-Roundtrip, kaputte und halbe Importdateien |
 | `tests/training.test.mjs` | 59 | Abschnitte, Intervall-Vorgabe, Abgleich, Plantreue und XP |
 | `tests/validation.test.mjs` | 53 | Pflicht- und Optionalfelder, erfundene Kalendertage |
@@ -580,15 +580,17 @@ installieren.
 | `tests/geo.test.mjs` | 32 | Haversine gegen bekannte Strecken, alle GPS-Filtergrenzen |
 | `tests/pwa.test.mjs` | 29 | Installationshinweis, Cache-Trennung, `APP_SHELL` vollständig |
 | `tests/tracker.test.mjs` | 25 | Start/Pause/Beenden, Fehlerfälle, Geolocation-Attrappe |
+| `tests/interval.test.mjs` | 22 | Phasenwechsel, Restzeit, angebrochene Runden |
 | `tests/exercise-plan.test.mjs` | 20 | Tagesgrenze, Reihenfolge, Doppelte |
 | `tests/exercises.test.mjs` | 20 | Vollständigkeit der Übungsdaten, Filter, Zählung |
 | `tests/lock.test.mjs` | 20 | Halte-Fortschritt, Sperrregeln, Freigabe im Notfall |
+| `tests/beep.test.mjs` | 19 | Tonfolgen, Ein- und Ausblenden, gesperrtes Audio auf iOS |
 | `tests/history.test.mjs` | 18 | Freischaltdaten, Titel-Historie, Monotonie-Annahme |
-| `tests/interval.test.mjs` | 17 | Phasenwechsel, Restzeit, angebrochene Runden |
+| `tests/share-card.test.mjs` | 18 | Aufteilung und Höhenberechnung der Karte |
+| `tests/stopwatch.test.mjs` | 18 | Start/Pause/Beenden ohne GPS, gleiche Form wie `tracker` |
 | `tests/goal.test.mjs` | 15 | Zielwochen ab `goalSince`, laufende Woche, Bonus-XP |
 | `tests/xp.test.mjs` | 15 | XP pro km, Aufstiegskosten, jede Levelgrenze bis 5000 |
-| `tests/share-card.test.mjs` | 14 | Aufteilung und Höhenberechnung der Karte |
-| `tests/stopwatch.test.mjs` | 13 | Start/Pause/Beenden ohne GPS, gleiche Form wie `tracker` |
+| `tests/wake-lock.test.mjs` | 13 | Anfordern, Freigeben, Rückkehr in den Tab |
 | `tests/titles.test.mjs` | 12 | feste Stufen, endlose Legenden, `nextTitle` bis Level 3000 |
 
 Getestet wird das Verhalten an den **Grenzen**: 4 gegen 5 Läufe, 49,9 gegen
@@ -597,7 +599,16 @@ Test, der nur den Normalfall prüft, fängt keine Regression.
 
 `tests/helpers.mjs` enthält die Attrappe für `navigator.geolocation`. Damit
 lassen sich Positionsfolgen einspeisen, ohne echtes GPS — inklusive
-abgelehnter Freigabe und Timeout.
+abgelehnter Freigabe und Timeout. Die Attrappen für Web Audio (`beep.js`) und
+`navigator.wakeLock` stehen dagegen in ihrer eigenen Testdatei: sie werden nur
+an einer Stelle gebraucht, und eine geteilte Attrappe für einen einzigen Nutzer
+ist ein Umweg.
+
+`beep.js` merkt sich seinen `AudioContext` in einer Modulvariablen. Ein Test,
+der einen anderen Ausgangszustand braucht — kein Web Audio, gesperrtes Audio —
+lädt das Modul deshalb über eine eindeutige Import-Adresse
+(`../js/beep.js?frisch=3`) noch einmal frisch. Das ist der einzige Ort im
+Projekt, an dem der Modul-Cache umgangen wird.
 
 Die App selbst läuft im Browser, die Tests laufen in Node. Möglich ist das,
 weil **alle Module ausser `app.js`, `storage.js`, `tracker.js`, `stopwatch.js`

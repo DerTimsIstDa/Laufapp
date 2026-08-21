@@ -29,7 +29,9 @@ function fakeCanvas() {
     // Eine Breite je Zeichen reicht, um das Kürzen zu prüfen.
     measureText: (text) => ({ width: text.length * 10 }),
     createRadialGradient: () => ({ addColorStop() {} }),
-    beginPath() {}, moveTo() {}, arcTo() {}, closePath() {},
+    // arcTo verrät die Breite der gerundeten Formen – der Balken zeichnet
+    // sich nicht über fillRect, sondern über eine Pille.
+    beginPath() {}, moveTo() {}, arcTo: (...a) => aufrufe.push(['arcTo', ...a]), closePath() {},
     fill: () => aufrufe.push(['fill']),
     stroke: () => aufrufe.push(['stroke']),
   };
@@ -128,6 +130,59 @@ describe('drawShareCard', () => {
     assert.equal(gefuellt.length, 2, 'bei 0 % wird nichts gefüllt');
   });
 
+  test('der Balken läuft nicht über den Rand hinaus', () => {
+    // Der Prozentwert kommt aus einer Rechnung; ein Rundungsfehler oder ein
+    // Level-Aufstieg zwischen zwei Rendern kann ihn über 100 schieben.
+    /**
+     * Rechter Rand des gefüllten Balkens.
+     *
+     * Der Balken wird als Pille gezeichnet: erst die Farbe setzen, dann die
+     * Form. Gesucht ist also das arcTo direkt hinter der Akzentfarbe – das
+     * erste arcTo davor gehört zur Spur und ist immer voll breit.
+     */
+    const rechts = (percent) => {
+      const f = fakeCanvas();
+      drawShareCard(f.canvas, { ...basis, percent });
+
+      const index = f.aufrufe.findIndex(
+        ([art, wert], i) =>
+          art === 'fillStyle' && wert === CARD_COLORS.accent && f.aufrufe[i + 1]?.[0] === 'arcTo'
+      );
+      assert.ok(index >= 0, `bei ${percent} % wird kein Balken gefüllt`);
+
+      return f.aufrufe[index + 1][1];
+    };
+
+    assert.equal(rechts(140), rechts(100), '140 % ist so breit wie 100 %');
+    assert.ok(rechts(140) <= CARD_WIDTH, 'und bleibt im Bild');
+    assert.ok(rechts(50) < rechts(100), 'die Hälfte ist wirklich schmaler');
+  });
+
+  test('ein negativer oder unbrauchbarer Wert füllt nichts', () => {
+    for (const percent of [-20, Number.NaN]) {
+      const f = fakeCanvas();
+      assert.doesNotThrow(() => drawShareCard(f.canvas, { ...basis, percent }));
+
+      const gefuellt = f.aufrufe.filter(([art, wert]) => art === 'fillStyle' && wert === CARD_COLORS.accent);
+      // Nur Titel und Fussmarke – der Balken bleibt leer.
+      assert.equal(gefuellt.length, 2, String(percent));
+    }
+  });
+
+  test('eine ungerade Zahl Kacheln lässt den Platz daneben frei', () => {
+    const f = fakeCanvas();
+    drawShareCard(f.canvas, {
+      ...basis,
+      stats: Array.from({ length: 5 }, (_, i) => ({ label: `L${i}`, value: `${i}` })),
+    });
+
+    const werte = f.aufrufe.filter((a) => a[0] === 'fillText' && /^\d$/.test(a[1]));
+
+    assert.equal(werte.length, 5);
+    assert.equal(werte[4][2], werte[0][2], 'die fünfte beginnt wieder links');
+    assert.ok(werte[4][3] > werte[2][3], 'und eine Zeile tiefer als die dritte');
+  });
+
   test('zu langer Text wird gekürzt statt über den Rand zu laufen', () => {
     const f = fakeCanvas();
     drawShareCard(f.canvas, { ...basis, name: 'x'.repeat(300) });
@@ -163,6 +218,20 @@ describe('inhaltsHoehe', () => {
   test('zwei Kacheln nebeneinander sind eine Zeile', () => {
     const eine = inhaltsHoehe({ ...basis, stats: basis.stats.slice(0, 1) });
     assert.equal(inhaltsHoehe(basis), eine, 'die zweite Kachel steht daneben');
+  });
+
+  test('eine angebrochene Zeile zählt voll', () => {
+    // Fünf Kacheln brauchen drei Zeilen, genau wie sechs.
+    const fuenf = inhaltsHoehe({
+      ...basis,
+      stats: Array.from({ length: 5 }, (_, i) => ({ label: `L${i}`, value: `${i}` })),
+    });
+    const sechs = inhaltsHoehe({
+      ...basis,
+      stats: Array.from({ length: 6 }, (_, i) => ({ label: `L${i}`, value: `${i}` })),
+    });
+
+    assert.equal(fuenf, sechs);
   });
 
   test('Name, Abzeichen und Unterzeile schlagen zu Buche', () => {

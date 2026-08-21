@@ -2,9 +2,9 @@
 
 > **Stand: 2026-08-21** · Grundlage: `KONTEXT.md` (Stand `funrun-v47`, 62 Trophäen, 27 Übungen)
 >
-> **Fortschritt: A1, A2, A3, A4, B2 und C1 sind erledigt, committet und
-> gepusht** – siehe §5. Der nächste Punkt ist **B3** (Testlücken der jungen
-> Module).
+> **Fortschritt: A1, A2, A3, A4, B2, B3 und C1 sind erledigt, committet und
+> gepusht** – siehe §5. Der nächste Punkt ist **B1** (`app.js` entflechten,
+> kleine Variante).
 >
 > Diese Datei beantwortet drei Fragen: **Was gibt es?**, **Was ist schwach?**,
 > **Was fehlt?** – und in welcher Reihenfolge das angegangen wird.
@@ -12,7 +12,7 @@
 
 **Wichtiger Vorbehalt:** Die Erstfassung dieses Plans war aus `KONTEXT.md`
 abgeleitet, nicht aus dem Quellcode. Was seither erledigt wurde (Block A, B2,
-C1), ist am Code geprüft. Alles **Offene** ist es nicht – Punkte, die vor der
+B3, C1), ist am Code geprüft. Alles **Offene** ist es nicht – Punkte, die vor der
 Umsetzung eine Prüfung brauchen, sind mit **[prüfen]** markiert. Wer sie ohne
 Prüfung als Fakt weitergibt, baut auf Sand.
 
@@ -23,20 +23,22 @@ Tag · **L** = mehrere Sitzungen, braucht vorher eine eigene Skizze.
 
 ## 0. Wo wir stehen
 
-**Block A ist vollständig abgeschlossen.** Aus Block B ist B2 erledigt, aus
-Block C der Punkt C1. Alles davon ist committet und gepusht.
+**Block A ist vollständig abgeschlossen.** Aus Block B sind B2 und B3 erledigt,
+aus Block C der Punkt C1. Alles davon ist committet und gepusht.
 
 ```
 A. Hygiene              B. Struktur (hier sind    C. Produkt
    ✅ A1 CSS geklärt       wir gerade)               ✅ C1 Sicherungs-
-   ✅ A2 README            ⬅ B3 Testlücken             erinnerung
-   ✅ A3 Testzahl          ○ B1 app.js teilen        ○ C2–C15 offen
-   ✅ A4 APP_SHELL         ○ B4, B5, B2b
-                          ✅ B2 Speicherfehler
+   ✅ A2 README            ⬅ B1 app.js teilen          erinnerung
+   ✅ A3 Testzahl          ○ B4, B5, B2b             ○ C2–C15 offen
+   ✅ A4 APP_SHELL         ✅ B2 Speicherfehler
+                          ✅ B3 Testlücken
 ```
 
-**Der nächste Punkt ist B3** – Testlücken der jungen Module. Reine Testarbeit,
-kein Produktivcode, damit risikoarm.
+**Der nächste Punkt ist B1** – `app.js` entflechten, und zwar in der kleinen
+Variante: nur Trainingsformular und Statistik herauslösen. Das ist der erste
+Punkt seit A1, der Produktivcode anfasst, und der riskanteste der ganzen
+Roadmap – die Begründung und das Vorgehen stehen in §3.
 
 Die vollständige Reihenfolge mit Stand steht in **§5**.
 
@@ -53,9 +55,9 @@ Gruppiert nach dem, was der Nutzer erlebt, nicht nach Dateien.
 | Lauf manuell eintragen (Distanz, Datum, Uhrzeit, Dauer, Pace) | `validation.js`, `storage.js` | rund |
 | GPS-Aufzeichnung live über `watchPosition` | `tracker.js`, `geo.js` | rund; Speicherfehler werden gemeldet (B2), GPS-Fehlerpfade offen (B2b) |
 | Stoppuhr ohne GPS | `stopwatch.js` | rund |
-| Intervall-Stoppuhr mit Phasen, Tönen, runder Ansicht | `interval.js`, `beep.js` | jung (zuletzt repariert) |
+| Intervall-Stoppuhr mit Phasen, Tönen, runder Ansicht | `interval.js`, `beep.js` | rund; seit B3 beide testgeprüft |
 | Tastensperre während der Aufzeichnung | `lock.js` | rund |
-| Bildschirm wach halten | `wake-lock.js` | rund |
+| Bildschirm wach halten | `wake-lock.js` | rund; Fehlerpfade seit B3 geprüft |
 | Route als SVG aus der GPS-Spur | `route.js` | rund, max. 500 Punkte |
 | Lauf bearbeiten / löschen | `storage.js`, `app.js` | rund |
 
@@ -84,9 +86,9 @@ Gruppiert nach dem, was der Nutzer erlebt, nicht nach Dateien.
 | Funktion | Träger | Reifegrad |
 |---|---|---|
 | Summen, Serien (Tage/Wochen), Zeitreihen nach Woche/Monat | `stats.js` | rund |
-| Aktivitätsraster (18 Wochen) | `stats.js`, `app.js` | jung |
-| Pace-Verlauf | `stats.js`, `app.js` | jung |
-| Bestzeiten über 6 Standarddistanzen | `stats.js` | jung |
+| Aktivitätsraster (18 Wochen) | `stats.js`, `app.js` | rund; Jahreswechsel seit B3 geprüft |
+| Pace-Verlauf | `stats.js`, `app.js` | rund; Wochen/Monats-Grenze seit B3 geprüft |
+| Bestzeiten über 6 Standarddistanzen | `stats.js` | rund, Toleranzgrenze geprüft |
 | Wochenziel + Bonus | `goal.js` | rund |
 
 ### 1.5 Drumherum
@@ -193,8 +195,8 @@ Ein-Personen-Projekt mehr Aufwand als Nutzen. Der Test läuft dagegen immer.
 
 ## 3. Block B – Struktur (hier stehen wir)
 
-**Stand:** B2 ✅ erledigt · B1, B2b, B3, B4, B5 offen. Der nächste Punkt der
-Reihenfolge ist **B3**.
+**Stand:** B2 und B3 ✅ erledigt · B1, B2b, B4, B5 offen. Der nächste Punkt der
+Reihenfolge ist **B1**.
 
 ### B1 · `js/app.js` entflechten · **L** · `js/app.js` → neue Module
 
@@ -293,14 +295,92 @@ Was aus B2 übrig blieb und nur auf dem Handy zu beantworten ist:
   Rechnung sagt ~3 KB je Lauf – das wären erst bei einigen tausend Läufen
   kritisch. Einmal nachmessen, statt zu schätzen.
 
-### B3 · Testabdeckung der jungen Module prüfen · **M** · `tests/`
+### ✅ B3 · Testabdeckung der jungen Module prüfen · `tests/`
 
-`interval.js`, `beep.js`, `share-card.js`, `stopwatch.js` und die neuen
-Statistik-Funktionen (`activityCalendar`, `paceTrend`, `bestTimes`) sind die
-jüngsten Teile. Nach der Regel „geprüft wird an den Grenzen" gehört geprüft:
-Pace-Trend mit exakt 2 vs. 3 Punkten (`PACE_TREND_MIN_POINTS`), Bestzeit bei
-genau 0,1 km Toleranz, Intervall-Phase exakt am Umschaltpunkt, Raster über
-Jahreswechsel. **[prüfen]** ob das schon existiert.
+**Befund zuerst, denn er war anders als vermutet.** Von den vier genannten
+Grenzen waren zwei längst geprüft – die Bestzeit bei genau 0,1 km Toleranz und
+die Intervall-Phase exakt am Umschaltpunkt. Der Verdacht aus dem ursprünglichen
+Punkt war also zur Hälfte falsch, und ohne das **[prüfen]** wären hier
+Doppelungen entstanden.
+
+**Die eigentliche Lücke lag woanders: zwei Module hatten überhaupt keine
+Testdatei.** `beep.js` (109 Zeilen) und `wake-lock.js` (42 Zeilen) standen seit
+ihrer Entstehung ungeprüft im Baum – nicht schwach getestet, sondern gar nicht.
+Regel 3 aus §6 („bei jedem neuen Modul: Testdatei anlegen *und* `APP_SHELL`
+ergänzen") war bei beiden nur zur Hälfte befolgt worden. Genau das ist der
+Grund, warum diese Regel „beides, nicht eins" sagt: die `APP_SHELL`-Hälfte
+fällt sofort auf, weil die App sonst offline nicht startet. Die Test-Hälfte
+fällt nie auf.
+
+**Was gebaut wurde – 749 → 802 Tests, 22 → 24 Dateien:**
+
+| Datei | neu | was jetzt geprüft ist |
+|---|--:|---|
+| `tests/beep.test.mjs` | +19 | ganze Datei neu |
+| `tests/wake-lock.test.mjs` | +13 | ganze Datei neu |
+| `tests/stats.test.mjs` | +7 | Wochen/Monats-Grenze, Jahreswechsel in beiden Ansichten |
+| `tests/interval.test.mjs` | +5 | letzte Zehntelsekunde, entartete Vorgaben |
+| `tests/stopwatch.test.mjs` | +5 | doppelte Pause, Fortsetzen zur Unzeit, Rundung |
+| `tests/share-card.test.mjs` | +4 | Balken über 100 %, ungerade Kachelzahl |
+
+**Kein Produktivcode angefasst.** `js/` ist byte-identisch mit dem Stand davor,
+`CACHE_VERSION` bleibt auf `funrun-v47`: keine Datei aus `APP_SHELL` hat sich
+geändert, es gibt also nichts, was ein Handy neu laden müsste. Schritt 5 der
+Checkliste ist hier ausnahmsweise wirklich gegenstandslos – nicht, weil die
+Änderung klein war, sondern weil sie die ausgelieferte App nicht berührt.
+
+**Was in `beep.js` zu prüfen war und warum es lohnte:**
+
+- Der `AudioContext` liegt in einer Modulvariablen und wird genau einmal
+  erzeugt. Ein Test mit anderem Ausgangszustand (kein Web Audio, gesperrtes
+  Audio) muss das Modul deshalb frisch laden – über eine eindeutige
+  Import-Adresse, `../js/beep.js?frisch=3`. Der einzige Ort im Projekt, an dem
+  der Modul-Cache umgangen wird.
+- **Die Rampe darf nie bei 0 beginnen.** `exponentialRampToValueAtTime(0, …)`
+  wirft im Browser – in Node fiele das nie auf, weil dort niemand rampt. Der
+  Test hält den Wert `0.0001` fest, der genau deshalb dort steht.
+- Ein suspendierter Kontext erzeugt gar nicht erst Oszillatoren. Das ist der
+  iOS-Fall vor der ersten Nutzeraktion.
+- Ein `AudioContext`-Konstruktor, der wirft, darf die App nicht mitreissen.
+
+**Was in `wake-lock.js` zu prüfen war:** die drei Wege, auf denen das Ding auf
+echten Geräten scheitert – kein `navigator.wakeLock` (jeder ältere Browser),
+ein abgelehnter Lock (Akkusparmodus), ein Fehler beim Freigeben. Dazu die
+Rückkehr in den Tab: der Lock wird nur zurückgeholt, **wenn noch aufgezeichnet
+wird**. Fiele diese Bedingung weg, hielte die App den Bildschirm nach jedem
+beendeten Lauf wach.
+
+**Nebenbefund, nicht behoben:** In `phaseAt()` steht
+`phaseProgress: phaseSeconds === 0 ? 1 : imPhase / phaseSeconds`. Die
+Bedingung ist **unerreichbar**. Eine Phase der Länge 0 wird nie betreten: bei
+`restSeconds === 0` ist `imZyklus < workSeconds` immer wahr, bei
+`workSeconds === 0` immer falsch, und sind beide 0, greift der Ende-Zweig
+davor. Der Zweig ist toter Code. Er wurde **stehen gelassen** – B3 ist
+Testarbeit, und eine Änderung an `phaseAt()` gehört nicht in einen Commit, der
+nur Tests anlegt. Stattdessen steht die Invariante jetzt als Test da („eine
+Phase der Länge null kommt nie an die Reihe"): wer die Phasenlogik ändert,
+wird rot, statt still ein `NaN` in die Anzeige zu schreiben.
+
+**Gegengeprüft, statt es anzunehmen.** Jeder neue Testblock wurde gegen eine
+absichtlich verfälschte Stelle im Quelltext laufen gelassen – ein Test, der
+nicht rot wird, wenn der Code kaputtgeht, prüft nichts. Rot wurden: `!erlaubt`
+aus `tone()` entfernt · Rampe auf 0 gesetzt · `suspended`-Prüfung entfernt ·
+`lock = null` im `release()` gestrichen · `isActive()` aus dem
+Sichtbarkeitswechsel gestrichen · `PACE_TREND_WEEK_SPAN` von 12 auf 11 ·
+Monatsjahr fest verdrahtet · Rasterbeginn um einen Tag verschoben ·
+Prozent-Deckel der Teilen-Karte entfernt · Phasengrenze von `<` auf `<=` ·
+`status !== 'paused'`-Wächter aus `resume()` entfernt.
+
+**Dabei fiel auch die eine Stelle auf, an der die Gegenprobe zuerst log:** der
+NaN-Test für `phaseProgress` blieb grün, obwohl der Schutz entfernt war – weil
+er den Ende-Zweig traf und nicht den Ternär. Erst das führte zum Nebenbefund
+oben. Ohne Gegenprobe stünde hier ein Test, der nichts prüft, und niemand
+wüsste vom toten Zweig.
+
+**Nicht gemacht:** `app.js` bleibt ungeprüft. Das ist keine Nachlässigkeit,
+sondern der Punkt, den **B1** angeht – solange die Datei 4.092 Zeilen DOM ist,
+lässt sich daran in Node nichts prüfen ausser dem, was `styles.test.mjs` schon
+gegen den Quelltext abgleicht.
 
 ### B4 · `history.js` O(n²) beobachten · **S (messen) / M (beheben)** · `js/history.js`
 
@@ -414,8 +494,8 @@ nichts. Das ist genau der Punkt, den **B1** angeht.
 | 4 | **B2** Speicher-Fehlerpfade härten | M | ✅ erledigt |
 | — | **committen und pushen** | S | ✅ erledigt |
 | 5 | **C1** Export-Erinnerung | S | ✅ erledigt |
-| 6 | **B3** Testlücken der jungen Module | M | ⬅ **als Nächstes** |
-| 7 | **B1** app.js entflechten – **kleine Variante** (Training + Statistik) | M | offen |
+| 6 | **B3** Testlücken der jungen Module | M | ✅ erledigt |
+| 7 | **B1** app.js entflechten – **kleine Variante** (Training + Statistik) | M | ⬅ **als Nächstes** |
 | 8 | **C3** Trophäen-Fortschritt | M | offen |
 | 9 | **C2** Notiz & Gefühl, **C4** Wetter | S+S | offen |
 | 10 | **B4** history.js messen | S | offen |
@@ -521,3 +601,4 @@ Fleißaufgabe, sondern der halbe Zweck dieser Datei.
 | 2026-08-21 | **Häkchen-Runde nachgeholt:** §0 neu geschrieben (behauptete noch, Block A stünde bevor), Block-Überschriften in §2/§3/§4 mit Stand versehen, falscher A2-Verweis in §1.5 korrigiert. Die Runde steht jetzt als Regel in §6 – sechs Stellen, damit sie nicht wieder halb gemacht wird. |
 | 2026-08-21 | A1, A2, A4 und B2 committet und gepusht (`e99b96a` … `28b277a`). Kopf, §2 (A1), §5-Tabelle und der Commit-Block auf den Stand danach gezogen. `css/style.css` sauber getrennt statt zusammengelegt. Nächster Punkt: **C1**. |
 | 2026-08-21 | **C1** umgesetzt und gepusht. §4 um den Ergebnisabschnitt ergänzt, §5-Tabelle nachgezogen. Nächster Punkt: **B3**. |
+| 2026-08-21 | **B3** umgesetzt. §3 um den Ergebnisabschnitt ergänzt, §0/§1/§5 nachgezogen. Der Punkt war zur Hälfte falsch gestellt: zwei der vier genannten Grenzen waren längst geprüft, dafür hatten `beep.js` und `wake-lock.js` gar keine Testdatei. 749 → 802 Tests. Nächster Punkt: **B1**. |

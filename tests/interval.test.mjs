@@ -98,9 +98,79 @@ describe('phaseAt', () => {
     assert.equal(phaseAt(eine, s(30)).done, true);
   });
 
+  test('die letzte Zehntelsekunde ist noch nicht das Ende', () => {
+    // Genau am Umschaltpunkt greift der Ende-Zweig; eine Wimper davor nicht.
+    // Zwischen beiden liegt die Frage, ob die App den Schlusston spielt.
+    const kurzDavor = phaseAt(vorgabe, s(269.9));
+    assert.equal(kurzDavor.done, false);
+    assert.equal(kurzDavor.remainingSeconds, 1);
+
+    assert.equal(phaseAt(vorgabe, s(270)).done, true, 'auf die Sekunde genau ist Schluss');
+  });
+
   test('jede Phase hat eine Beschriftung', () => {
     assert.equal(PHASE_LABEL[WORK], 'Intervall');
     assert.equal(PHASE_LABEL[REST], 'Pause');
+  });
+});
+
+describe('Vorgaben, die die Prüfung nie durchlassen würde', () => {
+  // validateInterval() in training.js verlangt mindestens MIN_PHASE_SECONDS je
+  // Phase und mindestens eine Runde. Solche Vorgaben können also nur aus einer
+  // von Hand bearbeiteten Sicherung kommen. phaseAt() rechnet trotzdem ohne
+  // Division durch null – ein NaN in der Anzeige wäre schwerer zu deuten als
+  // ein Ablauf, der einfach durchläuft.
+
+  test('ohne Pause folgt Belastung auf Belastung', () => {
+    const ohnePause = { workSeconds: 60, restSeconds: 0, repeats: 2 };
+
+    const zweite = phaseAt(ohnePause, s(60));
+    assert.equal(zweite.kind, WORK);
+    assert.equal(zweite.repeat, 2, 'die Pause der Länge null wird übersprungen');
+    assert.equal(zweite.completedRepeats, 1);
+  });
+
+  test('ohne Belastung bleibt nur die Pause', () => {
+    const ohneBelastung = { workSeconds: 0, restSeconds: 30, repeats: 2 };
+
+    assert.equal(phaseAt(ohneBelastung, 0).kind, REST);
+    assert.equal(phaseAt(ohneBelastung, 0).phaseProgress, 0);
+  });
+
+  test('eine Phase der Länge null kommt nie an die Reihe', () => {
+    // Das ist der Grund, warum der Fortschritt nie durch null teilt: die
+    // Phase mit der Dauer 0 wird gar nicht erst betreten. Fällt dieser Satz,
+    // wird phaseProgress zu NaN – deshalb steht er hier als Test und nicht
+    // als Kommentar.
+    const laeufe = [
+      [{ workSeconds: 60, restSeconds: 0, repeats: 3 }, REST],
+      [{ workSeconds: 0, restSeconds: 30, repeats: 3 }, WORK],
+    ];
+
+    for (const [vorgabe0, verboten] of laeufe) {
+      const gesamt = (vorgabe0.workSeconds + vorgabe0.restSeconds) * vorgabe0.repeats;
+
+      for (let sekunde = 0; sekunde < gesamt; sekunde += 0.5) {
+        const stand = phaseAt(vorgabe0, s(sekunde));
+
+        assert.notEqual(stand.kind, verboten, `bei ${sekunde} s`);
+        assert.equal(Number.isNaN(stand.phaseProgress), false, `bei ${sekunde} s`);
+      }
+    }
+  });
+
+  test('null Runden sind sofort vorbei statt NaN', () => {
+    const keine = { workSeconds: 60, restSeconds: 30, repeats: 0 };
+    const stand = phaseAt(keine, 0);
+
+    assert.equal(stand.done, true);
+    assert.equal(stand.completedRepeats, 0);
+    assert.equal(Number.isNaN(stand.phaseProgress), false);
+    assert.deepEqual(summarize(keine, s(5)), {
+      completedRepeats: 0,
+      elapsedSeconds: 0,
+      finished: true,
+    });
   });
 });
 

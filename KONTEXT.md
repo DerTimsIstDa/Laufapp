@@ -56,7 +56,7 @@ README.md             Erklärungen und Begründungen für Menschen
 KONTEXT.md            diese Datei
 css/style.css         ~61 KB, alle Werte als Custom Properties oben
 js/*.js               24 Module (siehe §3)
-tests/*.test.mjs      22 Testdateien + helpers.mjs
+tests/*.test.mjs      24 Testdateien + helpers.mjs
 icons/icon-*.png      App-Icons (192, 512, maskable-512, 180)
 icons/badges/*.png    6 Rang-Abzeichen: neuling, laeufer, ausdauerlaeufer,
                       veteran, elite, legende
@@ -95,8 +95,10 @@ laufen die Tests in Node.
 | `js/lock.js` | 56 | Tastensperre: Halte-Fortschritt, Sperrregeln | Sperre |
 | `js/wake-lock.js` | 42 | Bildschirm wach halten | Wake Lock |
 
-Zu **jedem** puren Modul gibt es `tests/<name>.test.mjs`. Zusätzlich prüft
-`tests/styles.test.mjs` CSS- und Markup-Regeln, die Node nicht ausführen kann.
+Zu **jedem Modul ausser `app.js`** gibt es `tests/<name>.test.mjs` – seit B3
+auch zu `beep.js` und `wake-lock.js`, die bis dahin fehlten. Zusätzlich prüft
+`tests/styles.test.mjs` CSS- und Markup-Regeln, die Node nicht ausführen kann,
+und gleicht als Einziges auch `app.js` gegen den Quelltext ab.
 
 ---
 
@@ -323,7 +325,7 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Übungen: 27** in 5 Kategorien (`warmup`, `drills`, `kraft`, `mobility`, `regeneration`)
 - **Bereiche/Tabs: 5** – `start`, `exercises`, `training`, `trophies`, `profile`
   (`data-view` / `#view-…` in `index.html`)
-- **Tests: 749** in 22 Dateien (`node --test`, alle grün)
+- **Tests: 802** in 24 Dateien (`node --test`, alle grün)
 - **Trophäen mit `progress()`: 55 von 62** · Trophäen-XP gesamt: **5055**
 - **`sw.js`: `funrun-v47`**
 - Letzte Commits (neueste zuerst, Stand des Repos):
@@ -333,9 +335,9 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
   4. APP_SHELL gegen den Dateibaum pruefen
   5. README auf den Stand des Codes gebracht
 
-### Roadmap-Block A, B2 und C1 sind committet
+### Roadmap-Block A, B2, B3 und C1 sind committet
 
-Die Änderungen aus A1, A2, A4, B2 und C1 liegen seit dem 2026-08-21 in sechs
+Die Änderungen aus A1, A2, A4, B2, B3 und C1 liegen seit dem 2026-08-21 in acht
 Commits auf `master` und sind gepusht; auf `dertimsistda.github.io` läuft
 `ddb579b`. Das Arbeitsverzeichnis ist sauber.
 
@@ -353,8 +355,19 @@ die gelöschte Regel in A1, die `.storage-hint`-Regel in B2. Jeder Commit ist
 für sich grün geprüft (706 / 706 / 711 / 725 / – / 749 Tests), damit ein
 späteres `git bisect` nicht in einem kaputten Stand landet.
 
-**Nächster Punkt laut Roadmap §5: B3** – Testlücken der jungen Module
-(`interval.js`, `beep.js`, `share-card.js`, `stopwatch.js`) prüfen.
+**Nächster Punkt laut Roadmap §5: B1** – `js/app.js` entflechten, kleine
+Variante: nur Trainingsformular (~430 Zeilen) und Statistik (~400 Zeilen)
+herauslösen. **Der riskanteste Punkt der Roadmap**, weil ohne Build-Step jeder
+vertippte Import-Pfad erst im Browser auffällt, nicht in `node --test`. Deshalb
+ein Bereich pro Commit, und nach jedem Commit die Live-Seite öffnen. Details in
+`ROADMAP.md` §3.
+
+**Aus B3 mitzunehmen:** `beep.js` und `wake-lock.js` hatten bis dahin gar keine
+Testdatei – Regel 3 aus `ROADMAP.md` §6 war bei beiden nur zur Hälfte befolgt
+(`APP_SHELL` ja, Testdatei nein). Beim Anlegen neuer Module in B1 gilt beides.
+Ausserdem steht in `js/interval.js` ein nachweislich unerreichbarer Zweig
+(`phaseProgress: phaseSeconds === 0 ? 1 : …`); er wurde bewusst stehen
+gelassen, weil B3 reine Testarbeit war.
 
 **Hinweis zum Ordner:** Das Repo liegt unter OneDrive
 (`C:\Users\tino2\OneDrive\Desktop\Laufapp`). OneDrive und `.git` vertragen sich
@@ -442,3 +455,4 @@ Bugfix in einer Render-Funktion braucht keinen Eintrag.
 | 2026-08-21 | **C1** umgesetzt: Erinnerung an die Sicherung. Neu in §4 `exportReminder()` und `loadLastExport`/`saveLastExport`, in §5 der Schlüssel `laufapp.export.v1`. `sw v47`, 749 Tests. |
 | 2026-08-21 | §7 nachgezogen: C1 und `1134dca` in der Commit-Tabelle ergänzt, Live-Stand auf `ddb579b` korrigiert (stand noch auf `28b277a`). |
 | 2026-08-21 | §8 um Schritt 9 und §10 um die Häkchen-Runde ergänzt: ein erledigter Roadmap-Punkt muss an sechs Stellen markiert werden, nicht nur in der Reihenfolge-Tabelle. |
+| 2026-08-21 | **B3** umgesetzt: Testlücken der jungen Module. Neue Testdateien für `beep.js` und `wake-lock.js` – beide standen bis dahin ungeprüft im Baum. 749 → **802 Tests in 24 Dateien**. Kein Produktivcode, `sw v47` bleibt. |
