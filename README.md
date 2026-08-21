@@ -101,28 +101,38 @@ alten Gerät exportieren, auf dem neuen importieren.
 | 3 → 4 |                     100 |               140 |
 | 4 → 5 |                     120 |               240 |
 
-Gesamt-XP = XP aus Läufen + XP aus abgehakten Übungen + Bonus-XP aus
-freigeschalteten Achievements + Bonus-XP aus Plantreue. Die Aufteilung steht
-im Fortschrittsbereich.
+Gesamt-XP setzen sich aus vier Quellen zusammen:
 
-Weder XP-Stand noch Achievements werden **gespeichert** – beides wird immer aus
-den Läufen, den abgehakten Übungen und dem Plan berechnet. Dadurch bleibt alles
-konsistent, wenn ein Lauf gelöscht oder eine Regel angepasst wird.
+| Quelle | XP | Modul |
+|---|--:|---|
+| gelaufener Kilometer | 10 | `js/xp.js` |
+| abgehakte Übung, je Übung und Kalendertag | 3 | `js/exercise-log.js` |
+| eingehaltene Trainingseinheit | 15 | `js/training.js` |
+| erreichte Zielwoche | 100 | `js/goal.js` |
+| freigeschaltete Trophäe | 10–600 | `js/achievements.js` |
+
+Die Aufteilung steht im Fortschrittsbereich.
+
+Weder XP-Stand noch Trophäen werden **gespeichert** – alles wird immer aus den
+Läufen, den abgehakten Übungen, dem Plan und dem Wochenziel berechnet. Dadurch
+bleibt alles konsistent, wenn ein Lauf gelöscht oder eine Regel angepasst wird.
 
 ## Bereiche
 
 Eine Tab-Leiste am unteren Rand führt durch fünf Bereiche:
 
 - **Start** – alles Bisherige: Fortschritt, Aufzeichnung, Eintragen,
-  Achievements als kompakte Liste, Statistik, Lauf-Liste, Sicherung
-- **Übungen** – kuratierte Übungsbibliothek mit Filter, siehe unten
-- **Training** – eigene Einheiten auf ein Datum planen und der Abgleich mit
-  den tatsächlichen Läufen, siehe unten
-- **Trophäen** – alle Achievements als grosse Kacheln, freigeschaltete mit
+  Trophäen als kompakte Liste, Statistik, Lauf-Liste, Sicherung
+- **Übungen** – kuratierte Übungsbibliothek mit Filter, Häkchen und Tagesplan,
+  siehe unten
+- **Training** – eigene Einheiten auf ein Datum planen, der Abgleich mit den
+  tatsächlichen Läufen und die Intervall-Stoppuhr, siehe unten
+- **Trophäen** – alle Trophäen als grosse Kacheln, freigeschaltete mit
   Datum, offene mit Fortschrittsbalken sofern die Bedingung einen Zähler hat
-- **Profil** – Titel und Level gross mit XP-Balken bis zum nächsten Level,
-  darunter eine Trophäen-Übersicht je Gruppe, die Titel-Historie und eine
-  Zusammenfassung der Gesamtstatistik
+- **Profil** – Name, Titel und Level gross mit XP-Balken bis zum nächsten
+  Level, Wochenziel, Trophäen-Übersicht je Gruppe, Titel-Historie,
+  Gesamtstatistik, Aktivitätsraster, Pace-Verlauf, Bestzeiten und die
+  Teilen-Karte
 
 In der Leiste heisst der dritte Bereich nur **Training** – fünf Beschriftungen
 müssen auf 360 px nebeneinander passen. Die volle Bezeichnung „Training
@@ -130,10 +140,11 @@ erstellen" steht in der Überschrift.
 
 ### Übungen
 
-27 Übungen in fünf Kategorien, fest hinterlegt in `js/exercises.js`: Aufwärmen,
-Lauftechnik, Kraft, Dehnen, Regeneration. Jede mit Anleitung und Richtwert für
-Dauer oder Wiederholungen. Die Bibliothek selbst ist unveränderlich; was der
-Nutzer beisteuert, sind die Häkchen darunter (siehe „Übungen abhaken").
+27 Übungen in fünf Kategorien, fest hinterlegt in `js/exercises.js`: Aufwärmen
+(5), Lauftechnik (5), Kraft (6), Dehnen (6), Regeneration (5). Jede mit
+Anleitung und Richtwert für Dauer oder Wiederholungen. Die Bibliothek selbst ist
+unveränderlich; was der Nutzer beisteuert, sind die Häkchen darunter (siehe
+„Übungen abhaken") und der Tagesplan.
 
 Zwei Eigenheiten:
 
@@ -162,17 +173,38 @@ verwechseln:
   selben Tag sagt das auch offen: „heute schon gezählt, XP gibt es morgen
   wieder".
 
-Die Übungs-XP fliessen wie Lauf- und Achievement-XP ins Level ein. Die
+Die Übungs-XP fliessen wie Lauf- und Trophäen-XP ins Level ein. Die
 Aufteilung steht im Fortschrittsbereich.
 
-Vier Achievements in der Kategorie **Übungen**: Erste Übung (1), Dranbleiber
-(10), Übungsroutine (50) und Vielseitig – letzteres verlangt mindestens eine
-Übung aus **jeder** der fünf Kategorien, vier reichen nicht.
+**14 Trophäen** hängen an den Übungen – von „Erste Übung" (1) über
+„Hundertfach" (100) und „Eine Woche am Stück" bis „Zwei volle Reihen".
+„Vielseitig" verlangt mindestens eine Übung aus **jeder** der fünf Kategorien,
+vier reichen nicht.
 
 Gerechnet wird in `js/exercise-log.js`, pur und ohne DOM. Einträge zu
 Übungen, die es in der Bibliothek nicht mehr gibt, zählen weiter mit, tragen
 aber zu keiner Kategorie bei – sonst ginge der Zähler nach einer Änderung an
 der Bibliothek verloren.
+
+### Übungen für einen Tag vornehmen
+
+Neben dem Häkchen steht ein zweiter Knopf: eine Übung lässt sich für einen Tag
+**vornehmen**. Gespeichert wird das unter `laufapp.exercise-plan.v1`, gerechnet
+in `js/exercise-plan.js`.
+
+Das ist bewusst vom Protokoll getrennt: dort steht, was **gemacht** wurde, hier,
+was gemacht werden **soll**. Beide teilen sich nur die `exerciseId`.
+
+- **Ein Vorhaben bringt nie XP.** Die Belohnung hängt am Erledigen – wer sich
+  etwas vornimmt, hat noch nichts geleistet.
+- **Höchstens 12 Übungen je Tag** (`MAX_PLANNED_PER_DAY`). Kein technischer
+  Zwang, sondern eine Bremse: ein Tag mit dreissig Vorhaben ist kein Plan mehr.
+- Der Tagesplan erscheint **in der Reihenfolge der Bibliothek**, nicht in der
+  Eingabereihenfolge. Die Aufwärmreihe ist als Abfolge gedacht und soll auch
+  dann stimmen, wenn sie kreuz und quer eingeplant wurde.
+- **Vergangene Tage fallen aus der Übersicht.** Was gestern vorgenommen war,
+  ist entweder gemacht oder vorbei, und beides steht woanders. Gespeichert
+  bleiben sie trotzdem.
 
 ### Zähler von Hand korrigieren
 
@@ -186,9 +218,9 @@ muss eine Korrektur Einträge entfernen oder ergänzen:
   Tagesgrenze weiterhin: eine Korrektur von 9 auf 30 bringt drei XP, nicht
   63.
 
-Fällt der Zähler dabei unter eine Achievement-Schwelle, **verliert das
-Achievement seinen Status** – es wird wie alles andere bei jedem Rendern neu
-abgeleitet, nichts ist eingefroren.
+Fällt der Zähler dabei unter eine Trophäen-Schwelle, **verliert die Trophäe
+ihren Status** – sie wird wie alles andere bei jedem Rendern neu abgeleitet,
+nichts ist eingefroren.
 
 Ein leeres Eingabefeld gilt **nicht** als Null. `Number('')` ist 0, und ohne
 diese Prüfung hätte ein versehentlich geleertes Feld beim Übernehmen den
@@ -204,6 +236,10 @@ Im Tab **Training** lassen sich einzelne Einheiten auf ein Datum anlegen: Art
 Abschnitte mit Wiederholungen, Distanz und Dauer, dazu eine Notiz. Gespeichert
 wird unter `laufapp.training.v1`, gerechnet wird in `js/training.js`, pur und
 ohne DOM.
+
+Abschnitte tragen eine Rolle: **Einlaufen, Belastung, Trabpause, Auslaufen**
+(`SEGMENT_KINDS`). Höchstens 12 Abschnitte je Einheit, höchstens 50
+Wiederholungen je Abschnitt.
 
 Der Abgleich mit den echten Läufen wird wie alles andere **bei jeder Anzeige
 neu gerechnet** und nicht gespeichert. Eine Einheit gilt als eingehalten, wenn
@@ -225,6 +261,52 @@ Beim Bearbeiten bleiben `id` und `createdAt` erhalten – sonst liesse sich eine
 nachträglich angelegte Einheit durch einmaliges Ändern in eine „vorher
 geplante" verwandeln.
 
+### Intervalle haben eine eigene Vorgabe
+
+Eine Einheit vom Typ **Intervalle** wird nicht über Abschnitte beschrieben,
+sondern über drei Zahlen: Belastung in Sekunden, Pause in Sekunden,
+Wiederholungen (`DEFAULT_INTERVAL` = 60 s / 60 s / 8×). Generische Abschnitte
+könnten dasselbe ausdrücken, aber niemand tippt zwanzig Abschnitte, um
+„8 × 400 m mit 1 min Trabpause" zu sagen.
+
+Grenzen: eine Phase dauert mindestens 5 und höchstens 3600 Sekunden
+(`MIN_PHASE_SECONDS`, `MAX_PHASE_SECONDS`).
+
+### Intervall-Stoppuhr
+
+Aus jeder Intervall-Einheit lässt sich ein Training direkt starten – eine runde
+Vollbildansicht mit der laufenden Phase, der Restzeit, der Runde und dem, was
+als Nächstes kommt.
+
+Gerechnet wird in `js/interval.js`, pur und ohne Zustand: aus der Vorgabe und
+der verstrichenen Zeit ergibt sich, welche Phase gerade läuft. Kein Timer im
+Modul – wer die Uhr stellt, ist `app.js`. Genau deshalb lässt sich der ganze
+Ablauf in Node prüfen, Sekunde für Sekunde.
+
+- Der Ablauf ist **Belastung, Pause, Belastung, Pause …** und endet nach der
+  letzten Pause. Die zählt mit: wer acht Runden plant, hat acht Pausen geplant.
+- Die Restzeit wird **aufgerundet**. Solange auch nur eine Zehntelsekunde übrig
+  ist, steht dort noch eine 1 und nicht schon die 0.
+- **Angebrochene Runden zählen nicht.** Wer bei Runde sechs von acht aufhört,
+  hat fünf geschafft. Die Zeit dagegen zählt so, wie sie gelaufen wurde.
+
+Am Ende lässt sich das Training als Lauf speichern – mit der Pace der
+Belastungsphasen, nicht der Gesamtzeit. Fünf Trophäen hängen daran
+(„Intervall-Einsteiger", „Intervall-Routine", „Hundert Runden",
+„Fünf Stunden unterwegs", „Tempo im Intervall").
+
+**Signaltöne** kommen aus `js/beep.js` über Web Audio – hoch für die Belastung,
+tief für die Pause, drei Töne aufwärts zum Schluss. Kein Sinuston braucht eine
+Datei, die geladen, gecacht und mitgeliefert werden müsste. Die Töne werden
+ein- und ausgeblendet statt hart geschaltet: ein abrupt beginnender Ton knackt,
+und das Knacken ist lauter als der Ton.
+
+Auf iOS startet ein `AudioContext` gesperrt und darf erst durch eine
+Nutzeraktion aufwachen – deshalb `unlock()`, aufgerufen aus dem Klick auf
+**Start**. Sperrt sich der Bildschirm trotzdem, hört das Betriebssystem
+irgendwann auf, uns Rechenzeit zu geben; dagegen ist von hier aus nichts
+auszurichten.
+
 ### Zeitpunkte statt nur Zustände
 
 Die App leitet sonst immer nur den Jetzt-Zustand ab. Für „freigeschaltet am"
@@ -238,8 +320,30 @@ Maxima über die Historie, Zähler wachsen nur. Ein Test prüft diese Annahme
 ausdrücklich; fiele sie, wären Freischaltdaten nicht mehr eindeutig.
 
 Der Durchlauf kostet O(n²). Bei ein paar hundert Läufen ist das ein
-Wimpernschlag, und die Alternative wären dreizehn handgeschriebene
+Wimpernschlag, und die Alternative wären zweiundsechzig handgeschriebene
 Fortschreibungen, die mit jeder neuen Regel wieder auseinanderlaufen.
+
+## Wochenziel
+
+Im Profil lässt sich ein **Ziel von Läufen pro Woche** setzen (höchstens 14,
+`MAX_WEEKLY_GOAL`). Der Stand der laufenden Woche steht als Ring darüber. Jede
+erreichte Woche bringt **100 XP** (`XP_PER_GOAL_WEEK`), gerechnet in
+`js/goal.js`.
+
+Zum Profil gehört auch ein **Name** (höchstens 30 Zeichen, `MAX_NAME_LENGTH`) –
+er begrüßt auf der Startseite und steht auf der Teilen-Karte.
+
+Gezählt wird ab `goalSince`, dem Tag, an dem das aktuelle Ziel gesetzt wurde.
+Ohne diese Grenze liesse sich der Bonus beliebig ernten: Ziel auf 1 stellen, und
+jede jemals gelaufene Woche zahlte rückwirkend aus. Dasselbe Problem löst
+`training.js` mit `createdAt` – ein Vorhaben zählt nur, wenn es vorher feststand.
+
+Die Kehrseite: **wer das Ziel ändert, fängt von vorn an zu zählen.** Das ist
+gewollt. Ein Ziel im Nachhinein zu senken und dafür bezahlt zu werden wäre keine
+Zielerfüllung, sondern Buchhaltung.
+
+Die laufende Woche zählt mit, sobald das Ziel erreicht ist, und nicht erst am
+Sonntag. Auf den Bonus bis Wochenende zu warten wäre die schlechtere Rückmeldung.
 
 ## Statistik
 
@@ -264,11 +368,71 @@ Gerechnet wird in `js/stats.js`, pur und ohne DOM:
   Diagramm eine Pause verschlucken und den Verlauf schönen.
 - Wochen beginnen montags, die Nummerierung folgt ISO 8601.
 
+### Aktivitätsraster
+
+Im Profil: **18 Wochen** als Raster mit sieben Zeilen, ein Feld je Tag, von
+hell nach neon eingefärbt. Vier Stufen über „kein Lauf", getrennt bei 5, 10 und
+15 km (`ACTIVITY_LEVELS`): bis 5 km ein normaler Feierabendlauf, bis 10 km eine
+ordentliche Runde, bis 15 km ein langer, darüber ein sehr langer. Gezählt wird
+die **Summe des Tages** – zweimal 5 km sind ein 10-km-Tag.
+
+Die Liste beginnt am Montag der ersten gezeigten Woche und endet am Sonntag der
+laufenden, ist also immer ein Vielfaches von sieben und lässt sich ohne Rechnung
+spaltenweise füllen. Tage nach heute sind als `future` ausgezeichnet: sie halten
+das Raster rechteckig, sind aber keine Aussage.
+
+### Pace-Verlauf
+
+Eine Linie der Ø-Pace je Zeitraum. Gebündelt wird nach **Wochen**, solange die
+Läufe in ein Vierteljahr passen, sonst nach **Monaten** – zwölf Wochenpunkte
+sind lesbar, fünfzig sind ein Zaun.
+
+- **Unter drei Punkten wird nichts gezeichnet** (`PACE_TREND_MIN_POINTS`). Zwei
+  Punkte sind keine Entwicklung, sondern ein Vergleich – und als Linie gezeichnet
+  behaupten sie eine Richtung, die die Daten nicht hergeben.
+- **Zeiträume ohne Lauf fallen heraus** statt auf 0 zu gehen. Eine Pace von null
+  wäre kein langsamer Zeitraum, sondern gar keiner.
+- Der Durchschnitt ist **nach Strecke gewichtet** – zwanzig Kilometer in 6:00
+  wiegen schwerer als zwei in 5:00.
+
+### Bestzeiten
+
+Schnellste Zeit über 5, 8, 10, 12, 15 und 21,1 km (`BEST_TIME_DISTANCES`).
+
+Zugeordnet wird mit **100 m Toleranz** (`BEST_TIME_TOLERANCE_KM`). Gespeicherte
+Strecken sind reine Punktlisten ohne Zeitstempel (siehe `route.js`) –
+Kilometer-Splits lassen sich daraus nicht rekonstruieren. Eine Bestzeit kann
+deshalb nur aus der Gesamtzeit eines Laufs kommen, der ohnehin fast genau so
+lang war. Hundert Meter sind der Spielraum, den eine GPS-Aufzeichnung von
+5,00 km üblicherweise streut; wer 5,3 km gelaufen ist, hat keine 5-km-Zeit
+gestellt, sondern eine über 5,3 km.
+
+Gewertet wird nur, was auch gemessen wurde: ein Lauf ohne Dauer und ohne Pace
+bringt keine Zeit ein. Bei gleicher Zeit gewinnt der **frühere** Lauf – die
+Bestzeit ist dann dort gefallen und wird nicht später noch einmal vergeben.
+
+## Teilen-Karte
+
+Im Profil erzeugt **Teilen** ein Bild im Hochformat (1080 × 1350, wie es
+Messenger und Stories erwarten) mit Name, Abzeichen, Titel, Fortschrittsbalken
+und Kennzahlen. Zur Wahl stehen vier Zuschnitte: **einzelner Lauf, Gesamt,
+Woche, Monat**. Gezeichnet wird auf ein Canvas in `js/share-card.js`, in
+denselben Farben wie die App – die Karte soll wiedererkennbar sein.
+
+Der XP-Text unter dem Balken bleibt weg. Auf einer Karte, die an Freunde geht,
+ist „noch 53 XP bis Level 6" eine Zahl ohne Bedeutung – der Balken zeigt
+dasselbe und braucht keine Erklärung.
+
+Das Modul kennt kein DOM ausser dem Canvas: was gezeichnet wird, kommt als
+fertige Daten herein. Damit lässt sich die Aufteilung prüfen, ohne einen Browser
+zu starten.
+
 ## Daten bearbeiten und sichern
 
 **Bearbeiten:** Der Stift an einem Lauf lädt ihn ins Formular. Distanz, Datum,
-Startzeit und Dauer lassen sich ändern; `id` und die GPS-Markierung bleiben
-erhalten. Geleerte Felder verschwinden auch wirklich aus dem Datensatz.
+Startzeit und Dauer lassen sich ändern; `id`, die GPS-Markierung und die
+Strecke bleiben erhalten. Geleerte Felder verschwinden auch wirklich aus dem
+Datensatz.
 
 **Löschen** fragt nach: das × wechselt die Zeile in eine Rückfrage, gelöscht
 wird erst nach dem zweiten Klick.
@@ -308,18 +472,32 @@ verworfen.
 
 ### Zahlenfelder sind `type="text"`
 
-Alle Zahleneingaben – Distanz, Dauer, die Abschnitte einer Einheit und die
-Zähler-Korrektur – sind bewusst **kein** `type="number"`. Der Browser
-akzeptiert dort nur den Punkt als Dezimaltrennzeichen und verwirft „0,4"
-schon beim Tippen; auf einer deutschen Tastatur ist das aber die normale
-Schreibweise. Die Zifferntastatur auf dem Handy kommt stattdessen über
-`inputmode`.
+Alle Zahleneingaben – Distanz, Dauer, die Abschnitte einer Einheit, die
+Intervall-Vorgabe und die Zähler-Korrektur – sind bewusst **kein**
+`type="number"`. Der Browser akzeptiert dort nur den Punkt als
+Dezimaltrennzeichen und verwirft „0,4" schon beim Tippen; auf einer deutschen
+Tastatur ist das aber die normale Schreibweise. Die Zifferntastatur auf dem
+Handy kommt stattdessen über `inputmode`.
 
 Gelesen wird überall mit `parseNumber()` aus `js/validation.js`, nie mit
 `Number()` oder `parseFloat()` — es nimmt Komma wie Punkt und liefert für
 Leerstring und Buchstabensalat `null`. Das ist der Unterschied, auf den es
 ankommt: `Number('')` ist 0, und eine 0 würde einen Zähler löschen statt eine
 Rückfrage auszulösen.
+
+### Was gespeichert wird
+
+Alle Schlüssel tragen weiterhin das Präfix `laufapp.` – siehe ganz oben.
+
+| Schlüssel | Inhalt |
+|---|---|
+| `laufapp.runs.v1` | Läufe |
+| `laufapp.exercises.v1` | erledigte Übungen |
+| `laufapp.training.v1` | geplante Einheiten |
+| `laufapp.exercise-plan.v1` | für Tage vorgenommene Übungen |
+| `laufapp.profile.v1` | Name, Wochenziel, `goalSince` |
+| `laufapp.recording.v1` | zuletzt gewählte Aufzeichnungsart |
+| `laufapp.installHint.dismissed` | Installationsbanner weggeklickt |
 
 ## Gestaltung
 
@@ -329,14 +507,14 @@ Dunkel, reduziert, sportlich. Alle Werte stehen als Custom Properties oben in
 
 - **Hintergrund** `#0d0f12`, Karten und Flächen in abgestuften Grautönen
 - **Neongrün** `#c4f000` als einziger Akzent, bewusst sparsam: Fortschritt,
-  freigeschaltete Achievements, Streckenlinie, primäre Aktion. Käme es überall
+  freigeschaltete Trophäen, Streckenlinie, primäre Aktion. Käme es überall
   vor, hebt es nichts mehr hervor.
 - **Text** weiß für Überschriften und Werte, helles Grau für Fließtext
 
 Der Level-/XP-Bereich ist der Blickfang: Levelzahl in 52 px Neon, breiter
 Fortschrittsbalken, alles Weitere tritt zurück.
 
-Freigeschaltete Achievements bekommen Neonrahmen, getönte Fläche und einen
+Freigeschaltete Trophäen bekommen Neonrahmen, getönte Fläche und einen
 gefüllten Haken; offene bleiben grau auf dunkler Fläche. Der Unterschied läuft
 über Fläche und Farbe, **nicht** über unleserlichen Text – jede Textfarbe hält
 mindestens 4,5:1 Kontrast (WCAG AA), auch die gedimmte.
@@ -353,6 +531,11 @@ Mass und ist zugleich das Fingerziel. `line-height` steht dort fest bei 1.25,
 sonst macht die 1.55 des `body` ein Textfeld höher als ein Datumsfeld. Ein Test
 in `tests/styles.test.mjs` wacht darüber.
 
+Nebeneinander stehende Felder stehen auf einer Höhe, auch wenn die
+Beschriftungen unterschiedlich lang sind: `.field` ist ein Raster, das die
+Zeilen von `.fields` per `subgrid` erbt. Ohne das rutscht ein Feld mit
+zweizeiliger Beschriftung gegen sein Nachbarfeld.
+
 Keine Schriftart wird nachgeladen – der Systemfont-Stack landet auf Android bei
 Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 
@@ -362,28 +545,34 @@ Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 node --test
 ```
 
-464 Tests im Ordner `tests/`, ausgeführt vom eingebauten Testrunner von Node —
-keine Abhängigkeiten, kein Framework, nichts zu installieren.
+**725 Tests in 22 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
+Testrunner von Node — keine Abhängigkeiten, kein Framework, nichts zu
+installieren.
 
-| Datei | prüft |
-|---|---|
-| `tests/xp.test.mjs` | XP pro km, Aufstiegskosten, jede Levelgrenze bis 5000 |
-| `tests/geo.test.mjs` | Haversine gegen bekannte Strecken, alle GPS-Filtergrenzen |
-| `tests/titles.test.mjs` | feste Stufen, endlose Legenden, `nextTitle` bis Level 3000 |
-| `tests/achievements.test.mjs` | jede Bedingung knapp darunter und darauf |
-| `tests/tracker.test.mjs` | Start/Pause/Beenden, Fehlerfälle, Geolocation-Attrappe |
-| `tests/validation.test.mjs` | Pflicht- und Optionalfelder, erfundene Kalendertage |
-| `tests/transfer.test.mjs` | Export-Roundtrip, kaputte und halbe Importdateien |
-| `tests/storage.test.mjs` | Anlegen/Ändern/Löschen/Ersetzen, Neuberechnung danach |
-| `tests/stats.test.mjs` | Summen, Serien mit Lücken, Wochen-/Monatsraster |
-| `tests/route.test.mjs` | Projektion, Seitenverhältnis, Geraden, Ausdünnen |
-| `tests/pwa.test.mjs` | Installationshinweis, Trennung eigener und fremder Caches |
-| `tests/lock.test.mjs` | Halte-Fortschritt, Sperrregeln, Freigabe im Notfall |
-| `tests/history.test.mjs` | Freischaltdaten, Titel-Historie, Monotonie-Annahme |
-| `tests/exercises.test.mjs` | Vollständigkeit der Übungsdaten, Filter, Zählung |
-| `tests/exercise-log.test.mjs` | Tageslimit, Zähler, Kategorien für Vielseitig |
-| `tests/training.test.mjs` | Abschnitte, Abgleich mit Läufen, Plantreue und XP |
-| `tests/styles.test.mjs` | CSS- und Markup-Regeln, die Node nicht ausführen kann |
+| Datei | Tests | prüft |
+|---|--:|---|
+| `tests/achievements.test.mjs` | 81 | jede Bedingung knapp darunter und darauf |
+| `tests/stats.test.mjs` | 70 | Summen, Serien mit Lücken, Raster, Pace-Verlauf, Bestzeiten |
+| `tests/training.test.mjs` | 59 | Abschnitte, Intervall-Vorgabe, Abgleich, Plantreue und XP |
+| `tests/transfer.test.mjs` | 56 | Export-Roundtrip, kaputte und halbe Importdateien |
+| `tests/validation.test.mjs` | 53 | Pflicht- und Optionalfelder, erfundene Kalendertage |
+| `tests/storage.test.mjs` | 43 | Anlegen/Ändern/Löschen/Ersetzen, Neuberechnung, volles Fach |
+| `tests/styles.test.mjs` | 43 | CSS- und Markup-Regeln, die Node nicht ausführen kann |
+| `tests/exercise-log.test.mjs` | 37 | Tageslimit, Zähler, Kategorien für Vielseitig |
+| `tests/route.test.mjs` | 33 | Projektion, Seitenverhältnis, Geraden, Ausdünnen |
+| `tests/geo.test.mjs` | 32 | Haversine gegen bekannte Strecken, alle GPS-Filtergrenzen |
+| `tests/pwa.test.mjs` | 29 | Installationshinweis, Cache-Trennung, `APP_SHELL` vollständig |
+| `tests/tracker.test.mjs` | 25 | Start/Pause/Beenden, Fehlerfälle, Geolocation-Attrappe |
+| `tests/exercise-plan.test.mjs` | 20 | Tagesgrenze, Reihenfolge, Doppelte |
+| `tests/exercises.test.mjs` | 20 | Vollständigkeit der Übungsdaten, Filter, Zählung |
+| `tests/lock.test.mjs` | 20 | Halte-Fortschritt, Sperrregeln, Freigabe im Notfall |
+| `tests/history.test.mjs` | 18 | Freischaltdaten, Titel-Historie, Monotonie-Annahme |
+| `tests/interval.test.mjs` | 17 | Phasenwechsel, Restzeit, angebrochene Runden |
+| `tests/goal.test.mjs` | 15 | Zielwochen ab `goalSince`, laufende Woche, Bonus-XP |
+| `tests/xp.test.mjs` | 15 | XP pro km, Aufstiegskosten, jede Levelgrenze bis 5000 |
+| `tests/share-card.test.mjs` | 14 | Aufteilung und Höhenberechnung der Karte |
+| `tests/stopwatch.test.mjs` | 13 | Start/Pause/Beenden ohne GPS, gleiche Form wie `tracker` |
+| `tests/titles.test.mjs` | 12 | feste Stufen, endlose Legenden, `nextTitle` bis Level 3000 |
 
 Getestet wird das Verhalten an den **Grenzen**: 4 gegen 5 Läufe, 49,9 gegen
 50 km, 13 gegen 14 Tage Pause, 06:59 gegen 07:00 Uhr, +19 % gegen +20 %. Ein
@@ -394,17 +583,36 @@ lassen sich Positionsfolgen einspeisen, ohne echtes GPS — inklusive
 abgelehnter Freigabe und Timeout.
 
 Die App selbst läuft im Browser, die Tests laufen in Node. Möglich ist das,
-weil `xp.js`, `geo.js`, `achievements.js` und `titles.js` weder DOM noch
-Storage anfassen. `tracker.js` liest `navigator.geolocation` erst beim Start,
-nicht beim Laden — genau deshalb lässt es sich unterschieben.
+weil **alle Module ausser `app.js`, `storage.js`, `tracker.js`, `stopwatch.js`
+und `wake-lock.js` pur sind** – kein DOM, kein Storage. `tracker.js` liest
+`navigator.geolocation` erst beim Start, nicht beim Laden — genau deshalb lässt
+es sich unterschieben.
 
-## Live-Tracking (GPS)
+## Aufzeichnen
 
-Start/Pause/Beenden im Abschnitt „Lauf aufzeichnen". Die App liest Positionen
-über `navigator.geolocation.watchPosition`, summiert die Strecke und legt beim
-Beenden automatisch einen Lauf an (Distanz, Datum, Startzeit, Dauer,
-`source: 'gps'`). Startzeit und Dauer füllen nebenbei die Bedingungen für
-Frühaufsteher, Nachteule und Neue Bestzeit.
+Im Abschnitt „Lauf aufzeichnen" stehen **zwei Wege** zur Wahl, und die Wahl
+wird gemerkt (`laufapp.recording.v1`, Voreinstellung: ohne GPS):
+
+- **Mit GPS** – Strecke und Zeit, siehe unten.
+- **Ohne GPS** – reine Zeitnahme über `js/stopwatch.js`. Nach aussen dieselbe
+  Form wie der Tracker: `start`, `pause`, `resume`, `stop`, `discard`,
+  `getState`. Nur so lässt sich in `app.js` umschalten, ohne Bedienung,
+  Tastensperre und Anzeige zu verdoppeln. Die Streckenfelder gibt es auch hier,
+  sie bleiben nur bei `null`. **Es wird kein Standort abgefragt** – deshalb
+  fragt das Betriebssystem auf diesem Weg auch nie nach der Freigabe.
+
+Beide halten über `js/wake-lock.js` den Bildschirm wach. Beim GPS-Tracking
+schläft sonst die Ortung mit dem Bildschirm ein, bei der Stoppuhr verliert man
+die Zeit aus dem Blick — deshalb liegt es an einer Stelle und nicht zweimal
+daneben. Fehlschläge sind kein Grund abzubrechen: im Akkusparmodus gibt das
+Betriebssystem den Lock einfach nicht her.
+
+### Live-Tracking (GPS)
+
+Die App liest Positionen über `navigator.geolocation.watchPosition`, summiert
+die Strecke und legt beim Beenden automatisch einen Lauf an (Distanz, Datum,
+Startzeit, Dauer, `source: 'gps'`). Startzeit und Dauer füllen nebenbei die
+Bedingungen für Frühaufsteher, Nachteule und Neue Bestzeit.
 
 Rohe GPS-Punkte sind unbrauchbar, ohne sie zu filtern (`DEFAULT_FILTER` in
 `js/geo.js`):
@@ -445,8 +653,8 @@ wurde – fällt die Sperre mit, sonst bliebe die Bedienung tot.
 
 Grenzen, die im Browser nicht zu umgehen sind:
 
-- Braucht **HTTPS oder localhost**. Über eine andere Adresse ist der Start-Knopf
-  deaktiviert.
+- Das GPS braucht **HTTPS oder localhost**. Über eine andere Adresse ist der
+  Start-Knopf deaktiviert. Die Stoppuhr läuft überall.
 - Ein `wakeLock` hält den Bildschirm an, solange der Browser das erlaubt.
   Sperrt sich das Handy trotzdem, drosselt das System die Positionsupdates –
   eine echte Hintergrund-Aufzeichnung wie native Apps ist nicht möglich.
@@ -463,8 +671,9 @@ Laufs und darunter die aufgezeichnete Strecke als Linienzug in einem SVG.
 Kein Kartenhintergrund, keine Chart- oder Karten-Bibliothek. Start und Ziel
 sind als Punkte markiert, Start grün, Ziel hell.
 
-Läufe ohne Aufzeichnung – von Hand eingetragene und alle aus der Zeit vor
-diesem Feature – zeigen stattdessen „Keine GPS-Daten für diesen Lauf."
+Läufe ohne Aufzeichnung – von Hand eingetragene, mit der Stoppuhr erfasste und
+alle aus der Zeit vor diesem Feature – zeigen stattdessen „Keine GPS-Daten für
+diesen Lauf."
 
 `js/route.js` rechnet, pur und ohne DOM:
 
@@ -490,28 +699,42 @@ nur wenige Megabyte. Anfang und Ende bleiben beim Ausdünnen erhalten. Eine
 Die Route überlebt Bearbeiten, Export und Import. Das Formular kann sie nicht
 ändern, deshalb trägt `updateRun()` sie unverändert weiter – wie `source`.
 
-## Achievements
+## Trophäen
 
-17 Stück in drei Kategorien, definiert in `js/achievements.js`: acht
-Meilensteine (Anzahl Läufe, Gesamtdistanz, Serien), fünf Herausforderungen
-(Tageszeit, Bestzeit, Comeback, Distanz-Durchbruch) und vier für Übungen. Sie
-werden bei jedem Render automatisch geprüft; die Bonus-XP fließen sofort in
-Level und Titel ein.
+**62 Stück in drei Kategorien**, definiert in `js/achievements.js`:
+
+| Kategorie | Anzahl | worum es geht |
+|---|--:|---|
+| Meilensteine | 30 | Anzahl Läufe, Gesamtdistanz, Serien, Intervall-Runden, Gesamtzeit |
+| Herausforderungen | 18 | Tageszeit, Tempo, Bestzeit, Comeback, Distanz-Durchbruch |
+| Übungen | 14 | Zähler, Übungstage, Serien, Kategorien-Abdeckung |
+
+Zusammen **5055 Bonus-XP**. Sie werden bei jedem Render automatisch geprüft; die
+XP fliessen sofort in Level und Titel ein. **55 der 62** tragen eine
+`progress(stats)`-Funktion und zeigen deshalb in der Übersicht einen
+Fortschrittsbalken; die übrigen sind Ja/Nein-Bedingungen ohne sinnvollen Zähler.
 
 Auslegungen, die in der Spezifikation offen waren:
 
 - **Eiserner Wille** = längste Spanne von mindestens 30 Tagen, in der nie länger
   als 7 Tage pausiert wurde (`longestWeeklyStreakDays`).
 - **Neue Bestzeit** = ein Lauf unterbietet die eigene beste Dauer auf 5 oder
-  10 km. Zugeordnet wird mit ±0,5 km Toleranz (`PR_TOLERANCE_KM`).
+  10 km (`PR_DISTANCES_KM`). Zugeordnet wird mit ±0,5 km Toleranz
+  (`PR_TOLERANCE_KM`) – grosszügiger als bei den Bestzeiten im Profil, weil hier
+  die persönliche Verbesserung zählt und nicht die Vergleichbarkeit der Marke.
 - **Der lange Atem** = ein Lauf ist mindestens 20 % länger als der bis dahin
   längste; braucht also mindestens zwei Läufe.
+- **Tempo-Trophäen** werten nur Läufe ab 3 km (`PACE_MIN_DISTANCE_KM`). Die
+  Stufen liegen bei 6:00, 5:30 und 5:00 min/km. Ein schneller Kilometer ist
+  kein Tempolauf.
+- **Schneller geworden** verlangt eine Verbesserung um mindestens 0:30 min/km
+  (`PACE_IMPROVEMENT_MIN`) gegenüber der früheren Ø-Pace.
 
 ## Titel
 
 Definiert in `js/titles.js`: Level 1 Neuling, 5 Läufer, 15 Ausdauerläufer,
 30 Veteran, 80 Elite, danach alle 50 Level `Legende I`, `Legende II`, … –
-endlos.
+endlos. Die erste Legenden-Stufe beginnt damit bei Level 130.
 
 Zu jedem Titel gehört ein **Abzeichen** aus `icons/badges/`, aufsteigend von
 Bronze bis zum Kronen-Schild. Die Zuordnung steht ausschliesslich in
@@ -521,53 +744,72 @@ Legenden-Stufen: alle teilen sich das Kronen-Abzeichen, unterschieden werden
 sie durch die römische Ziffer im Text. Ein Test prüft, dass das Bild nur dort
 wechselt, wo auch der Titel wechselt.
 
-Gezeigt wird es an zwei Stellen: klein in der Titel-Pille im Fortschritts-
-bereich und gross über dem Rang im Profil. Die Grafiken bringen Plastik und
-Glanz schon mit, deshalb setzt das CSS nur Grösse und Abstand – kein Rahmen,
-keine Tönung. Sie sind der einzige Ort in der App mit voller Farbigkeit.
+Gezeigt wird es an drei Stellen: klein in der Titel-Pille im Fortschritts-
+bereich, gross über dem Rang im Profil und auf der Teilen-Karte. Die Grafiken
+bringen Plastik und Glanz schon mit, deshalb setzt das CSS nur Grösse und
+Abstand – kein Rahmen, keine Tönung. Sie sind der einzige Ort in der App mit
+voller Farbigkeit.
 
 ## Struktur
 
+24 Module in `js/`. Alle sind pur – kein DOM, kein Storage – ausser den fünf
+unten ausdrücklich markierten.
+
 ```
-index.html          Markup
-css/style.css       Gestaltung; alle Werte als Tokens ganz oben
-js/xp.js            XP-/Level-Logik – pur, kein DOM, kein Storage
-js/achievements.js  Achievement-Definitionen + Auswertung – ebenfalls pur
-js/titles.js        Titel zum Level – ebenfalls pur
-js/geo.js           Haversine, GPS-Filter, Pace/Zeit-Formatierung – ebenfalls pur
-js/validation.js    Prüfung der Lauf-Eingaben – ebenfalls pur
-js/transfer.js      Export-/Importformat – ebenfalls pur
-js/stats.js         Summen, Durchschnitte, Serien, Zeitreihen – ebenfalls pur
-js/route.js         GPS-Strecke auf Zeichenflächen-Koordinaten – ebenfalls pur
-js/pwa.js           Installationshinweis, eigene Caches erkennen – ebenfalls pur
-js/lock.js          Tastensperre: Halte-Fortschritt und Sperrregeln – ebenfalls pur
-js/history.js       Freischaltdaten der Achievements – ebenfalls pur
-js/exercises.js     Übungsbibliothek und Filter – feste Daten, ebenfalls pur
-js/exercise-log.js  Erledigte Übungen: Zähler, Tageslimit, XP – ebenfalls pur
-js/exercise-plan.js Für einen Tag vorgenommene Übungen – ebenfalls pur
-js/goal.js          Wochenziel: erreichte Wochen und Bonus-XP – ebenfalls pur
-js/share-card.js    Zeichnet die Teilen-Karte aufs Canvas – ohne DOM drumherum
-js/training.js      Geplante Einheiten, Abgleich mit den Läufen – ebenfalls pur
-js/tracker.js       Live-Aufzeichnung: watchPosition, Pausen, Wake Lock
-js/storage.js       Laden/Speichern/Ändern der Läufe im localStorage
-js/app.js           Formular, Rendering, Verdrahtung
-manifest.json       PWA-Manifest
-sw.js               Service Worker (App-Shell-Cache)
-icons/icon-*.png    App-Icon; die maskable-Fassung hat Rand für Androids Zuschnitt
-icons/badges/       Rang-Abzeichen zu den Titeln, 160 px hoch
-tests/              Node-Tests, laufen mit `node --test`
+index.html            Markup, alle fünf Bereiche in einem Dokument
+css/style.css         Gestaltung; alle Werte als Tokens ganz oben
+manifest.json         PWA-Manifest
+sw.js                 Service Worker (App-Shell-Cache)
+
+js/app.js             DOM, Rendering, Verdrahtung – rechnet nichts selbst *
+js/storage.js         Laden/Speichern/Ändern aller Datentöpfe *
+js/tracker.js         Live-Aufzeichnung: watchPosition, Pausen *
+js/stopwatch.js       Aufzeichnung ohne GPS, gleiche Form wie tracker *
+js/wake-lock.js       Bildschirm wach halten *
+
+js/xp.js              XP-/Level-Logik – die Kernformel
+js/titles.js          Titel und Abzeichen zum Level
+js/achievements.js    Trophäen-Definitionen + Auswertung
+js/history.js         Freischaltdaten und Titel-Historie
+js/goal.js            Wochenziel: erreichte Wochen und Bonus-XP
+js/stats.js           Summen, Serien, Zeitreihen, Raster, Pace-Verlauf, Bestzeiten
+js/geo.js             Haversine, GPS-Filter, Pace-/Zeitformatierung
+js/route.js           GPS-Strecke auf Zeichenflächen-Koordinaten
+js/validation.js      Prüfung aller Eingaben
+js/transfer.js        Export-/Importformat
+js/training.js        Geplante Einheiten, Intervall-Vorgaben, Abgleich
+js/interval.js        Phasenberechnung Belastung/Pause
+js/beep.js            Signaltöne für die Intervall-Stoppuhr (Web Audio)
+js/exercises.js       Übungsbibliothek und Filter – feste Daten
+js/exercise-log.js    Erledigte Übungen: Zähler, Tageslimit, XP
+js/exercise-plan.js   Für einen Tag vorgenommene Übungen
+js/share-card.js      Zeichnet die Teilen-Karte aufs Canvas
+js/lock.js            Tastensperre: Halte-Fortschritt und Sperrregeln
+js/pwa.js             Installationshinweis, eigene Caches erkennen
+
+icons/icon-*.png      App-Icon; die maskable-Fassung hat Rand für Androids Zuschnitt
+icons/badges/         Rang-Abzeichen zu den Titeln, 160 px hoch
+tests/                Node-Tests, laufen mit `node --test`
 ```
+
+`* = fasst DOM, Storage oder Browser-APIs an und läuft deshalb nicht in Node.`
 
 ## Erweiterung später
 
-**Neues Achievement:** einen Eintrag in `ACHIEVEMENTS` (`js/achievements.js`)
+**Neue Trophäe:** einen Eintrag in `ACHIEVEMENTS` (`js/achievements.js`)
 ergänzen – `id`, `name`, `description`, `xp`, `category`, `check(stats)` und
 optional `progress(stats)` für den Zähler in der Übersicht. Reicht die
 vorhandene Statistik nicht, ein Feld in `buildRunStats()` ergänzen. Anzeige und
 XP-Verrechnung laufen automatisch mit.
 
+⚠️ Die Bedingung **muss monoton sein** – was einmal erfüllt war, muss erfüllt
+bleiben. Sonst zerfallen die Freischaltdaten (siehe „Zeitpunkte statt nur
+Zustände"). Ein Test wacht darüber.
+
 **Neuer Titel:** Eintrag in `BASE_TITLES` (`js/titles.js`), aufsteigend
 sortiert; für die endlosen Stufen `ENDLESS_START_LEVEL` / `ENDLESS_STEP`.
+
+**Neue Datei:** in `APP_SHELL` in `sw.js` eintragen, sonst fehlt sie offline.
 
 Beim Ändern der App-Dateien `CACHE_VERSION` in `sw.js` hochzählen, sonst
 liefert der Service Worker den alten Stand aus.
