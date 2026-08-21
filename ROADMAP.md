@@ -2,9 +2,10 @@
 
 > **Stand: 2026-08-21** · Grundlage: `KONTEXT.md` (Stand `funrun-v53`, 62 Trophäen, 27 Übungen)
 >
-> **Fortschritt: A1, A2, A3, A4, B1, B2, B3, C1, C2, C3 und C4 sind erledigt
-> und committet** – siehe §5. Der nächste Punkt ist **B4** (`history.js`
-> messen).
+> **Fortschritt: A1, A2, A3, A4, B1, B2, B3, B4, C1, C2, C3 und C4 sind
+> erledigt und committet** – siehe §5. **B4 hat einen Nachfolger geboren:**
+> die Messung sagt, dass die Historie behoben werden muss – als **B4b**, und
+> das ist der nächste Punkt.
 >
 > Diese Datei beantwortet drei Fragen: **Was gibt es?**, **Was ist schwach?**,
 > **Was fehlt?** – und in welcher Reihenfolge das angegangen wird.
@@ -12,7 +13,7 @@
 
 **Wichtiger Vorbehalt:** Die Erstfassung dieses Plans war aus `KONTEXT.md`
 abgeleitet, nicht aus dem Quellcode. Was seither erledigt wurde (Block A, B1,
-B2, B3, C1, C2, C3, C4), ist am Code geprüft. Alles **Offene** ist es nicht – Punkte, die
+B2, B3, B4, C1, C2, C3, C4), ist am Code geprüft. Alles **Offene** ist es nicht – Punkte, die
 vor der Umsetzung eine Prüfung brauchen, sind mit **[prüfen]** markiert. Wer sie
 ohne Prüfung als Fakt weitergibt, baut auf Sand.
 
@@ -32,7 +33,7 @@ Tag · **L** = mehrere Sitzungen, braucht vorher eine eigene Skizze.
 
 ## 0. Wo wir stehen
 
-**Block A ist vollständig abgeschlossen.** Aus Block B sind B1, B2 und B3
+**Block A ist vollständig abgeschlossen.** Aus Block B sind B1, B2, B3 und B4
 erledigt, aus Block C die Punkte C1 bis C4. Alles davon ist committet.
 
 ```
@@ -40,9 +41,9 @@ A. Hygiene              B. Struktur               C. Produkt (hier sind
    ✅ A1 CSS geklärt       ✅ B1 app.js geteilt       wir gerade)
    ✅ A2 README            ✅ B2 Speicherfehler       ✅ C1 Sicherungs-
    ✅ A3 Testzahl          ✅ B3 Testlücken             erinnerung
-   ✅ A4 APP_SHELL      ⬅ B4 history.js messen   ✅ C3 Trophäen-
-                           ○ B5, B2b                  Fortschritt
-                                                   ✅ C2 Notiz & Gefühl
+   ✅ A4 APP_SHELL         ✅ B4 history.js gemessen  ✅ C3 Trophäen-
+                        ⬅ B4b Historie beheben        Fortschritt
+                           ○ B5, B2b               ✅ C2 Notiz & Gefühl
                                                    ✅ C4 Wetter
                                                     ○ C5–C15 offen
 ```
@@ -69,9 +70,14 @@ Dienst. Die Kästchen aus C2 sind dabei zur gemeinsamen Bauart geworden. Zum
 ersten Mal in dieser Reihe **kein Fehler, den erst der Browser fand**: die zwei
 Wächter aus C2 haben die Lücke vorher gemeldet. Das Ergebnis steht in §4.
 
-**Der nächste Punkt ist B4** – messen, ob `history.js` mit seinem O(n²)
-tatsächlich ein Problem ist. Nach vier sichtbaren Punkten wieder einer unter
-der Haube, und einer, der erst misst und dann entscheidet.
+**B4 ist gemessen, und die Antwort ist unbequem.** Die Grenze lautete: unter
+50 ms ist es kein Problem und der Punkt wird gestrichen. Gemessen wurden bei
+**200 Läufen und 600 Übungen 314 ms** – auf einem Rechner, nicht auf einem
+Telefon. Bei 1.000 Läufen sind es siebeneinhalb Sekunden. Der Punkt wird also
+nicht gestrichen, sondern bekommt einen Nachfolger: **B4b**, das Beheben.
+
+Zwei Annahmen der alten B4-Beschreibung waren dabei falsch – beide standen
+dort ungeprüft. Was daraus geworden ist, steht in §3.
 
 Die vollständige Reihenfolge mit Stand steht in **§5**.
 
@@ -105,7 +111,7 @@ Gruppiert nach dem, was der Nutzer erlebt, nicht nach Dateien.
 | Titel und 6 Rang-Abzeichen, endlos ab Level 80 | `titles.js` | rund |
 | 62 Trophäen in 3 Kategorien | `achievements.js` | rund, wächst stetig |
 | Stand jeder offenen Trophäe: Balken (55) oder Zeile (5) | `achievements.js`, `app.js` | rund seit C3; zwei zeigen bewusst nichts |
-| Freischaltdaten per Replay | `history.js` | rund, aber **O(n²)** – siehe B4 |
+| Freischaltdaten per Replay | `history.js` | richtig, aber **zu langsam** – 314 ms bei 200 Läufen und 600 Übungen, gemessen (B4). Behebung als B4b |
 
 ### 1.3 Training & Übungen
 
@@ -238,8 +244,8 @@ Ein-Personen-Projekt mehr Aufwand als Nutzen. Der Test läuft dagegen immer.
 
 ## 3. Block B – Struktur
 
-**Stand:** B1, B2 und B3 ✅ erledigt · B2b, B4, B5 offen. Keiner der drei steht
-als Nächstes an – die Reihenfolge geht erst über C2 und C4 (siehe §5).
+**Stand:** B1, B2, B3 und B4 ✅ erledigt · **B4b** ist als Nächstes dran,
+B2b und B5 danach.
 
 ### ✅ B1 · `js/app.js` entflechten · `js/app.js` → `js/views/`, `js/format.js`
 
@@ -459,17 +465,90 @@ sondern der Punkt, den **B1** angeht – solange die Datei 4.092 Zeilen DOM ist,
 lässt sich daran in Node nichts prüfen ausser dem, was `styles.test.mjs` schon
 gegen den Quelltext abgleicht.
 
-### B4 · `history.js` O(n²) beobachten · **S (messen) / M (beheben)** · `js/history.js`
+### ✅ B4 · `history.js` gemessen · `tools/mess-history.mjs`
 
-`replayHistory()` spielt für jeden Lauf alle Trophäenbedingungen erneut durch.
-Bei 200 Läufen ist das unauffällig, bei 2.000 nicht mehr – und es läuft bei
-**jedem** Rendern.
+Die Grenze stand vorher fest: **unter ~50 ms ist es kein Problem und der Punkt
+wird gestrichen.** Er wird nicht gestrichen.
 
-**Jetzt:** nur messen. Ein Skript, das 2.000 synthetische Läufe erzeugt und die
-Laufzeit misst. Liegt sie unter ~50 ms, ist das kein Problem und der Punkt wird
-gestrichen. **Nicht optimieren, bevor gemessen wurde** – vorzeitige Optimierung
-würde hier ausgerechnet das Modul verkomplizieren, dessen Monotonie-Annahme die
-Freischaltdaten trägt.
+Gemessen mit `node tools/mess-history.mjs`, Node 24 auf einem Windows-Rechner.
+Das Skript liegt im Baum, weil die Antwort an der Zahl der Läufe hängt und die
+wächst – eine Messung, die nur aufgeschrieben wurde, ist ab dem nächsten Jahr
+eine Behauptung.
+
+```
+achievementUnlockDates() – nur Läufe
+     n         ms   ms/Lauf   gegen die halbe Größe
+   100       21,6     0,216   –
+   200       73,9     0,369   3,41×
+   500      449,3     0,899   6,08×
+  1000    1.772,9     1,773   3,95×
+  2000    7.020,0     3,510   3,96×
+
+… mit Übungen, drei pro Tag
+   200 Läufe +   600 Übungen:    314 ms
+   500 Läufe + 1.500 Übungen:  1.898 ms
+  1000 Läufe + 3.000 Übungen:  7.487 ms
+```
+
+**Der Faktor 4 je Verdopplung ist O(n²), sauber und ohne Ausreisser.** Die
+50-ms-Grenze fällt schon zwischen 100 und 200 Läufen – und das auf einem
+Rechner. **Ein Telefon rechnet drei- bis zehnmal langsamer**; die 314 ms von
+oben sind dort eine bis drei Sekunden.
+
+**Zum Vergleich, damit klar ist, wo es *nicht* klemmt:** der Jetzt-Zustand,
+`evaluateAchievements()`, braucht bei 2.000 Läufen **7 ms**. Die Anzeige der
+Trophäen ist billig. Teuer ist ausschliesslich das Durchspielen der Historie
+für die Freischalt-*Daten*.
+
+#### Zwei Annahmen dieses Punkts waren falsch
+
+Beide standen hier ungeprüft – genau die Sorte, vor der der Kopf dieser Datei
+warnt.
+
+1. **„Es läuft bei jedem Rendern."** Nein. `achievementUnlockDates()` wird nur
+   aus `renderTrophies()` gerufen, und das passiert nur, wenn der
+   Trophäen-Bereich offen ist (`setView()` und die Schlusszeilen von
+   `render()`). Im Code steht sogar der Kommentar dazu: *„Erst beim Ansehen
+   aufbauen."* **Der Punkt ist damit kleiner als beschrieben** – wer die
+   Trophäen nie öffnet, merkt nichts. Er ist trotzdem echt: solange der
+   Bereich offen ist, läuft es bei jedem Speichern erneut.
+2. **„Bei 200 Läufen ist das unauffällig."** Nein – 74 ms nur mit Läufen, 314 ms
+   mit Übungen dazu. Die Zahl war geraten, und sie war um eine Grössenordnung
+   zu optimistisch.
+
+#### Die billigste Abhilfe wurde geprüft und fällt aus
+
+Naheliegend wäre: abbrechen, sobald jede Trophäe ihr Datum hat. Das Skript
+misst auch das – und es trägt nicht:
+
+```
+  500 Läufe + 1.500 Übungen: 46 von 62 freigeschaltet – letzte bei Schritt 1750 von 2000
+  2000 Läufe +     0 Übungen: 37 von 62 freigeschaltet – letzte bei Schritt  250 von 2000
+```
+
+Die Abbruchbedingung wäre „alle 62 gefunden", und die tritt **nie** ein: es
+bleiben immer welche offen. Im zweiten Fall wären 87 % der Arbeit umsonst und
+liessen sich sparen – nur weiss der Abbruch das nicht. **Gut, dass gemessen
+wurde, statt es einzubauen.**
+
+### B4b · Die Historie beheben · **M** · `js/history.js`, `js/achievements.js`
+
+Aus der Messung entstanden. Drei Wege, vom billigsten zum saubersten:
+
+| Weg | Aufwand | Was es bringt | Was es kostet |
+|---|--:|---|---|
+| **Merken statt neu rechnen** | S | Das Wiederholen fällt weg – bei jedem Speichern mit offenem Trophäen-Bereich. **Das erste Öffnen bleibt langsam.** | Fast nichts. Ein Zwischenspeicher, der verfällt, sobald sich Läufe oder Übungen ändern. |
+| **Nur die offenen weiterverfolgen** | M | Jeder Schritt prüft nur noch, was noch nicht freigeschaltet ist. Spart in der Praxis viel, aber die Kostenklasse bleibt O(n²). | Wenig. Die Monotonie-Annahme wird nicht angetastet – im Gegenteil, sie wird ausgenutzt. |
+| **`buildRunStats()` fortschreiben** | M–L | O(n) statt O(n²). Aus sieben Sekunden werden Millisekunden. | Das, wovor der Modulkommentar warnt: gut zwei Dutzend Kennzahlen von Hand fortschreiben, jede eine mögliche Abweichung vom Neuberechnen. |
+
+**Empfehlung: die ersten beiden, in dieser Reihenfolge, und dann neu messen.**
+Der dritte Weg berührt das Modul, dessen Monotonie-Annahme die Freischaltdaten
+trägt – dort etwas von Hand fortzuschreiben, was heute abgeleitet wird, ist
+genau die Sorte Änderung, die man erst bemerkt, wenn ein Datum falsch ist.
+
+**Bedingung an jede Fassung:** `tools/mess-history.mjs` vorher und nachher
+laufen lassen und beide Zahlen in diesen Abschnitt schreiben. Eine Optimierung
+ohne Nachmessung ist eine Hoffnung.
 
 ### B5 · Barrierefreiheit stichprobenhaft prüfen · **M** · `index.html`, `css/style.css`
 
@@ -738,9 +817,10 @@ Argument für B1: was `app.js` selbst tut, prüft weiterhin niemand.
 | 8 | **C3** Trophäen-Fortschritt | S | ✅ erledigt |
 | 9 | **C2** Notiz & Gefühl | S | ✅ erledigt |
 | 10 | **C4** Wetter | S | ✅ erledigt |
-| 11 | **B4** history.js messen | S | ⬅ **als Nächstes** |
-| 12 | **B2b** GPS-Fehlerpfade am Gerät prüfen | M | offen |
-| 13 | danach frei nach Lust: C5, C8, C10, C15 | – | offen |
+| 11 | **B4** history.js messen | S | ✅ erledigt |
+| 12 | **B4b** Historie beheben – aus der Messung entstanden | M | ⬅ **als Nächstes** |
+| 13 | **B2b** GPS-Fehlerpfade am Gerät prüfen | M | offen |
+| 14 | danach frei nach Lust: C5, C8, C10, C15 | – | offen |
 
 ### Die Commits – erledigt am 2026-08-21
 
@@ -768,6 +848,8 @@ Ein Punkt = ein Commit (§6, Regel 1). So sind sie gefallen:
 | 18 | C2 | `12fd1cf` | Notiz und Gefuehl zu jedem Lauf |
 | 19 | – | `38e484d` | Haekchen-Runde nach C2 |
 | 20 | C4 | `20aaed8` | Wetter zum Antippen statt aus dem Netz |
+| 21 | – | `962de24` | Haekchen-Runde nach C4 |
+| 22 | B4 | `8dda88e` | Ein Werkzeug, das die Historie misst |
 
 **B1 hat drei Commits statt einem** – das ist keine Ausnahme von Regel 1 in §6,
 sondern stand so im Punkt selbst: einen Bereich pro Commit, nach jedem Commit
@@ -875,6 +957,9 @@ Fleißaufgabe, sondern der halbe Zweck dieser Datei.
 | 2026-08-21 | **B1** umgesetzt, kleine Variante, in drei Commits (`061d0ba`, `2378c00`, `96bfbf2`). `app.js` 4.132 → 3.091 Zeilen; neu sind `js/format.js` und `js/views/{dom,training,stats}.js`. §3 komplett neu geschrieben (Ergebnis statt Vorhaben, samt der Frage, ob der Rest folgt), §0 mit neuem Schaubild, §1.5 mit der Einordnung der Modul-Zahl, §5-Tabelle und Commit-Block nachgezogen. §1 bekam **keine** neue Zeile: B1 hat für den Nutzer nichts geändert, und eine Zeile dafür wäre eine Behauptung. 802 → 887 Tests, `sw` v47 → v50. Nächster Punkt: **C3**. |
 | 2026-08-21 | **C3** umgesetzt. Der Punkt war zu 90 % schon gebaut – Balken an 55 von 62 Trophäen seit `8c9308c`, und `KONTEXT.md` §7 sagte das seit `28b277a` wörtlich, während diese Datei das Gegenteil behauptete. Offen waren die sieben, bei denen ein Balken lügt; fünf haben jetzt eine Zeile (`standing`), zwei bleiben mit Begründung leer. §0/§1.2/§4/§5 nachgezogen, Aufwand von M auf S korrigiert. 887 → 895 Tests, `sw` v50 → v51. Nächste Punkte: **C2** und **C4**. |
 | 2026-08-21 | **C2** umgesetzt: Notiz und Gefühl pro Lauf. §1.1 um eine Zeile ergänzt, §0/§4/§5 nachgezogen. Zwei Fehler fand wieder nur der Browser – der zweite hätte ein Gefühl in den falschen Lauf geschrieben. 895 → 913 Tests, `sw` v51 → v52. Nächster Punkt: **C4**. |
+| 2026-08-21 | **B4** gemessen – und die Grenze klar gerissen: 314 ms bei 200 Läufen und 600 Übungen statt der gesetzten 50 ms, auf einem Rechner. Der Punkt wird nicht gestrichen, sondern bekommt mit **B4b** einen Nachfolger. Das Messskript liegt als `tools/mess-history.mjs` im Baum, damit die Antwort nachprüfbar bleibt, wenn die Zahl der Läufe wächst. |
+| 2026-08-21 | **Zwei Annahmen der B4-Beschreibung waren falsch.** „Läuft bei jedem Rendern" – nein, nur bei offenem Trophäen-Bereich, und im Code steht sogar der Kommentar dazu. „Bei 200 Läufen unauffällig" – nein, um eine Grössenordnung daneben. Der Punkt war also gleichzeitig kleiner *und* schlimmer, als er dastand. Beides hätte ein Blick in den Code gezeigt; genau dafür steht die Regel im Kopf. |
+| 2026-08-21 | Die naheliegende billige Abhilfe für B4b – abbrechen, sobald alle Trophäen ihr Datum haben – wurde **mitgemessen und fällt aus**: es bleiben immer 16 bis 25 Trophäen offen, die Abbruchbedingung tritt nie ein. Eine halbe Stunde Messen hat einen Tag Einbau gespart. |
 | 2026-08-21 | **C4** umgesetzt: Wetter zum Antippen. §1.1 um eine Zeile ergänzt, §0/§4/§5 nachgezogen. Die Kästchen aus C2 sind zur gemeinsamen Bauart geworden. 913 → 925 Tests, `sw` v52 → v53. Nächster Punkt: **B4**. |
 | 2026-08-21 | **Der Offline-Modus ist geprüft und funktioniert** – die Frage stand seit B1 offen. Der erste Versuch schlug fehl, weil der „Aktualisieren"-Knopf den Offline-Speicher zuerst *löscht* und neu aufbaut: wer danach sofort in den Flugmodus geht, hat nichts. Zweiter Versuch mit einer Viertelminute Netz dazwischen: die App startet ohne Verbindung. **Der Knopf trägt diesen Preis nirgends an – die App sagt bis heute nicht, ob sie offline bereit ist.** Kein Roadmap-Punkt, aber notiert. |
 | 2026-08-21 | **Zum dritten Mal in Folge grüne Tests, kaputte Oberfläche.** Nach C1 und C3 jetzt C2. Das ist kein Zufall mehr, sondern die Kennzahl von B1: solange `app.js` untestbar ist, sagt eine grüne Suite über die Oberfläche nichts. Der Punkt steht in §3 und wird mit jedem Mal teurer. |

@@ -102,7 +102,7 @@ schaut nie in beide.
 | `js/pwa.js` | 94 | Installationshinweis, eigene Caches erkennen | Update-/Installlogik |
 | `js/xp.js` | 84 | XP und Level – die Kernformel | XP-Regeln |
 | `js/goal.js` | 79 | Wochenziel: erreichte Wochen, Bonus-XP | Wochenziel |
-| `js/history.js` | 78 | Freischaltdaten, Titel-Historie (Replay, O(n²)) | „freigeschaltet am" |
+| `js/history.js` | 78 | Freischaltdaten (Replay, O(n²) – **teuer**, siehe §6) | „freigeschaltet am" |
 | `js/lock.js` | 56 | Tastensperre: Halte-Fortschritt, Sperrregeln | Sperre |
 | `js/wake-lock.js` | 42 | Bildschirm wach halten | Wake Lock |
 
@@ -386,6 +386,15 @@ herein, nie aus der Systemuhr – nur so testbar.
 war, bleibt erfüllt. Ein Test wacht darüber. Eine nicht-monotone Bedingung würde
 die Freischaltdaten zerstören.
 
+⚠️ **Die Historie ist teuer** (gemessen bei B4, `node tools/mess-history.mjs`):
+`achievementUnlockDates()` kostet O(n²) – **314 ms bei 200 Läufen und 600
+Übungen**, sieben Sekunden bei 1.000 Läufen, gemessen auf einem Rechner; ein
+Telefon ist drei- bis zehnmal langsamer. Gerufen wird sie nur aus
+`renderTrophies()`, also **nur bei offenem Trophäen-Bereich** – dort aber bei
+jedem Speichern erneut. Der Jetzt-Zustand (`evaluateAchievements()`) ist mit
+7 ms bei 2.000 Läufen dagegen billig. **Wer hier etwas anfasst, misst vorher
+und nachher.** Die Behebung steht als B4b in der Roadmap.
+
 **Jede offene Trophäe zeigt ihren Stand** (`achievements.js`): entweder
 `progress(stats)` – ein Zähler, der zum Ziel hochläuft und als Balken erscheint –
 oder `standing(stats)` für die Fälle, in denen ein Balken lügen würde: eine Pace
@@ -434,18 +443,20 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
   `comeback`; warum, steht als Kommentar über `ACHIEVEMENTS`. Trophäen-XP
   gesamt: **5055**
 - **Module: 28** – 25 in `js/`, 3 in `js/views/`
+- **Werkzeuge: 1** – `tools/mess-history.mjs` (kein Teil der App: nicht in
+  `APP_SHELL`, keine Testdatei; siehe den Dateikopf dort)
 - **`js/app.js`: 3185 Zeilen**, 140 Funktionen (vor B1: 4132)
 - **`sw.js`: `funrun-v53`**
 - Letzte Commits (neueste zuerst, Stand des Repos):
-  1. Wetter zum Antippen statt aus dem Netz
-  2. Haekchen-Runde nach C2
-  3. Notiz und Gefuehl zu jedem Lauf
-  4. Haekchen-Runde nach C3 – und was sie zutage foerderte
-  5. Stand statt Balken, wo ein Balken luegen wuerde
+  1. Die Historie gemessen: sie ist teurer als gedacht
+  2. Haekchen-Runde nach C4
+  3. Wetter zum Antippen statt aus dem Netz
+  4. Haekchen-Runde nach C2
+  5. Notiz und Gefuehl zu jedem Lauf
 
-### Roadmap-Block A, B1, B2, B3 und C1 bis C4 sind committet
+### Roadmap-Block A, B1, B2, B3, B4 und C1 bis C4 sind committet
 
-Die Änderungen aus A1, A2, A4, B1, B2, B3 und C1 bis C4 liegen seit dem
+Die Änderungen aus A1, A2, A4, B1, B2, B3, B4 und C1 bis C4 liegen seit dem
 2026-08-21 auf `master`; `dertimsistda.github.io` liefert immer den letzten
 Stand von `master`. Das Arbeitsverzeichnis ist sauber.
 
@@ -477,6 +488,8 @@ Stand von `master`. Das Arbeitsverzeichnis ist sauber.
 | C2 | `12fd1cf` | Notiz und Gefühl am Lauf; `FEELINGS` in `validation.js`; `CACHE_VERSION` auf v52 |
 | – | `38e484d` | Häkchen-Runde nach C2; die Drei-Stellen-Regel in §5 |
 | C4 | `20aaed8` | Wetter am Lauf; `WEATHERS` und vier Symbole; `.choice-scale` geteilt; `CACHE_VERSION` auf v53 |
+| – | `962de24` | Häkchen-Runde nach C4 |
+| B4 | `8dda88e` | `tools/mess-history.mjs`; kein Produktivcode, `sw` bleibt v53 |
 
 `css/style.css` steckte in A1 und B2 und wurde auf beide Commits aufgeteilt –
 die gelöschte Regel in A1, die `.storage-hint`-Regel in B2. Jeder Commit ist
@@ -593,6 +606,7 @@ Bugfix in einer Render-Funktion braucht keinen Eintrag.
 | 2026-08-21 | Ebenfalls beim Nachzählen aufgefallen und in §4 vermerkt: `Statistik` ist die **letzte** Kommentarmarke in `app.js` und begrenzt deshalb nichts – Lauf-Liste, Fehleranzeige und Service-Worker stehen mit unter ihr. Das war schon vor B1 so und stand nirgends. |
 | 2026-08-21 | Nach dem Push nachgezogen: §7 sagte „noch nicht gepusht" – seit `102107b` auf `origin/master` stimmt das nicht mehr. Genau die Sorte Satz, die nur so lange wahr ist, bis jemand den nächsten Schritt tut; deshalb steht hier weiterhin kein Live-Hash. |
 | 2026-08-21 | **C3** umgesetzt: `standing()` für die fünf Trophäen, bei denen ein Fortschrittsbalken lügen würde. Neu in §6 die Regel, dass jede offene Trophäe einen Stand zeigt; §3 und §4 mit neuen Zeilenzahlen und Marken. 887 → **895 Tests**, `sw` v50 → v51. |
+| 2026-08-21 | **B4** gemessen: die Historie kostet O(n²) und reisst die gesetzte 50-ms-Grenze schon zwischen 100 und 200 Läufen. Neu in §6 die Warnung mit den Zahlen, in §7 der Werkzeug-Eintrag. Kein Produktivcode, `sw` bleibt v53. |
 | 2026-08-21 | **C4** umgesetzt: Wetter am Lauf. Neu in §4 `WEATHERS` und `weatherLabel()`, in §5 das Feld am `Run` und die zweite Warnung: eine Auswahl steht zweimal da, in der Liste und im Markup. 913 → **925 Tests**, `sw` v52 → v53. |
 | 2026-08-21 | **Offline geprüft und in Ordnung** – die Frage stand seit B1 offen. Der erste Versuch schlug fehl, weil „Aktualisieren" den Offline-Speicher erst löscht und neu aufbaut; wer sofort danach offline geht, hat nichts. Mit einer Viertelminute Netz dazwischen startet die App ohne Verbindung. Der Knopf trägt diesen Preis nirgends an. |
 | 2026-08-21 | **C2** umgesetzt: Notiz und Gefühl am Lauf. Neu in §4 `MAX_RUN_NOTE_LENGTH`, `FEELINGS` und `feelingLabel()`; in §5 die zwei Felder am `Run` **und** die Warnung, dass ein neues Feld an drei Stellen gehört. 895 → **913 Tests**, `sw` v51 → v52. |

@@ -874,7 +874,7 @@ js/wake-lock.js       Bildschirm wach halten *
 js/xp.js              XP-/Level-Logik – die Kernformel
 js/titles.js          Titel und Abzeichen zum Level
 js/achievements.js    Trophäen-Definitionen + Auswertung
-js/history.js         Freischaltdaten und Titel-Historie
+js/history.js         Freischaltdaten – teuer, siehe „Was langsam ist"
 js/goal.js            Wochenziel: erreichte Wochen und Bonus-XP
 js/stats.js           Summen, Serien, Zeitreihen, Raster, Pace-Verlauf, Bestzeiten
 js/geo.js             Haversine, GPS-Filter, Pace-/Zeitformatierung
@@ -895,9 +895,39 @@ js/pwa.js             Installationshinweis, eigene Caches erkennen
 icons/icon-*.png      App-Icon; die maskable-Fassung hat Rand für Androids Zuschnitt
 icons/badges/         Rang-Abzeichen zu den Titeln, 160 px hoch
 tests/                Node-Tests, laufen mit `node --test`
+tools/                Messwerkzeuge – kein Teil der App, nicht im Offline-Cache
 ```
 
 `* = fasst DOM, Storage oder Browser-APIs an und läuft deshalb nicht in Node.`
+
+## Was langsam ist
+
+Eine Zahl, damit niemand raten muss: **die Freischaltdaten der Trophäen**
+(„freigeschaltet am 14.08.") werden berechnet, indem die gesamte Historie noch
+einmal durchgespielt wird – Lauf für Lauf, jedes Mal alle Bedingungen neu. Das
+kostet quadratisch:
+
+| Daten | Zeit |
+|---|--:|
+| 200 Läufe | 74 ms |
+| 200 Läufe + 600 Übungen | 314 ms |
+| 1.000 Läufe + 3.000 Übungen | 7,5 s |
+
+Gemessen mit `node tools/mess-history.mjs` auf einem Windows-Rechner; ein
+Telefon rechnet drei- bis zehnmal langsamer.
+
+**Wo es sich bemerkbar macht:** nur im Trophäen-Bereich. Er ist der einzige
+Aufrufer, und er wird bewusst erst beim Ansehen aufgebaut. Solange er offen
+ist, läuft die Rechnung allerdings bei jedem Speichern erneut. Alles andere –
+XP, Level, welche Trophäen erfüllt sind – kostet bei 2.000 Läufen **7 ms**.
+Teuer ist ausschliesslich die Frage *wann*, nicht die Frage *ob*.
+
+Warum es überhaupt so gebaut ist: Alle Bedingungen sind monoton – was einmal
+erfüllt war, bleibt erfüllt. Deshalb genügt ein Durchspielen, und es braucht
+keine zwei Dutzend handgeschriebene Fortschreibungen, die mit jeder neuen
+Trophäe wieder auseinanderlaufen. Der Preis dafür steht in der Tabelle. Die
+Behebung ist als **B4b** in `ROADMAP.md` geplant, samt Auflage: vorher und
+nachher messen.
 
 ## Erweiterung später
 
