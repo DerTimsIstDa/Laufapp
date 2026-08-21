@@ -364,6 +364,29 @@ jedem Gerät anders aussehen.
 gespeichert und angezeigt – mehr nicht. Das ist Absicht: eine Auswertung über
 drei Läufe wäre Zahlenspielerei.
 
+### Ansagen beim Laufen
+
+Bei jedem vollen Kilometer sagt die App **„Ein Kilometer. 5 Minuten 42."** —
+über die Sprachausgabe, die jeder Browser mitbringt. Keine Audiodatei, keine
+Abhängigkeit, dasselbe Prinzip wie bei den Signaltönen der Intervall-Stoppuhr.
+
+Der Schalter steht in der Aufzeichnungs-Karte und **nur dort, wo er wirkt**:
+Ohne GPS gibt es keine Strecke und damit keinen Kilometer anzusagen; kennt der
+Browser keine Sprachausgabe, wäre er ein Versprechen, das niemand einlöst. In
+beiden Fällen ist die Zeile ausgeblendet.
+
+Ausgeschrieben statt in Ziffern, weil eine Sprachausgabe die „1" als *eins
+Kilometer* und die „5:42" als Uhrzeit vorliest. Ein GPS-Sprung wird zu einer
+Ansage zusammengefasst — zwei im selben Atemzug wären Lärm. Und unter einer
+Minute je Kilometer wird gar kein Tempo genannt: Das wäre ein Sprung und kein
+Laufen.
+
+⚠️ **Was hier niemand prüfen konnte:** ob die Ansage neben laufender Musik
+durchkommt, ob sie bei gesperrtem Bildschirm noch gesprochen wird und wie die
+Stimme des jeweiligen Geräts klingt. Das entscheidet das Betriebssystem, und
+dafür gibt es keine Attrappe. Der Vorbehalt ist derselbe wie beim Ton der
+Intervall-Stoppuhr.
+
 ## Wochenziel
 
 Im Profil lässt sich ein **Ziel von Läufen pro Woche** setzen (höchstens 14,
@@ -611,7 +634,7 @@ Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 node --test
 ```
 
-**925 Tests in 26 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
+**954 Tests in 27 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
 Testrunner von Node — keine Abhängigkeiten, kein Framework, nichts zu
 installieren.
 
@@ -623,7 +646,8 @@ installieren.
 | `tests/imports.test.mjs` | 60 | jeder Import-Pfad und -Name gegen den Dateibaum |
 | `tests/training.test.mjs` | 59 | Abschnitte, Intervall-Vorgabe, Abgleich, Plantreue und XP |
 | `tests/validation.test.mjs` | 74 | Pflicht- und Optionalfelder, erfundene Kalendertage, Gefühlsskala und Wetter |
-| `tests/storage.test.mjs` | 53 | Anlegen/Ändern/Löschen/Ersetzen, Neuberechnung, volles Fach, kein Feld geht verloren |
+| `tests/storage.test.mjs` | 58 | Anlegen/Ändern/Löschen/Ersetzen, Neuberechnung, volles Fach, kein Feld geht verloren |
+| `tests/speech.test.mjs` | 22 | Wann angesagt wird und was – Kilometergrenze, GPS-Sprung, Sprachausgabe-Attrappe |
 | `tests/styles.test.mjs` | 53 | CSS- und Markup-Regeln, die Node nicht ausführen kann; Auswahlreihen gegen ihre Datenquelle |
 | `tests/exercise-log.test.mjs` | 37 | Tageslimit, Zähler, Kategorien für Vielseitig |
 | `tests/route.test.mjs` | 33 | Projektion, Seitenverhältnis, Geraden, Ausdünnen |
@@ -885,6 +909,7 @@ js/transfer.js        Export-/Importformat
 js/training.js        Geplante Einheiten, Intervall-Vorgaben, Abgleich
 js/interval.js        Phasenberechnung Belastung/Pause
 js/beep.js            Signaltöne für die Intervall-Stoppuhr (Web Audio)
+js/speech.js          Ansagen beim Laufen: der Text (pur) und die Sprachausgabe *
 js/exercises.js       Übungsbibliothek und Filter – feste Daten
 js/exercise-log.js    Erledigte Übungen: Zähler, Tageslimit, XP
 js/exercise-plan.js   Für einen Tag vorgenommene Übungen

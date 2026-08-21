@@ -1,6 +1,6 @@
 # FunRun – Projektkontext (Gedächtnisdatei)
 
-> **Stand: 2026-08-21** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v53`
+> **Stand: 2026-08-21** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v54`
 >
 > **Diese Datei ist das Gedächtnis des Projekts.** Sie ersetzt das Einlesen des
 > Quellcodes beim Start eines neuen Chats. Wird sie nicht gepflegt, ist sie
@@ -14,7 +14,7 @@
    Datenmodell und Regeln. Sie genügt für Planung, Beratung und Diskussion.
 2. **Erst konkret werden, dann Dateien laden.** Für eine Änderung nur die
    Dateien lesen, die die Modulkarte (§3) für das Anliegen nennt – plus die
-   zugehörige Testdatei. `js/app.js` ist seit B1 3.185 statt 4.132 Zeilen, aber
+   zugehörige Testdatei. `js/app.js` ist seit B1 3.250 statt 4.132 Zeilen, aber
    immer noch zu lang zum Am-Stück-Lesen: dort gezielt nach Funktionsnamen oder
    Kommentarmarken aus §4 greifen. Die Ansichten unter `js/views/` sind klein
    genug, um ganz gelesen zu werden.
@@ -77,12 +77,12 @@ schaut nie in beide.
 
 | Datei | Zeilen | Zuständig für | Anfassen wenn … |
 |---|--:|---|---|
-| `js/app.js` | 3185 | Verdrahtung und die noch nicht herausgelösten Bereiche | Start, Läufe, Übungen, Trophäen, Profil, Intervall, Teilen, Export |
+| `js/app.js` | 3250 | Verdrahtung und die noch nicht herausgelösten Bereiche | Start, Läufe, Übungen, Trophäen, Profil, Intervall, Teilen, Export |
 | `js/views/training.js` | 498 | Trainingsformular, Planliste, Löschrückfrage | irgendetwas am Trainingsplan |
 | `js/views/stats.js` | 422 | Profil-Kennzahlen, Aktivitätsraster, Pace-Verlauf, Bestzeiten, Trophäen-Übersicht | irgendetwas an der Statistik im Profil |
 | `js/views/dom.js` | 242 | die `getElementById`-Verweise (`el`), `SVG_NS`, `createSvg` | ein neues Element im Markup |
 | `js/format.js` | 85 | rein: Zahlen, Daten, Zeiten in Anzeigeform | eine neue Formatierung |
-| `js/storage.js` | 686 | Laden/Speichern/Ändern aller Datentöpfe | neues persistiertes Feld, neuer Datentopf |
+| `js/storage.js` | 731 | Laden/Speichern/Ändern aller Datentöpfe | neues persistiertes Feld, neuer Datentopf |
 | `js/achievements.js` | 997 | Trophäen-Definitionen + `buildRunStats()` | neue Trophäe, neue Kennzahl für Bedingungen, Stand einer offenen Trophäe |
 | `js/training.js` | 590 | geplante Einheiten, Intervall-Vorgaben, Abgleich mit Läufen | Trainingsplan, Plantreue-XP |
 | `js/stats.js` | 551 | Summen, Serien, Zeitreihen, Aktivitätsraster, Pace-Trend, Bestzeiten | Statistik, Diagramme |
@@ -98,6 +98,7 @@ schaut nie in beide.
 | `js/exercise-plan.js` | 129 | für einen Tag vorgenommene Übungen | Tagesplan Übungen |
 | `js/titles.js` | 114 | Titel + Abzeichen zum Level | neuer Rang |
 | `js/beep.js` | 109 | Töne für die Intervall-Stoppuhr (WebAudio) | Signaltöne |
+| `js/speech.js` | 175 | Ansagen beim Laufen: was gesagt wird (pur) + Sprachausgabe | Ansagetext, Schrittweite |
 | `js/interval.js` | 107 | Phasenberechnung Belastung/Pause | Intervall-Ablauf |
 | `js/pwa.js` | 94 | Installationshinweis, eigene Caches erkennen | Update-/Installlogik |
 | `js/xp.js` | 84 | XP und Level – die Kernformel | XP-Regeln |
@@ -139,6 +140,10 @@ fassen das DOM an und laden in Node nicht; für sie gibt es zwei Tests, die den
 **`achievements.js`** `ACHIEVEMENTS` · `ACHIEVEMENT_CATEGORIES` ·
 `buildRunStats(runs)` · `evaluateAchievements(runs, exerciseLog=[])` ·
 `achievementsByCategory(evaluated)` · `achievementXp(evaluated)`
+
+**`speech.js`** `ANNOUNCE_STEP_KM=1` · `nextAnnouncement(state, previous)` ·
+`announcementText(km, proKmMs)` · `isVoiceSupported()` · `isVoiceOn()` ·
+`setVoiceOn(v)` · `unlockVoice()` · `speak(text)` · `cancelSpeech()`
 
 **`geo.js`** `EARTH_RADIUS_KM` · `DEFAULT_FILTER` · `haversineKm(a,b)` ·
 `evaluateSegment(prev, next, filter)` · `reduceTrack(points, filter)` ·
@@ -308,7 +313,7 @@ Formatierung → `js/format.js`.
 | `laufapp.training.v1` | geplante Einheiten (Sessions) |
 | `laufapp.exercise-plan.v1` | für Tage vorgenommene Übungen |
 | `laufapp.profile.v1` | `{ name, weeklyGoal, goalSince }` |
-| `laufapp.recording.v1` | `{ gps: boolean }` – zuletzt gewählte Aufzeichnungsart, Voreinstellung **false** |
+| `laufapp.recording.v1` | `{ gps: boolean, voice: boolean }` – Aufzeichnungsart (Voreinstellung **false**) und Ansagen beim Laufen (Voreinstellung **true**). ⚠️ **Zwei Schalter, ein Eintrag:** gelesen und geschrieben wird im Ganzen, sonst löscht einer den anderen. Wandert **nicht** in die Exportdatei |
 | `laufapp.export.v1` | `{ lastExport: "JJJJ-MM-TT" }` – Tag der letzten Sicherung. Wandert **nicht** in die Exportdatei: beschreibt die Gewohnheit des Browsers, nicht die Daten |
 | `laufapp.installHint.dismissed` | Installationsbanner weggeklickt |
 
@@ -437,27 +442,27 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Übungen: 27** in 5 Kategorien (`warmup`, `drills`, `kraft`, `mobility`, `regeneration`)
 - **Bereiche/Tabs: 5** – `start`, `exercises`, `training`, `trophies`, `profile`
   (`data-view` / `#view-…` in `index.html`)
-- **Tests: 925** in 26 Dateien (`node --test`, alle grün)
+- **Tests: 954** in 27 Dateien (`node --test`, alle grün)
 - **Trophäen mit Anzeige: 60 von 62** – 55 mit Balken (`progress()`), 5 mit
   Zeile (`standing()`, seit C3). Ohne beides nur `neue-bestzeit` und
   `comeback`; warum, steht als Kommentar über `ACHIEVEMENTS`. Trophäen-XP
   gesamt: **5055**
-- **Module: 28** – 25 in `js/`, 3 in `js/views/`
+- **Module: 29** – 26 in `js/`, 3 in `js/views/`
 - **Werkzeuge: 1** – `tools/mess-history.mjs` (kein Teil der App: nicht in
   `APP_SHELL`, keine Testdatei; siehe den Dateikopf dort)
-- **`js/app.js`: 3185 Zeilen**, 140 Funktionen (vor B1: 4132)
-- **`sw.js`: `funrun-v53`**
+- **`js/app.js`: 3250 Zeilen**, 141 Funktionen (vor B1: 4132)
+- **`sw.js`: `funrun-v54`**
 - Letzte Commits (neueste zuerst, Stand des Repos):
-  1. Die Historie gemessen: sie ist teurer als gedacht
-  2. Haekchen-Runde nach C4
-  3. Wetter zum Antippen statt aus dem Netz
-  4. Haekchen-Runde nach C2
-  5. Notiz und Gefuehl zu jedem Lauf
+  1. Ansagen waehrend des Laufs
+  2. Die Reihenfolge neu geordnet: benutzen zuerst
+  3. Haekchen-Runde nach B4 – die Messung als Ergebnis
+  4. Die Historie gemessen: sie ist teurer als gedacht
+  5. Haekchen-Runde nach C4
 
-### Roadmap-Block A, B1, B2, B3, B4 und C1 bis C4 sind committet
+### Roadmap-Block A, B1, B2, B3, B4, C1 bis C4 und C15 sind committet
 
-Die Änderungen aus A1, A2, A4, B1, B2, B3, B4 und C1 bis C4 liegen seit dem
-2026-08-21 auf `master`; `dertimsistda.github.io` liefert immer den letzten
+Die Änderungen aus A1, A2, A4, B1, B2, B3, B4, C1 bis C4 und C15 liegen seit
+dem 2026-08-21 auf `master`; `dertimsistda.github.io` liefert immer den letzten
 Stand von `master`. Das Arbeitsverzeichnis ist sauber.
 
 > **Zur Tabelle:** Der Commit, der diese Zeilen schreibt, kann nicht in ihr
@@ -490,6 +495,9 @@ Stand von `master`. Das Arbeitsverzeichnis ist sauber.
 | C4 | `20aaed8` | Wetter am Lauf; `WEATHERS` und vier Symbole; `.choice-scale` geteilt; `CACHE_VERSION` auf v53 |
 | – | `962de24` | Häkchen-Runde nach C4 |
 | B4 | `8dda88e` | `tools/mess-history.mjs`; kein Produktivcode, `sw` bleibt v53 |
+| – | `1bd1388` | Häkchen-Runde nach B4 |
+| – | `849813d` | Reihenfolge neu geordnet: benutzen zuerst, ausbauen später |
+| C15 | `18c4106` | `js/speech.js` neu samt Testdatei und `APP_SHELL`; `CACHE_VERSION` auf v54 |
 
 `css/style.css` steckte in A1 und B2 und wurde auf beide Commits aufgeteilt –
 die gelöschte Regel in A1, die `.storage-hint`-Regel in B2. Jeder Commit ist
@@ -606,6 +614,8 @@ Bugfix in einer Render-Funktion braucht keinen Eintrag.
 | 2026-08-21 | Ebenfalls beim Nachzählen aufgefallen und in §4 vermerkt: `Statistik` ist die **letzte** Kommentarmarke in `app.js` und begrenzt deshalb nichts – Lauf-Liste, Fehleranzeige und Service-Worker stehen mit unter ihr. Das war schon vor B1 so und stand nirgends. |
 | 2026-08-21 | Nach dem Push nachgezogen: §7 sagte „noch nicht gepusht" – seit `102107b` auf `origin/master` stimmt das nicht mehr. Genau die Sorte Satz, die nur so lange wahr ist, bis jemand den nächsten Schritt tut; deshalb steht hier weiterhin kein Live-Hash. |
 | 2026-08-21 | **C3** umgesetzt: `standing()` für die fünf Trophäen, bei denen ein Fortschrittsbalken lügen würde. Neu in §6 die Regel, dass jede offene Trophäe einen Stand zeigt; §3 und §4 mit neuen Zeilenzahlen und Marken. 887 → **895 Tests**, `sw` v50 → v51. |
+| 2026-08-21 | **C15** umgesetzt: Ansagen bei jedem Kilometer. Neu in §3 und §4 das Modul `speech.js`, in §5 der zweite Schalter im Aufzeichnungs-Eintrag samt Warnung. 925 → **954 Tests in 27 Dateien**, `sw` v53 → v54. |
+| 2026-08-21 | **Erster Punkt, der am Gerät ungeprüft bleibt.** Ob die Sprachausgabe neben Musik durchkommt und bei gesperrtem Bildschirm spricht, lässt sich hier nicht feststellen – dafür gibt es keine Attrappe. Steht ausformuliert in `ROADMAP.md` §4. Wer die Zeile in der Bestandsaufnahme als „fertig geprüft" liest, liest sie falsch. |
 | 2026-08-21 | **Die Roadmap-Reihenfolge ist neu geordnet**: „benutzen zuerst, ausbauen später". Für diese Datei ändert das nichts am Inhalt, aber am Zusammenhang – wer hier nachschlägt, was als Nächstes dran ist, findet es in `ROADMAP.md` §5, und die Liste ist jetzt dreigeteilt: erledigt, jetzt, vertagt. Vertagte Punkte tragen die Bedingung, die sie wieder aufweckt. |
 | 2026-08-21 | **B4** gemessen: die Historie kostet O(n²) und reisst die gesetzte 50-ms-Grenze schon zwischen 100 und 200 Läufen. Neu in §6 die Warnung mit den Zahlen, in §7 der Werkzeug-Eintrag. Kein Produktivcode, `sw` bleibt v53. |
 | 2026-08-21 | **C4** umgesetzt: Wetter am Lauf. Neu in §4 `WEATHERS` und `weatherLabel()`, in §5 das Feld am `Run` und die zweite Warnung: eine Auswahl steht zweimal da, in der Liste und im Markup. 913 → **925 Tests**, `sw` v52 → v53. |

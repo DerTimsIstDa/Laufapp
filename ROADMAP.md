@@ -1,14 +1,15 @@
 # FunRun – Leitfaden & Roadmap
 
-> **Stand: 2026-08-21** · Grundlage: `KONTEXT.md` (Stand `funrun-v53`, 62 Trophäen, 27 Übungen)
+> **Stand: 2026-08-21** · Grundlage: `KONTEXT.md` (Stand `funrun-v54`, 62 Trophäen, 27 Übungen)
 >
 > **Fortschritt: A1, A2, A3, A4, B1, B2, B3, B4, C1, C2, C3 und C4 sind
 > erledigt und committet** – siehe §5.
 >
 > **Die Reihenfolge ist am 2026-08-21 neu geordnet.** Ziel ist jetzt
-> ausdrücklich: *die App benutzen, ausbauen später.* Der nächste Punkt ist
-> **C15** (Audio-Ansagen). Die verbliebenen unsichtbaren Punkte stehen
-> vertagt in §5, jeder mit der Bedingung, die ihn wieder aufweckt.
+> ausdrücklich: *die App benutzen, ausbauen später.* **C15 ist erledigt**,
+> der nächste Punkt ist **C8** (Kilometer-Splits). Die verbliebenen
+> unsichtbaren Punkte stehen vertagt in §5, jeder mit der Bedingung, die ihn
+> wieder aufweckt.
 >
 > Diese Datei beantwortet drei Fragen: **Was gibt es?**, **Was ist schwach?**,
 > **Was fehlt?** – und in welcher Reihenfolge das angegangen wird.
@@ -16,7 +17,7 @@
 
 **Wichtiger Vorbehalt:** Die Erstfassung dieses Plans war aus `KONTEXT.md`
 abgeleitet, nicht aus dem Quellcode. Was seither erledigt wurde (Block A, B1,
-B2, B3, B4, C1, C2, C3, C4), ist am Code geprüft. Alles **Offene** ist es nicht – Punkte, die
+B2, B3, B4, C1–C4, C15), ist am Code geprüft. Alles **Offene** ist es nicht – Punkte, die
 vor der Umsetzung eine Prüfung brauchen, sind mit **[prüfen]** markiert. Wer sie
 ohne Prüfung als Fakt weitergibt, baut auf Sand.
 
@@ -37,7 +38,7 @@ Tag · **L** = mehrere Sitzungen, braucht vorher eine eigene Skizze.
 ## 0. Wo wir stehen
 
 **Block A ist vollständig abgeschlossen.** Aus Block B sind B1, B2, B3 und B4
-erledigt, aus Block C die Punkte C1 bis C4. Alles davon ist committet.
+erledigt, aus Block C die Punkte C1 bis C4 und C15. Alles davon ist committet.
 
 ```
 A. Hygiene              B. Struktur               C. Produkt (hier sind
@@ -48,7 +49,8 @@ A. Hygiene              B. Struktur               C. Produkt (hier sind
                            ⏸ B4b, B1-Rest,              Fortschritt
                               B2b, B5 vertagt      ✅ C2 Notiz & Gefühl
                                                    ✅ C4 Wetter
-                                                  ⬅ C15 Audio-Ansagen
+                                                   ✅ C15 Audio-Ansagen
+                                                  ⬅ C8 Kilometer-Splits
                                                     ○ C5–C14 offen
 ```
 
@@ -85,9 +87,14 @@ was daraus wurde, steht in §3.
 hat, steht nirgends – und genau davon hängt ab, ob B4b eine Frage ist oder
 keine. Deshalb steht der Punkt in §5 vertagt, mit dem Nachsehen als Bedingung.
 
-**Der nächste Punkt ist C15** – Audio-Ansagen während des Laufs. Nach zwölf
-Punkten, von denen die Hälfte unsichtbar war, der erste, den man **während**
-des Laufens hat statt danach.
+**C15 ist erledigt** – die App sagt jetzt jeden Kilometer an. Der erste Punkt,
+den man **während** des Laufens hat statt danach, und zugleich der erste, den
+ich nicht zu Ende prüfen kann: ob die Stimme neben Musik durchkommt und bei
+gesperrtem Bildschirm noch spricht, entscheidet das Telefon. Das Ergebnis
+steht in §4.
+
+**Der nächste Punkt ist C8** – Kilometer-Splits aus der GPS-Spur. Die Zahl,
+die man nach dem Lauf als Erstes sucht; die Daten liegen längst da.
 
 Die vollständige Reihenfolge mit Stand steht in **§5**.
 
@@ -111,6 +118,7 @@ Gruppiert nach dem, was der Nutzer erlebt, nicht nach Dateien.
 | Lauf bearbeiten / löschen | `storage.js`, `app.js` | rund |
 | Notiz und Gefühl (1–5) zum Lauf | `validation.js`, `storage.js`, `app.js` | neu (C2); wird noch nirgends ausgewertet |
 | Wetter zum Lauf: vier Kästchen | `validation.js`, `storage.js`, `app.js` | neu (C4); ohne Netz, wird noch nirgends ausgewertet |
+| Ansage bei jedem Kilometer | `speech.js`, `app.js` | neu (C15); **am Gerät ungeprüft** – siehe §4 |
 
 ### 1.2 Gamification
 
@@ -574,8 +582,8 @@ auf dem dunklen Hintergrund, `prefers-reduced-motion` für Animationen. **[prüf
 Ideen, nach Verhältnis von Nutzen zu Aufwand sortiert. Alles hier ist optional –
 FunRun ist heute schon eine vollständige App.
 
-**Stand:** C1 bis C4 ✅ erledigt · C5 bis C15 offen. Der nächste Punkt der
-Reihenfolge ist **C15**.
+**Stand:** C1 bis C4 und C15 ✅ erledigt · C5 bis C14 offen. Der nächste Punkt
+der Reihenfolge ist **C8**.
 
 **Seit dem 2026-08-21 gibt dieser Block den Takt vor**, nicht mehr Block B –
 die Reihenfolge in §5 ist auf „benutzen zuerst" umgestellt. Die Sortierung
@@ -805,7 +813,78 @@ Argument für B1: was `app.js` selbst tut, prüft weiterhin niemand.
 | C9 | **Höhenmeter.** `watchPosition` liefert `altitude`. Ungenau (leicht ±10 m), aber über einen Lauf gemittelt brauchbar. **Ehrlich: GPS-Höhe ohne Barometer ist wackelig** – lieber als „ungefähr" beschriften als Präzision vortäuschen. | M | `geo.js`, `tracker.js`, `route.js` |
 | C10 | **Helles Farbschema.** Alle Werte hängen schon an Custom Properties – die Vorarbeit ist getan. `prefers-color-scheme` plus manueller Schalter. | M | `css/style.css` |
 | C11 | **Jahresrückblick.** Eine Seite „2026 in Zahlen" mit Teilen-Karte. Saisonal, aber emotional der stärkste Moment einer Lauf-App. | M | `stats.js`, `share-card.js` |
-| C15 | **Audio-Ansagen während des Laufs.** „1 Kilometer, 5:42." Über `SpeechSynthesis` – im Browser eingebaut, keine Abhängigkeit. Passt zu `beep.js`. Praktisch der größte Zugewinn beim tatsächlichen Laufen. | M | `tracker.js`, neues `speech.js` |
+| ✅ C15 | **Audio-Ansagen während des Laufs.** Erledigt – siehe unten. | M | `speech.js` (neu), `app.js`, `storage.js`, `index.html` |
+
+#### ✅ C15 · Ansagen während des Laufs
+
+**Gebaut:** „Ein Kilometer. 5 Minuten 42." bei jedem vollen Kilometer, über
+die im Browser eingebaute Sprachausgabe. Ein Schalter in der
+Aufzeichnungs-Karte, voreingestellt an, sein Stand überlebt das Schliessen.
+
+**Entscheidungen, die beim Bauen anfielen:**
+
+- **Ausgeschrieben statt in Ziffern.** Eine Sprachausgabe liest die „1" als
+  *eins Kilometer* und die „5:42" als Uhrzeit vor. Im Text steht deshalb
+  „Ein Kilometer" und „5 Minuten 42".
+- **Ein Sprung wird zusammengefasst.** Kommt die Strecke nach einem Tunnel von
+  1,2 auf 3,4 km, wird einmal „3 Kilometer" gesagt statt zweimal
+  hintereinander. Angesagt wird der Schnitt über die dazugekommenen Kilometer
+  – die Zeit für den übersprungenen weiss ohnehin niemand.
+- **Unter einer Minute je Kilometer wird nichts behauptet.** Das wäre ein
+  GPS-Sprung und kein Tempo.
+- **Der Schalter steht nur dort, wo er wirkt:** ohne GPS keine Strecke, also
+  kein Kilometer; ohne Sprachausgabe im Browser wäre er ein Versprechen, das
+  niemand einlöst. In beiden Fällen ist die Zeile ausgeblendet.
+- **Zwei Hälften in einem Modul.** *Was* gesagt wird, ist pure Rechnung und
+  einzeln prüfbar; *dass* es gesagt wird, fasst den Browser an und ist dünn
+  gehalten. Getrennte Dateien wären zweimal vierzig Zeilen gewesen – dieselbe
+  Sache, in zwei Karteikarten.
+
+**Der Speicherplatz, der zur Falle wurde:** Der Schalterstand liegt im selben
+Eintrag wie die Aufzeichnungsart – beides beschreibt, wie *dieses Gerät*
+aufzeichnet, und beides gehört nicht in die Exportdatei. Damit teilen sich
+zwei Schalter einen Platz, und wer nur seinen eigenen Wert hineinschreibt,
+löscht den anderen. Ohne Fehler, ohne Meldung. Gelesen und geschrieben wird
+jetzt im Ganzen; ein Test wacht darüber, und es ist gegengeprüft, dass er
+anschlägt. **Dieselbe Fehlerart wie bei C2** – nur eine Ebene tiefer.
+
+**Am Gerät geprüft, mit angehaltener Uhr und gefütterter GPS-Attrappe:**
+
+| gelaufen | angesagt |
+|---|---|
+| Kilometer 1 in 5:00 | „Ein Kilometer. 5 Minuten 2." |
+| Kilometer 2 in 6:00 | „2 Kilometer. 6 Minuten." |
+
+Die zwei Sekunden sind die Wartezeit auf den nächsten GPS-Punkt: Die
+Kilometermarke fällt zwischen zwei Meldungen, gemerkt wird sie bei der
+nächsten. Wegrechnen liesse sich das nur, indem man den Zeitpunkt schätzt –
+und eine geschätzte Zahl anzusagen ist schlechter, als zwei Sekunden zu spät
+zu sein.
+
+**Eine kleine Ungereimtheit bleibt:** Die Anzeige rundet auf zwei
+Nachkommastellen, die Ansage nicht. Bei 2,997 km steht „3,00" auf dem
+Schirm, angesagt wird aber erst bei echten 3,000 – ein, zwei Sekunden später.
+Andersherum wäre es eine Ansage über einen Kilometer, der noch fünf Meter
+fehlt. **Bewusst so gelassen.**
+
+#### ⚠️ Was an C15 offen bleibt – und nur Tim prüfen kann
+
+Der erste Punkt dieser Roadmap, den ich **nicht zu Ende prüfen kann**. Alles
+oben lief gegen Attrappen. Was ein Telefon daraus macht, steht auf einem
+anderen Blatt:
+
+1. **Kommt die Ansage neben Musik durch?** iOS und Android mischen
+   Sprachausgabe und Wiedergabe unterschiedlich – von „leiser drehen und
+   sprechen" bis „gar nicht".
+2. **Spricht sie bei gesperrtem Bildschirm?** Derselbe Vorbehalt wie beim Ton
+   der Intervall-Stoppuhr: Irgendwann hört das Betriebssystem auf, uns
+   Rechenzeit zu geben. Der Wake Lock hilft, solange der Bildschirm an ist.
+3. **Klingt die Stimme brauchbar?** Die Sprachausgabe nimmt, was das Gerät an
+   deutschen Stimmen mitbringt. Auf manchen Geräten ist das eine
+   Wetterdurchsage aus dem Jahr 2010.
+
+**Bis das an einem echten Lauf geprüft ist, gilt der Punkt als gebaut, nicht
+als bestätigt.** Wer die Zeile in §1.1 anders liest, liest sie falsch.
 
 ### Groß / später
 
@@ -858,8 +937,8 @@ klare Linie, mit der Bedingung, die sie wieder aufweckt.
 
 | Schritt | Was | Aufwand | Warum hier |
 |--:|---|--:|---|
-| 12 | **C15** Audio-Ansagen während des Laufs | M | ⬅ **als Nächstes.** Der einzige Punkt der ganzen Liste, den man **während** des Laufens hat, nicht danach. „1 Kilometer, 5:42" über die eingebaute Sprachausgabe – keine Abhängigkeit, passt zu `beep.js` |
-| 13 | **C8** Kilometer-Splits aus der GPS-Spur | M | Die Zahl, die man nach dem Lauf als Erstes sucht. Die Daten liegen schon da, es fehlt nur die Auswertung |
+| 12 | **C15** Audio-Ansagen während des Laufs | M | ✅ erledigt – **aber am Gerät ungeprüft**, siehe §4 |
+| 13 | **C8** Kilometer-Splits aus der GPS-Spur | M | ⬅ **als Nächstes.** Die Zahl, die man nach dem Lauf als Erstes sucht. Die Daten liegen schon da, es fehlt nur die Auswertung |
 | 14 | **C10** Helles Farbschema | M | Dunkel ist bei Sonne draussen schwer zu lesen. Die Vorarbeit ist getan: alle Werte hängen an Custom Properties |
 | 15 | **C11** Jahresrückblick | M | Emotional der stärkste Moment einer Lauf-App – aber **saisonal**. Vor Dezember hat er wenig Wirkung |
 | 16 | **C7** Trainingsplan-Vorlagen · **C6** eigene Übungen · **C5** Läufe filtern · **C14** GPX-Import | M je | Nach Bedarf. **C5 erst, wenn die Lauf-Liste unübersichtlich wird** – das hängt an einer Zahl, die niemand kennt (siehe unten) |
@@ -910,6 +989,9 @@ Ein Punkt = ein Commit (§6, Regel 1). So sind sie gefallen:
 | 20 | C4 | `20aaed8` | Wetter zum Antippen statt aus dem Netz |
 | 21 | – | `962de24` | Haekchen-Runde nach C4 |
 | 22 | B4 | `8dda88e` | Ein Werkzeug, das die Historie misst |
+| 23 | – | `1bd1388` | Haekchen-Runde nach B4 – die Messung als Ergebnis |
+| 24 | – | `849813d` | Die Reihenfolge neu geordnet: benutzen zuerst |
+| 25 | C15 | `18c4106` | Ansagen waehrend des Laufs |
 
 **B1 hat drei Commits statt einem** – das ist keine Ausnahme von Regel 1 in §6,
 sondern stand so im Punkt selbst: einen Bereich pro Commit, nach jedem Commit
@@ -1017,6 +1099,9 @@ Fleißaufgabe, sondern der halbe Zweck dieser Datei.
 | 2026-08-21 | **B1** umgesetzt, kleine Variante, in drei Commits (`061d0ba`, `2378c00`, `96bfbf2`). `app.js` 4.132 → 3.091 Zeilen; neu sind `js/format.js` und `js/views/{dom,training,stats}.js`. §3 komplett neu geschrieben (Ergebnis statt Vorhaben, samt der Frage, ob der Rest folgt), §0 mit neuem Schaubild, §1.5 mit der Einordnung der Modul-Zahl, §5-Tabelle und Commit-Block nachgezogen. §1 bekam **keine** neue Zeile: B1 hat für den Nutzer nichts geändert, und eine Zeile dafür wäre eine Behauptung. 802 → 887 Tests, `sw` v47 → v50. Nächster Punkt: **C3**. |
 | 2026-08-21 | **C3** umgesetzt. Der Punkt war zu 90 % schon gebaut – Balken an 55 von 62 Trophäen seit `8c9308c`, und `KONTEXT.md` §7 sagte das seit `28b277a` wörtlich, während diese Datei das Gegenteil behauptete. Offen waren die sieben, bei denen ein Balken lügt; fünf haben jetzt eine Zeile (`standing`), zwei bleiben mit Begründung leer. §0/§1.2/§4/§5 nachgezogen, Aufwand von M auf S korrigiert. 887 → 895 Tests, `sw` v50 → v51. Nächste Punkte: **C2** und **C4**. |
 | 2026-08-21 | **C2** umgesetzt: Notiz und Gefühl pro Lauf. §1.1 um eine Zeile ergänzt, §0/§4/§5 nachgezogen. Zwei Fehler fand wieder nur der Browser – der zweite hätte ein Gefühl in den falschen Lauf geschrieben. 895 → 913 Tests, `sw` v51 → v52. Nächster Punkt: **C4**. |
+| 2026-08-21 | **C15** umgesetzt: Ansagen bei jedem Kilometer. Neues Modul `speech.js` mit Testdatei und `APP_SHELL`-Eintrag. §1.1 um eine Zeile ergänzt, §0/§4/§5 nachgezogen. 927 → 954 Tests, `sw` v53 → v54. Nächster Punkt: **C8**. |
+| 2026-08-21 | **Der erste Punkt, den ich nicht zu Ende prüfen kann.** Ob die Stimme neben Musik durchkommt, bei gesperrtem Bildschirm spricht und brauchbar klingt, entscheidet das Telefon – dafür gibt es keine Attrappe. Der Punkt gilt als gebaut, nicht als bestätigt; die drei offenen Fragen stehen ausformuliert in §4. |
+| 2026-08-21 | **Dieselbe Fehlerart wie bei C2, eine Ebene tiefer:** Der neue Schalter teilt sich seinen Speicherplatz mit der Aufzeichnungsart, und wer nur seinen eigenen Wert hineinschreibt, löscht den anderen – ohne Fehler, ohne Meldung. Diesmal vorher gesehen statt hinterher: gelesen und geschrieben wird im Ganzen, ein Test wacht darüber, und es ist gegengeprüft, dass er anschlägt. |
 | 2026-08-21 | **Die Reihenfolge in §5 ist neu geordnet** – nach Tims Frage „Was genau ist der Mehrwert von dem allen?". Die Antwort war: die App benutzen, ausbauen später. §5 hat jetzt drei Teile statt einer Liste: erledigt, was man beim Laufen merkt, und – hinter einer Linie – das Vertagte, jedes mit der Bedingung, die es wieder aufweckt. Ohne solche Bedingung wandert ein Punkt nur von Liste zu Liste. |
 | 2026-08-21 | Die Frage war berechtigt: **sechs der zwölf erledigten Punkte waren für den Nutzer unsichtbar** (A2, A3, A4, B1, B3, B4). Zur Hälfte richtig – ohne A1–A4 und B2 stünde hier ein Baustellenschild –, zur Hälfte eine Investition, die sich nur bei fortgesetzter Entwicklung auszahlt. Das gehört benannt und nicht weggeredet. |
 | 2026-08-21 | **C15 ist von „Gross / später" nach „Mittelfristig" gezogen.** Er war der einzige M zwischen lauter L, und die Überschrift hat ausgerechnet den Punkt kleiner aussehen lassen, der beim Laufen am meisten bringt. Eine Sortierung nach Aufwand darf keine nach Wichtigkeit vortäuschen. |
