@@ -414,10 +414,8 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 ### Roadmap-Block A, B1, B2, B3 und C1 sind committet
 
 Die Änderungen aus A1, A2, A4, B1, B2, B3 und C1 liegen seit dem 2026-08-21 auf
-`master`. `dertimsistda.github.io` liefert immer den letzten Stand von `master`.
-
-> **Noch nicht gepusht:** die drei B1-Commits und die beiden Doku-Commits
-> darum herum. Bis zum Push zeigt die Live-Seite den Stand von `63fe111`.
+`master` und sind gepusht; `dertimsistda.github.io` liefert immer den letzten
+Stand von `master`. Das Arbeitsverzeichnis ist sauber.
 
 > **Zur Tabelle:** Der Commit, der diese Zeilen schreibt, kann nicht in ihr
 > stehen – er entsteht erst danach. Die Doku-Commits (`1134dca`, `af9b35f`, …)
@@ -554,3 +552,4 @@ Bugfix in einer Render-Funktion braucht keinen Eintrag.
 | 2026-08-21 | **B1** umgesetzt, kleine Variante, drei Commits. Neu: §3 mit vier Modulen (`format.js`, `views/{dom,training,stats}.js`) und dem Hinweis, dass „die App" nicht mehr `app.js` ist; §4 um die vier APIs und die Erklärung, wie die Ansichten an den Zustand kommen; §7 mit neuen Zahlen. Die `app.js`-Orientierung in §4 ist neu geschrieben: sie hängt jetzt an den Kommentarmarken statt an Zeilennummern, weil die nach jeder Änderung falsch sind. 802 → 887 Tests, `sw` v47 → v50. |
 | 2026-08-21 | Beim Nachzählen für B1 aufgefallen: §3 führte `storage.js` mit **602** Zeilen, tatsächlich sind es **653** – die Fehlerbehandlung aus B2 war nie in die Modulkarte nachgetragen worden. Korrigiert. Alle übrigen 21 Zeilenzahlen stimmten. Genau die Drift, gegen die A2 antrat, nur eine Datei weiter. |
 | 2026-08-21 | Ebenfalls beim Nachzählen aufgefallen und in §4 vermerkt: `Statistik` ist die **letzte** Kommentarmarke in `app.js` und begrenzt deshalb nichts – Lauf-Liste, Fehleranzeige und Service-Worker stehen mit unter ihr. Das war schon vor B1 so und stand nirgends. |
+| 2026-08-21 | Nach dem Push nachgezogen: §7 sagte „noch nicht gepusht" – seit `102107b` auf `origin/master` stimmt das nicht mehr. Genau die Sorte Satz, die nur so lange wahr ist, bis jemand den nächsten Schritt tut; deshalb steht hier weiterhin kein Live-Hash. |
