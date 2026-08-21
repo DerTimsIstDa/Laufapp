@@ -6,6 +6,8 @@
  * hier eine Geolocation-Attrappe.
  */
 
+import { readFileSync, readdirSync } from 'node:fs';
+
 /** Ein Grad Breite sind ~111,19 km, ein Meter also ~0,000008993°. */
 export const METER_IN_DEGREES_LAT = 0.000008993;
 
@@ -155,4 +157,37 @@ export function installFakeGeolocation() {
       else delete globalThis.navigator;
     },
   };
+}
+
+/**
+ * Alle Module unter `js/`, samt Unterverzeichnissen, als Pfad ab der Wurzel.
+ *
+ * Steht hier, weil drei Testdateien dieselbe Frage stellen. Bis B1 lasen sie
+ * alle einfach `js/app.js` – das war dieselbe Datei wie "die App". Seit die
+ * Ansichten unter `js/views/` liegen, ist es das nicht mehr, und ein Test, der
+ * weiter nur `app.js` liest, sucht in der falschen Datei und bleibt trotzdem
+ * grün. Genau das ist beim Herauslösen dreimal passiert.
+ */
+export function moduleDateien(verzeichnis = 'js/') {
+  const wurzel = new URL('../', import.meta.url);
+
+  return readdirSync(new URL(verzeichnis, wurzel), { withFileTypes: true }).flatMap((eintrag) => {
+    if (eintrag.isDirectory()) return moduleDateien(`${verzeichnis}${eintrag.name}/`);
+    return eintrag.name.endsWith('.js') ? [`${verzeichnis}${eintrag.name}`] : [];
+  });
+}
+
+/**
+ * Der Quelltext aller Module hintereinander.
+ *
+ * Für Tests, die im Quelltext nach einer Regel suchen, statt Verhalten zu
+ * prüfen – wo im Baum die Zeile steht, ist für sie ohne Belang. Nur die
+ * Reihenfolge ist verlässlich, nicht die Zeilennummern: wer auf Position
+ * prüfen will, liest die einzelne Datei.
+ */
+export function quelltextDerModule() {
+  const wurzel = new URL('../', import.meta.url);
+  return moduleDateien()
+    .map((pfad) => readFileSync(new URL(pfad, wurzel), 'utf8'))
+    .join('\n');
 }

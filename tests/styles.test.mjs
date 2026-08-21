@@ -1,8 +1,19 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 
 import { ACTIVITY_WEEKS } from '../js/stats.js';
+import { quelltextDerModule } from './helpers.mjs';
+
+/**
+ * Der Quelltext aller Module hintereinander.
+ *
+ * Diese Tests suchen nach Regeln im Code, nicht nach Verhalten – in welcher
+ * Datei die Zeile steht, ist fuer sie ohne Belang. Bis B1 stand hier
+ * `js/app.js`, weil das dieselbe Datei war wie "die App". Seit die Ansichten
+ * unter `js/views/` liegen, ist es das nicht mehr.
+ */
+const app = quelltextDerModule();
 
 /**
  * CSS-Regeln, die sich in Node nicht am Verhalten prüfen lassen, aber halten
@@ -108,8 +119,6 @@ describe('Eingabefelder sind zentral bemasst', () => {
 });
 
 describe('Zahlenfelder nehmen ein Komma an', () => {
-  const app = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
-
   /** Ohne das stolpert die Prüfung über den Kommentar, der die Regel erklärt. */
   const ohneKommentare = html.replace(/<!--[\s\S]*?-->/g, '');
 
@@ -245,8 +254,6 @@ describe('Aktivitätsraster im Profil', () => {
 });
 
 describe('Pace-Verlauf im Profil', () => {
-  const app = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
-
   test('steht direkt unter der Aktivität', () => {
     const profil = /<div class="view" id="view-profile"[\s\S]*?\n    <\/div>/.exec(html);
     const reihe = [...profil[0].matchAll(/aria-labelledby="([a-z-]+)"/g)].map((m) => m[1]);
@@ -311,8 +318,6 @@ describe('Bestzeiten stehen zwischen Gesamtstatistik und Lauf-Liste', () => {
 });
 
 describe('Die Intervall-Stoppuhr ist ein eigener Vollbild-Schirm', () => {
-  const app = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
-
   test('die Sperre lässt die Stoppuhr selbst aus', () => {
     // Der Schirm liegt in `.app` und wurde von setAppInert() mitgesperrt.
     // Damit stand er zwar da, nahm aber keine Berührung an: Knöpfe tot,
@@ -355,25 +360,6 @@ describe('Die Intervall-Stoppuhr ist ein eigener Vollbild-Schirm', () => {
  * Node kann die Seite nicht bauen, aber diesen Abgleich schafft es.
  */
 describe('Markup und die Module kennen dieselben Elemente', () => {
-  /**
-   * Alle Module unter js/, samt Unterverzeichnissen.
-   *
-   * Bis B1 stand hier nur `app.js`. Die Verweise aufs Markup liegen seitdem in
-   * `js/views/dom.js` – ein Test, der weiter nur `app.js` liest, fände null IDs
-   * und bliebe trotzdem grün. Deshalb das ganze Verzeichnis.
-   */
-  const moduleUnter = (verzeichnis) =>
-    readdirSync(new URL(`../${verzeichnis}`, import.meta.url), { withFileTypes: true }).flatMap(
-      (eintrag) => {
-        if (eintrag.isDirectory()) return moduleUnter(`${verzeichnis}${eintrag.name}/`);
-        return eintrag.name.endsWith('.js') ? [`${verzeichnis}${eintrag.name}`] : [];
-      }
-    );
-
-  const app = moduleUnter('js/')
-    .map((pfad) => readFileSync(new URL(`../${pfad}`, import.meta.url), 'utf8'))
-    .join('\n');
-
   const angefragt = [
     ...new Set([...app.matchAll(/getElementById\('([^']+)'\)/g)].map((m) => m[1])),
   ];
@@ -391,8 +377,6 @@ describe('Markup und die Module kennen dieselben Elemente', () => {
 });
 
 describe('Speicher-Warnung', () => {
-  const app = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
-
   test('der Hinweis steht im Markup und meldet sich als Alarm', () => {
     // role="alert" statt "status": Hilfsmittel sollen das sofort vorlesen und
     // nicht erst beim nächsten Innehalten. Ein verlorener Lauf kann warten.
@@ -419,8 +403,6 @@ describe('Speicher-Warnung', () => {
 });
 
 describe('Erinnerung an die Sicherung', () => {
-  const app = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
-
   /** Der Text zwischen zwei Marken, ohne regulaeren Ausdruck. */
   const zwischen = (quelle, von, bis) => {
     const start = quelle.indexOf(von);
