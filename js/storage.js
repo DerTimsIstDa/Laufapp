@@ -18,6 +18,7 @@ const TRAINING_KEY = 'laufapp.training.v1';
 const PROFILE_KEY = 'laufapp.profile.v1';
 const EXERCISE_PLAN_KEY = 'laufapp.exercise-plan.v1';
 const RECORDING_KEY = 'laufapp.recording.v1';
+const EXPORT_KEY = 'laufapp.export.v1';
 
 /* --------------------------------------------------- Schreiben ---- */
 
@@ -541,6 +542,56 @@ export function saveGpsPreference(gps) {
   schreibe(RECORDING_KEY, { gps: wert }, 'Die Aufzeichnungsart');
 
   return wert;
+}
+
+/* --------------------------------------------- Letzte Sicherung ---- */
+
+/** Ein lokaler ISO-Tag, "JJJJ-MM-TT". Sonst nichts. */
+function istIsoTag(wert) {
+  return typeof wert === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(wert);
+}
+
+/**
+ * Der Tag, an dem zuletzt gesichert wurde – als lokaler ISO-Tag.
+ *
+ * Bewusst nur der Tag und nicht der Zeitpunkt: gefragt wird "wie lange ist das
+ * her", und darauf antwortet eine Uhrzeit nicht genauer, sondern nur
+ * ausführlicher.
+ *
+ * Dieser Wert wandert **nicht** in die Exportdatei. Er beschreibt nicht die
+ * Daten, sondern die Sicherungsgewohnheit dieses einen Browsers. Eine Datei,
+ * die ihn mitbrächte, würde einem frisch eingerichteten Gerät erzählen, es
+ * habe vor drei Tagen gesichert – was dort nie passiert ist.
+ *
+ * @returns {?string} null, wenn noch nie gesichert wurde
+ */
+export function loadLastExport() {
+  let raw;
+  try {
+    raw = localStorage.getItem(EXPORT_KEY);
+  } catch {
+    return null;
+  }
+  if (!raw) return null;
+
+  try {
+    const wert = JSON.parse(raw)?.lastExport;
+    return istIsoTag(wert) ? wert : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * @param {string} isoDate lokaler ISO-Tag
+ * @returns {?string} derselbe Wert, zum Weiterreichen; null bei Unsinn
+ */
+export function saveLastExport(isoDate) {
+  if (!istIsoTag(isoDate)) return null;
+
+  schreibe(EXPORT_KEY, { lastExport: isoDate }, 'Der Zeitpunkt der Sicherung');
+
+  return isoDate;
 }
 
 function isValidSession(session) {

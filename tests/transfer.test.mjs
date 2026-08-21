@@ -9,6 +9,8 @@ import {
   EXPORT_FORMAT,
   EXPORT_VERSION,
   LEGACY_EXPORT_FORMATS,
+  exportReminder,
+  EXPORT_REMINDER_DAYS,
 } from '../js/transfer.js';
 
 const sampleRuns = [
@@ -460,5 +462,103 @@ describe('Übungsplan und Profil in der Sicherung', () => {
     });
 
     assert.equal(parseImport(text).exercisePlan[0].xp, undefined);
+  });
+});
+
+describe('Erinnerung an die Sicherung', () => {
+  const HEUTE = '2026-08-21';
+
+  /** Kurz: erinnert die App heute, wenn zuletzt an diesem Tag gesichert wurde? */
+  const stand = (lastExport, runCount = 5) =>
+    exportReminder({ lastExport, runCount, todayIso: HEUTE });
+
+  test('dreissig Tage sind die Grenze', () => {
+    assert.equal(EXPORT_REMINDER_DAYS, 30);
+  });
+
+  test('genau an der Grenze wird erinnert, einen Tag davor nicht', () => {
+    // 29 Tage: 2026-07-23 -> 2026-08-21
+    assert.equal(stand('2026-07-23').daysSince, 29);
+    assert.equal(stand('2026-07-23').due, false, '29 Tage sind noch in Ordnung');
+
+    assert.equal(stand('2026-07-22').daysSince, 30);
+    assert.equal(stand('2026-07-22').due, true, 'am dreissigsten Tag ist es fällig');
+
+    assert.equal(stand('2026-07-21').due, true);
+  });
+
+  test('am selben Tag gesichert heisst null Tage', () => {
+    assert.deepEqual(stand(HEUTE), { due: false, never: false, daysSince: 0 });
+  });
+
+  test('noch nie gesichert ist sofort fällig', () => {
+    assert.deepEqual(stand(null), { due: true, never: true, daysSince: null });
+  });
+
+  test('ohne Läufe wird nicht erinnert', () => {
+    // Ein Hinweis, der zum Sichern von nichts auffordert, ist der schnellste
+    // Weg, dass der Hinweis künftig übersehen wird.
+    assert.equal(exportReminder({ lastExport: null, runCount: 0, todayIso: HEUTE }).due, false);
+    assert.equal(
+      exportReminder({ lastExport: '2020-01-01', runCount: 0, todayIso: HEUTE }).due,
+      false
+    );
+  });
+
+  test('eine Sicherung in der Zukunft zaehlt als heute', () => {
+    // Verstellte Uhr oder Zeitzonenwechsel. Eine negative Zahl Tage wäre kein
+    // Zustand, sondern ein Rechenfehler auf dem Schirm.
+    const zukunft = stand('2026-12-24');
+    assert.equal(zukunft.daysSince, 0);
+    assert.equal(zukunft.due, false);
+  });
+
+  test('ueber einen Zeitumstellungstermin hinweg stimmt die Zahl', () => {
+    // Ende Oktober wird in Europa zurückgestellt. Mit lokalen Daten gerechnet
+    // läge die Differenz hier um eine Stunde daneben und rutschte beim Runden
+    // auf einen Tag zu wenig.
+    const ueberDieUmstellung = exportReminder({
+      lastExport: '2026-10-01',
+      runCount: 3,
+      todayIso: '2026-11-01',
+    });
+
+    assert.equal(ueberDieUmstellung.daysSince, 31);
+    assert.equal(ueberDieUmstellung.due, true);
+  });
+
+  test('ueber einen Jahreswechsel hinweg auch', () => {
+    assert.equal(
+      exportReminder({ lastExport: '2025-12-20', runCount: 3, todayIso: '2026-01-05' }).daysSince,
+      16
+    );
+  });
+
+  test('ein Schaltjahr wird mitgezaehlt', () => {
+    // 2028 ist eins: der 29. Februar existiert und zählt mit.
+    assert.equal(
+      exportReminder({ lastExport: '2028-02-01', runCount: 3, todayIso: '2028-03-01' }).daysSince,
+      29
+    );
+  });
+
+  test('unbrauchbare Angaben gelten als nie gesichert', () => {
+    for (const wert of [undefined, '', 'gestern', '2026-13-01', '2026-02-30', 42, {}]) {
+      assert.equal(stand(wert).never, true, `${JSON.stringify(wert)} sollte als "nie" gelten`);
+      assert.equal(stand(wert).due, true);
+    }
+  });
+
+  test('ein unbrauchbares Heute erinnert nicht', () => {
+    // Lieber schweigen als eine erfundene Zahl Tage behaupten.
+    assert.equal(
+      exportReminder({ lastExport: '2026-01-01', runCount: 3, todayIso: 'heute' }).due,
+      false
+    );
+  });
+
+  test('ganz ohne Angaben stuerzt nichts ab', () => {
+    assert.doesNotThrow(() => exportReminder());
+    assert.equal(exportReminder().due, false);
   });
 });

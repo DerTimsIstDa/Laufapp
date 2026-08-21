@@ -43,7 +43,13 @@ import {
   isValidIsoDate,
   MAX_WEEKLY_GOAL,
 } from './validation.js';
-import { serializeExport, exportFileName, parseImport } from './transfer.js';
+import {
+  serializeExport,
+  exportFileName,
+  parseImport,
+  exportReminder,
+  EXPORT_REMINDER_DAYS,
+} from './transfer.js';
 import {
   buildStats,
   distanceByWeek,
@@ -111,6 +117,7 @@ import {
   loadExercisePlan, saveExercisePlan,
   loadProfile, saveProfile,
   loadGpsPreference, saveGpsPreference,
+  loadLastExport, saveLastExport,
   setStorageErrorHandler,
 } from './storage.js';
 import {
@@ -135,6 +142,15 @@ import {
 
 /** @type {import('./storage.js').Run[]} */
 let runs = [];
+
+/**
+ * Tag der letzten Sicherung, als lokaler ISO-Tag; null = noch nie.
+ *
+ * Steht hier oben beim übrigen Zustand und nicht bei der Anzeige: init() läuft
+ * am Modulanfang, und eine let-Deklaration weiter unten wäre zu dem Zeitpunkt
+ * noch nicht initialisiert.
+ */
+let lastExport = null;
 
 /** @type {import('./exercise-log.js').ExerciseEntry[]} */
 let exerciseLog = [];
@@ -270,6 +286,7 @@ const el = {
   formWarning: document.getElementById('form-warning'),
   unlockNotice: document.getElementById('unlock-notice'),
 
+  exportReminder: document.getElementById('export-reminder'),
   exportButton: document.getElementById('export-button'),
   importButton: document.getElementById('import-button'),
   importInput: document.getElementById('import-input'),
@@ -513,6 +530,7 @@ function init() {
   setStorageErrorHandler(showStorageError);
 
   runs = loadRuns();
+  lastExport = loadLastExport();
   exerciseLog = loadExerciseLog();
   sessions = loadSessions();
   exercisePlan = normalizePlan(loadExercisePlan());
@@ -3320,6 +3338,32 @@ function renderFormMode() {
 
 /* --------------------------------------------------------------- Sichern */
 
+/**
+ * Erinnert an die Sicherung, wenn die letzte zu lange her ist.
+ *
+ * Ob erinnert wird, entscheidet transfer.js – hier steht nur, wie es aussieht.
+ * Der Hinweis lässt sich nicht wegklicken: er verschwindet, sobald exportiert
+ * wurde, und das ist der einzige Zustand, in dem er nichts mehr zu sagen hat.
+ */
+function renderExportReminder() {
+  const stand = exportReminder({ lastExport, runCount: runs.length, todayIso: todayIso() });
+
+  el.exportReminder.hidden = !stand.due;
+  el.exportReminder.classList.toggle('never', stand.never);
+
+  if (!stand.due) return;
+
+  el.exportReminder.textContent = stand.never
+    ? `Noch nie gesichert. Deine ${runs.length} ${runs.length === 1 ? 'Lauf liegt' : 'Läufe liegen'} nur in diesem Browser – ein geleerter Speicher nimmt alles mit.`
+    : `Die letzte Sicherung ist ${stand.daysSince} Tage her. Empfohlen ist alle ${EXPORT_REMINDER_DAYS} Tage.`;
+}
+
+/** Hält den Tag der letzten Sicherung fest und zeichnet den Hinweis neu. */
+function rememberExport() {
+  lastExport = saveLastExport(todayIso()) ?? lastExport;
+  renderExportReminder();
+}
+
 function handleExport() {
   clearDataMessages();
 
@@ -3339,6 +3383,7 @@ function handleExport() {
   link.click();
 
   URL.revokeObjectURL(url);
+  rememberExport();
   showDataStatus(`${runs.length} ${runs.length === 1 ? 'Lauf' : 'Läufe'} exportiert.`);
 }
 
@@ -3415,6 +3460,12 @@ function handleImportApply() {
   // Datei ab, und ein stehengebliebener Name wäre der des alten Geräts.
   profile = saveProfile(importiertesProfil);
   fillProfileForm();
+
+  // Ein Import zählt als Sicherung: in diesem Moment existiert nachweislich
+  // eine Datei mit genau diesen Daten. Nicht das Datum aus der Datei nehmen –
+  // wer eine halbjährige Sicherung einliest, bekäme sonst sofort die
+  // Erinnerung, obwohl er gerade eben das Richtige getan hat.
+  rememberExport();
 
   // Ohne Freischalt-Meldung: nach einem Import wäre sie eine Aufzählung
   // sämtlicher Achievements statt einer Neuigkeit.
@@ -3675,6 +3726,7 @@ function render({ announceUnlocks }) {
   renderAchievements(achievements, announceUnlocks);
   renderDetail();
   renderRuns();
+  renderExportReminder();
 
   // Der sichtbare Nebenbereich muss mitziehen; die verborgenen werden beim
   // Umschalten ohnehin neu gebaut.

@@ -400,3 +400,61 @@ describe('Speicher-Warnung', () => {
     assert.match(app, /setStorageErrorHandler\(showStorageError\)/);
   });
 });
+
+describe('Erinnerung an die Sicherung', () => {
+  const app = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
+
+  /** Der Text zwischen zwei Marken, ohne regulaeren Ausdruck. */
+  const zwischen = (quelle, von, bis) => {
+    const start = quelle.indexOf(von);
+    assert.notEqual(start, -1, `nicht gefunden: ${von}`);
+    const ende = quelle.indexOf(bis, start);
+    assert.notEqual(ende, -1, `kein Ende nach ${von}`);
+    return quelle.slice(start, ende);
+  };
+
+  test('steht bei den Sicherungs-Knoepfen, nicht im Profil', () => {
+    // Ein Hinweis, dessen Abhilfe einen Tab weiter liegt, wird weggeklickt
+    // statt befolgt - deshalb in derselben Karte wie der Export-Knopf.
+    const karte = zwischen(html, '<h2 id="data-title">', '</section>');
+
+    assert.ok(karte.includes('id="export-reminder"'), 'die Erinnerung steht nicht in der Karte');
+    assert.ok(karte.includes('id="export-button"'), 'der Export-Knopf steht nicht in der Karte');
+  });
+
+  test('sie startet versteckt', () => {
+    // Ohne hidden staende sie beim ersten Laden kurz da, bevor render() sie
+    // wieder wegnimmt.
+    const tag = zwischen(html, '<p class="export-reminder"', '>');
+    assert.ok(tag.includes(' hidden'), `hidden fehlt: ${tag}`);
+  });
+
+  test('sie sieht nicht aus wie die Speicher-Warnung', () => {
+    // Die eine meldet einen Verlust, die andere eine Empfehlung. Wer beides
+    // gleich laut macht, entwertet die Warnung.
+    const regel = zwischen(css, '.export-reminder {', '}');
+
+    assert.ok(!regel.includes('--danger'), 'die Erinnerung traegt das Warnrot');
+    assert.ok(regel.includes('var(--accent-line)'), 'die Akzentkante fehlt');
+  });
+
+  test('ob erinnert wird, entscheidet das pure Modul', () => {
+    // In app.js steht keine eigene Rechnung mit Tagen - sonst gaebe es zwei
+    // Wahrheiten darueber, wann eine Sicherung faellig ist.
+    assert.ok(
+      app.includes('exportReminder({ lastExport, runCount: runs.length'),
+      'app.js fragt nicht das pure Modul'
+    );
+    assert.ok(
+      !app.includes('EXPORT_REMINDER_DAYS >') && !app.includes('EXPORT_REMINDER_DAYS <'),
+      'app.js rechnet die Faelligkeit selbst nach'
+    );
+  });
+
+  test('Export und Import halten den Tag fest', () => {
+    // Ein Import zaehlt mit: in dem Moment existiert nachweislich eine Datei
+    // mit genau diesen Daten.
+    const aufrufe = app.split('rememberExport()').length - 1;
+    assert.equal(aufrufe, 3, 'erwartet: Definition, Aufruf nach Export, Aufruf nach Import');
+  });
+});

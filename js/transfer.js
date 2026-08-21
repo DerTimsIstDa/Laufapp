@@ -64,6 +64,75 @@ export function serializeExport(runs, options) {
   return JSON.stringify(buildExport(runs, options), null, 2);
 }
 
+/**
+ * Nach so vielen Tagen ohne Sicherung wird erinnert.
+ *
+ * Dreissig Tage sind der Kompromiss zwischen "nervt" und "zu spät": die Daten
+ * liegen ausschliesslich im localStorage eines Browsers, und ein geleerter
+ * Cache nimmt alles mit. Häufiger zu erinnern trainiert nur, den Hinweis zu
+ * übersehen – und ein übersehener Hinweis schützt niemanden.
+ */
+export const EXPORT_REMINDER_DAYS = 30;
+
+/**
+ * @typedef {Object} ExportReminder
+ * @property {boolean} due      es ist Zeit für eine Sicherung
+ * @property {boolean} never    es wurde noch nie gesichert
+ * @property {?number} daysSince Tage seit der letzten Sicherung, null = nie
+ */
+
+/**
+ * Ist eine Sicherung fällig?
+ *
+ * Pur und ohne Uhr: der heutige Tag kommt herein, damit sich jede Grenze
+ * prüfen lässt, ohne die Systemzeit zu stellen.
+ *
+ * Ohne einen einzigen Lauf gibt es nichts zu verlieren – dann wird nicht
+ * erinnert. Ein Hinweis, der zum Sichern von nichts auffordert, ist der
+ * schnellste Weg, dass der Hinweis künftig ignoriert wird.
+ *
+ * Eine Sicherung, die in der Zukunft liegt, zählt als heute. Das passiert bei
+ * verstellter Uhr oder über Zeitzonen hinweg, und eine negative Zahl Tage
+ * wäre keine Aussage, sondern ein Rechenfehler auf dem Schirm.
+ *
+ * @param {{ lastExport?: ?string, runCount?: number, todayIso: string }} stand
+ * @returns {ExportReminder}
+ */
+export function exportReminder({ lastExport = null, runCount = 0, todayIso } = {}) {
+  const nie = { due: false, never: true, daysSince: null };
+
+  if (!Number.isFinite(runCount) || runCount <= 0) {
+    return { due: false, never: !isValidIsoDate(lastExport), daysSince: null };
+  }
+
+  if (!isValidIsoDate(lastExport)) return { ...nie, due: true };
+  if (!isValidIsoDate(todayIso)) return nie;
+
+  const daysSince = Math.max(0, tagesAbstand(lastExport, todayIso));
+
+  return {
+    due: daysSince >= EXPORT_REMINDER_DAYS,
+    never: false,
+    daysSince,
+  };
+}
+
+/**
+ * Ganze Tage zwischen zwei ISO-Tagen.
+ *
+ * Über UTC gerechnet, obwohl beides lokale Tage sind: Date.UTC() kennt keine
+ * Sommerzeit, und genau deshalb ist die Differenz hier immer ein Vielfaches
+ * von 24 Stunden. Mit lokalen Daten läge zweimal im Jahr eine Stunde daneben.
+ */
+function tagesAbstand(vonIso, bisIso) {
+  const alsZahl = (iso) => {
+    const [year, month, day] = iso.split('-').map(Number);
+    return Date.UTC(year, month - 1, day);
+  };
+
+  return Math.round((alsZahl(bisIso) - alsZahl(vonIso)) / 86_400_000);
+}
+
 /** Dateiname mit lokalem Datum, z.B. "funrun-2026-08-14.json". */
 export function exportFileName(date = new Date()) {
   const year = date.getFullYear();

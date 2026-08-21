@@ -5,6 +5,7 @@ import {
   loadRuns, addRun, updateRun, removeRun, replaceRuns, saveRuns,
   loadSessions, addSession, updateSession, removeSession, replaceSessions,
   loadGpsPreference, saveGpsPreference,
+  loadLastExport, saveLastExport,
   saveExerciseLog, saveSessions, saveExercisePlan, saveProfile,
   setStorageErrorHandler,
 } from '../js/storage.js';
@@ -504,5 +505,60 @@ describe('Schreibfehler', () => {
 
     assert.equal(runs.length, 1);
     assert.equal(runs[0].distanceKm, 5);
+  });
+});
+
+describe('Tag der letzten Sicherung', () => {
+  test('ohne Eintrag ist die Antwort null, nicht heute', () => {
+    // "Heute" hiesse: eine frisch eingerichtete App behauptet, sie sei
+    // gesichert. Genau der Fall, in dem die Erinnerung gebraucht wird.
+    assert.equal(loadLastExport(), null);
+  });
+
+  test('schreiben und wieder lesen', () => {
+    assert.equal(saveLastExport('2026-08-21'), '2026-08-21');
+    assert.equal(loadLastExport(), '2026-08-21');
+  });
+
+  test('landet unter dem eigenen Schluessel', () => {
+    saveLastExport('2026-08-21');
+    assert.deepEqual(store.read('laufapp.export.v1'), { lastExport: '2026-08-21' });
+  });
+
+  test('ueberschreibt den vorherigen Tag', () => {
+    saveLastExport('2026-01-01');
+    saveLastExport('2026-08-21');
+    assert.equal(loadLastExport(), '2026-08-21');
+  });
+
+  test('nimmt nur einen ISO-Tag an', () => {
+    for (const wert of [undefined, null, '', '21.08.2026', '2026-8-1', 20260821, {}]) {
+      assert.equal(saveLastExport(wert), null, `${JSON.stringify(wert)} durfte nicht durch`);
+    }
+    assert.equal(loadLastExport(), null, 'nichts davon wurde geschrieben');
+  });
+
+  test('kaputter Eintrag gilt als nie gesichert', () => {
+    localStorage.setItem('laufapp.export.v1', '{kein json');
+    assert.equal(loadLastExport(), null);
+
+    localStorage.setItem('laufapp.export.v1', JSON.stringify({ lastExport: 'neulich' }));
+    assert.equal(loadLastExport(), null);
+
+    localStorage.setItem('laufapp.export.v1', JSON.stringify({ lastExport: 42 }));
+    assert.equal(loadLastExport(), null);
+  });
+
+  test('ein fehlgeschlagenes Schreiben wird gemeldet', () => {
+    const meldungen = [];
+    setStorageErrorHandler((info) => meldungen.push(info));
+    store.failWrites();
+
+    saveLastExport('2026-08-21');
+
+    assert.equal(meldungen.length, 1);
+    assert.equal(meldungen[0].key, 'laufapp.export.v1');
+    assert.equal(meldungen[0].voll, true);
+    setStorageErrorHandler(null);
   });
 });

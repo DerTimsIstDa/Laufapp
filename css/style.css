@@ -2555,6 +2555,30 @@ button.heatmap-cell[aria-pressed="true"] {
   font-size: 0.8125rem;
 }
 
+/**
+ * Erinnerung an die Sicherung.
+ *
+ * Getönte Fläche mit Akzentkante links, wie der Installationshinweis – nicht
+ * das Warnrot der Speicher-Meldung. Das hier ist keine Störung, sondern eine
+ * Empfehlung: es ist nichts kaputt, es ist nur etwas fällig. Wer beides gleich
+ * laut macht, entwertet die Warnung.
+ */
+.export-reminder {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  background: var(--surface-hover);
+  border-left: 3px solid var(--accent-line);
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  color: var(--body);
+}
+
+/* Noch nie gesichert ist der dringendere der beiden Fälle: es gibt bis jetzt
+   überhaupt keine Kopie. Deshalb die volle Akzentkante statt der matten. */
+.export-reminder.never {
+  border-left-color: var(--accent);
+}
+
 /* ------------------------------------------------------ Breitere Schirme */
 
 @media (min-width: 40em) {

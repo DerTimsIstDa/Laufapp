@@ -1,6 +1,6 @@
 # FunRun – Projektkontext (Gedächtnisdatei)
 
-> **Stand: 2026-08-21** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v46`
+> **Stand: 2026-08-21** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v47`
 >
 > **Diese Datei ist das Gedächtnis des Projekts.** Sie ersetzt das Einlesen des
 > Quellcodes beim Start eines neuen Chats. Wird sie nicht gepflegt, ist sie
@@ -77,7 +77,7 @@ laufen die Tests in Node.
 | `js/stats.js` | 551 | Summen, Serien, Zeitreihen, Aktivitätsraster, Pace-Trend, Bestzeiten | Statistik, Diagramme |
 | `js/validation.js` | 325 | Prüfung aller Eingaben, `parseNumber`, `parsePace` | neues Eingabefeld, neue Grenze |
 | `js/exercises.js` | 297 | Übungsbibliothek (fest) + Filter | Übung ergänzen/ändern |
-| `js/transfer.js` | 279 | Export-/Importformat | Datenformat erweitern |
+| `js/transfer.js` | 348 | Export-/Importformat | Datenformat erweitern |
 | `js/tracker.js` | 249 | Live-Aufzeichnung über `watchPosition` | GPS-Aufzeichnung |
 | `js/share-card.js` | 252 | Teilen-Karte auf Canvas (1080×1350) | Teilen-Bild |
 | `js/exercise-log.js` | 239 | erledigte Übungen: Zähler, Tageslimit, XP | Übungs-Häkchen |
@@ -131,7 +131,7 @@ Zu **jedem** puren Modul gibt es `tests/<name>.test.mjs`. Zusätzlich prüft
 `replaceExerciseLog` · `loadSessions` · `saveSessions` · `addSession` ·
 `updateSession` · `removeSession` · `replaceSessions` · `loadExercisePlan` ·
 `saveExercisePlan` · `loadProfile` · `saveProfile` · `loadGpsPreference` ·
-`saveGpsPreference`
+`saveGpsPreference` · `loadLastExport` · `saveLastExport(isoDate)`
 
 **`stats.js`** `buildStats(runs,{todayIso})` · `distanceByWeek/ByMonth(runs,{limit=12,todayIso})` ·
 `runsInPeriod(runs,{period,todayIso})` · `ACTIVITY_WEEKS=18` ·
@@ -173,7 +173,8 @@ Zu **jedem** puren Modul gibt es `tests/<name>.test.mjs`. Zusätzlich prüft
 
 **`transfer.js`** `EXPORT_FORMAT='funrun-export'` ·
 `LEGACY_EXPORT_FORMATS=['laufapp-export']` · `EXPORT_VERSION=1` · `buildExport` ·
-`serializeExport` · `exportFileName(date)` · `parseImport(text)`
+`serializeExport` · `exportFileName(date)` · `parseImport(text)` ·
+`EXPORT_REMINDER_DAYS=30` · `exportReminder({lastExport, runCount, todayIso})`
 
 **`interval.js`** `WORK` · `REST` · `PHASE_LABEL` · `phaseAt(interval, elapsedMs)` ·
 `summarize(interval, elapsedMs)`
@@ -230,6 +231,7 @@ Grob in dieser Reihenfolge im File; Zeilennummern sind Richtwerte:
 | `laufapp.exercise-plan.v1` | für Tage vorgenommene Übungen |
 | `laufapp.profile.v1` | `{ name, weeklyGoal, goalSince }` |
 | `laufapp.recording.v1` | `{ gps: boolean }` – zuletzt gewählte Aufzeichnungsart, Voreinstellung **false** |
+| `laufapp.export.v1` | `{ lastExport: "JJJJ-MM-TT" }` – Tag der letzten Sicherung. Wandert **nicht** in die Exportdatei: beschreibt die Gewohnheit des Browsers, nicht die Daten |
 | `laufapp.installHint.dismissed` | Installationsbanner weggeklickt |
 
 ### Objekte
@@ -321,15 +323,15 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Übungen: 27** in 5 Kategorien (`warmup`, `drills`, `kraft`, `mobility`, `regeneration`)
 - **Bereiche/Tabs: 5** – `start`, `exercises`, `training`, `trophies`, `profile`
   (`data-view` / `#view-…` in `index.html`)
-- **Tests: 725** in 22 Dateien (`node --test`, alle grün)
+- **Tests: 749** in 22 Dateien (`node --test`, alle grün)
 - **Trophäen mit `progress()`: 55 von 62** · Trophäen-XP gesamt: **5055**
-- **`sw.js`: `funrun-v46`**
+- **`sw.js`: `funrun-v47`**
 - Letzte Commits (neueste zuerst, Stand des Repos):
-  1. Fehlgeschlagenes Speichern wird sichtbar
-  2. APP_SHELL gegen den Dateibaum pruefen
-  3. README auf den Stand des Codes gebracht
-  4. Tote Regel fuer stat-note entfernt
-  5. Aktivitaetsraster und Pace-Verlauf im Profil, Feldhoehen begradigt
+  1. Erinnerung an die Sicherung nach dreissig Tagen
+  2. Kontext und Roadmap auf den Stand nach dem Push
+  3. Fehlgeschlagenes Speichern wird sichtbar
+  4. APP_SHELL gegen den Dateibaum pruefen
+  5. README auf den Stand des Codes gebracht
 
 ### Roadmap-Block A und B2 sind committet
 
@@ -349,8 +351,8 @@ die gelöschte Regel in A1, die `.storage-hint`-Regel in B2. Jeder der vier
 Commits ist für sich grün geprüft (706 / 706 / 711 / 725 Tests), damit ein
 späteres `git bisect` nicht in einem kaputten Stand landet.
 
-**Nächster Punkt laut Roadmap §5: C1** – Export-Erinnerung im Profil, wenn der
-letzte Export mehr als 30 Tage her ist.
+**Nächster Punkt laut Roadmap §5: B3** – Testlücken der jungen Module
+(`interval.js`, `beep.js`, `share-card.js`, `stopwatch.js`) prüfen.
 
 **Hinweis zum Ordner:** Das Repo liegt unter OneDrive
 (`C:\Users\tino2\OneDrive\Desktop\Laufapp`). OneDrive und `.git` vertragen sich
@@ -429,3 +431,4 @@ Bugfix in einer Render-Funktion braucht keinen Eintrag.
 | 2026-08-21 | Erstfassung: Stand nach „Aktivitaetsraster und Pace-Verlauf", `sw v44`, 62 Trophäen, 27 Übungen |
 | 2026-08-21 | Roadmap-Sitzung: `sw v46`, 725 Tests in 22 Dateien, `setStorageErrorHandler` in §4/§6, §7 um die uncommitteten Änderungen erweitert, §9 erledigt. **Korrigiert:** Session-Typen in §5 standen als Beschriftungen statt als IDs. |
 | 2026-08-21 | A1, A2, A4 und B2 committet und gepusht. §7: Warnblock „noch nicht committet" durch die vier Commits ersetzt, Commit-Liste nachgezogen. Beim Committen fiel auf, dass das README noch 706 Tests nannte statt 725 – die drei betroffenen Tabellenzeilen wurden in Commit `56ecd94` mitkorrigiert. |
+| 2026-08-21 | **C1** umgesetzt: Erinnerung an die Sicherung. Neu in §4 `exportReminder()` und `loadLastExport`/`saveLastExport`, in §5 der Schlüssel `laufapp.export.v1`. `sw v47`, 749 Tests. |

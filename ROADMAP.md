@@ -2,8 +2,9 @@
 
 > **Stand: 2026-08-21** · Grundlage: `KONTEXT.md` (Stand `funrun-v46`, 62 Trophäen, 27 Übungen)
 >
-> **Fortschritt: A1, A2, A3, A4 und B2 sind erledigt, committet und gepusht**
-> – siehe §5. Der nächste Punkt ist **C1** (Export-Erinnerung).
+> **Fortschritt: A1, A2, A3, A4, B2 und C1 sind erledigt, committet und
+> gepusht** – siehe §5. Der nächste Punkt ist **B3** (Testlücken der jungen
+> Module).
 >
 > Diese Datei beantwortet drei Fragen: **Was gibt es?**, **Was ist schwach?**,
 > **Was fehlt?** – und in welcher Reihenfolge das angegangen wird.
@@ -316,11 +317,53 @@ FunRun ist heute schon eine vollständige App.
 
 | # | Idee | Aufwand | Module |
 |---|---|--:|---|
-| C1 | **Automatischer Export als Erinnerung.** Ein Hinweis im Profil, wenn der letzte Export mehr als 30 Tage her ist. Die Daten liegen ausschließlich im `localStorage` eines Browsers – ein geleerter Cache, und alles ist weg. Das ist das größte reale Risiko der App. | S | `transfer.js`, `storage.js` (neuer Schlüssel `laufapp.export.v1`) |
+| ✅ C1 | **Erinnerung an die Sicherung.** Erledigt – siehe unten. | S | `transfer.js`, `storage.js`, `index.html`, `app.js` |
 | C2 | **Notiz und Gefühl pro Lauf.** Ein Freitextfeld und eine 1–5-Skala („wie war's?"). Öffnet später Auswertungen („Läufe, bei denen es sich gut anfühlte, waren im Schnitt 40 s/km langsamer"). | S | `validation.js`, `storage.js`, `app.js` |
 | C3 | **Trophäen-Fortschritt anzeigen.** Statt nur offen/erfüllt: „78 / 100 km". Der stärkste Gamification-Hebel überhaupt – ein sichtbarer Fortschrittsbalken zieht deutlich mehr als ein verschlossenes Feld. Braucht pro Trophäe eine `progress(stats)`-Funktion neben der Bedingung. | M | `achievements.js`, `app.js` |
 | C4 | **Wetter zum Lauf – manuell.** Vier Symbole zum Antippen. Kein API-Aufruf, keine Abhängigkeit, kein Backend. Passt zur Architektur. | S | `validation.js`, `app.js` |
 | C5 | **Läufe filtern und suchen.** Nach Zeitraum, Distanzbereich, Quelle (GPS/manuell), Intervall. Wird ab ein paar hundert Läufen unverzichtbar. | M | `stats.js` oder neues `filter.js`, `app.js` |
+
+#### ✅ C1 · Erinnerung an die Sicherung
+
+**Gebaut:** `exportReminder({lastExport, runCount, todayIso})` in
+`transfer.js` – pur und ohne Uhr, damit sich jede Grenze prüfen lässt, ohne die
+Systemzeit zu stellen. `loadLastExport`/`saveLastExport` in `storage.js` unter
+`laufapp.export.v1`. Der Hinweis steht in der Karte „Daten sichern".
+
+**Abweichung von der Idee oben:** nicht im Profil, sondern bei den
+Sicherungs-Knöpfen. Die Abhilfe ist der Knopf direkt darunter; ein Hinweis,
+dessen Abhilfe einen Tab weiter liegt, wird weggeklickt statt befolgt. Der
+Start-Tab ist ausserdem der zuerst sichtbare.
+
+**Entscheidungen, die beim Bauen anfielen:**
+
+- **Ohne Läufe wird nicht erinnert.** Ein Hinweis, der zum Sichern von nichts
+  auffordert, ist der schnellste Weg, dass er künftig übersehen wird.
+- **Ein Import zählt als Sicherung** – in dem Moment existiert nachweislich
+  eine Datei mit genau diesen Daten. Genommen wird der Tag des Imports, nicht
+  das `exportedAt` aus der Datei: wer eine halbjährige Sicherung einliest,
+  bekäme sonst sofort die Erinnerung, obwohl er gerade das Richtige getan hat.
+- **Regel 3 (§6) greift hier bewusst nicht.** Der Tag wandert *nicht* in die
+  Exportdatei. Er beschreibt nicht die Daten, sondern die Gewohnheit dieses
+  einen Browsers – eine Datei, die ihn mitbrächte, erzählte einem frisch
+  eingerichteten Gerät, es habe vor drei Tagen gesichert.
+- Der Hinweis lässt sich **nicht wegklicken**. Er verschwindet, sobald
+  exportiert wurde, und das ist der einzige Zustand, in dem er nichts mehr zu
+  sagen hat.
+
+**Zwei Fehler, die erst der Browser zeigte** – `node --test` war zu dem
+Zeitpunkt grün:
+
+1. `let lastExport` stand bei der Anzeige statt beim übrigen Modulzustand.
+   `init()` läuft am Modulanfang und griff darauf zu, bevor die Deklaration
+   initialisiert war – `ReferenceError`, und zwar für die **ganze App**, nicht
+   nur für die Erinnerung.
+2. Der Aufruf `renderExportReminder()` landete in `toggleDetail()` statt in
+   `render()`, weil die Zeilenfolge `renderDetail(); renderRuns();` an beiden
+   Stellen steht.
+
+**Lehre daraus:** eine grüne Testsuite sagt über `app.js` weiterhin fast
+nichts. Das ist genau der Punkt, den **B1** angeht.
 
 ### Mittelfristig
 
@@ -353,8 +396,8 @@ FunRun ist heute schon eine vollständige App.
 | 3 | **A2** README auf Stand | M | ✅ erledigt |
 | 4 | **B2** Speicher-Fehlerpfade härten | M | ✅ erledigt |
 | — | **committen und pushen** | S | ✅ erledigt |
-| 5 | **C1** Export-Erinnerung | S | ⬅ **als Nächstes** |
-| 6 | **B3** Testlücken der jungen Module | M | offen |
+| 5 | **C1** Export-Erinnerung | S | ✅ erledigt |
+| 6 | **B3** Testlücken der jungen Module | M | ⬅ **als Nächstes** |
 | 7 | **B1** app.js entflechten – **kleine Variante** (Training + Statistik) | M | offen |
 | 8 | **C3** Trophäen-Fortschritt | M | offen |
 | 9 | **C2** Notiz & Gefühl, **C4** Wetter | S+S | offen |
@@ -433,3 +476,4 @@ Zusätzlich zur Checkliste in `KONTEXT.md` §8:
 |---|---|
 | 2026-08-21 | Erstfassung, abgeleitet aus `KONTEXT.md` (Stand `funrun-v44`) |
 | 2026-08-21 | A1, A2, A4 und B2 committet und gepusht (`e99b96a` … `28b277a`). Kopf, §2 (A1), §5-Tabelle und der Commit-Block auf den Stand danach gezogen. `css/style.css` sauber getrennt statt zusammengelegt. Nächster Punkt: **C1**. |
+| 2026-08-21 | **C1** umgesetzt und gepusht. §4 um den Ergebnisabschnitt ergänzt, §5-Tabelle nachgezogen. Nächster Punkt: **B3**. |

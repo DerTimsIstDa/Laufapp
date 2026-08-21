@@ -455,6 +455,22 @@ Dateien mit der alten Kennung `laufapp-export` werden weiterhin angenommen
 (`LEGACY_EXPORT_FORMATS`) – eine Sicherung, die die App selbst geschrieben hat,
 darf sie nicht ablehnen.
 
+**Erinnerung an die Sicherung.** Ist die letzte Sicherung mehr als 30 Tage her
+– oder gab es noch nie eine –, steht über den beiden Knöpfen ein Hinweis. Er
+sitzt bewusst dort und nicht im Profil: die Abhilfe ist der Knopf direkt
+darunter, und ein Hinweis, dessen Abhilfe einen Tab weiter liegt, wird
+weggeklickt statt befolgt. Ohne einen einzigen Lauf erscheint er nicht – ein
+Hinweis, der zum Sichern von nichts auffordert, bringt sich selbst um die
+Wirkung. Ob er fällig ist, entscheidet `exportReminder()` in `js/transfer.js`,
+pur und ohne Uhr; der Tag steht unter `laufapp.export.v1`.
+
+Ein **Import zählt als Sicherung**: in dem Moment existiert nachweislich eine
+Datei mit genau diesen Daten. Genommen wird dabei der Tag des Imports, nicht
+das `exportedAt` aus der Datei – wer eine halbjährige Sicherung einliest,
+bekäme sonst sofort die Erinnerung, obwohl er gerade das Richtige getan hat.
+Der Tag selbst wandert **nicht** in die Exportdatei: er beschreibt nicht die
+Daten, sondern die Gewohnheit dieses einen Browsers.
+
 Der Import **ersetzt** den Bestand und fragt vorher nach, mit Angabe, wie
 viele Läufe, Übungen und geplante Einheiten gefunden wurden und wie viele
 ersetzt werden. `parseImport()` in
@@ -497,6 +513,7 @@ Alle Schlüssel tragen weiterhin das Präfix `laufapp.` – siehe ganz oben.
 | `laufapp.exercise-plan.v1` | für Tage vorgenommene Übungen |
 | `laufapp.profile.v1` | Name, Wochenziel, `goalSince` |
 | `laufapp.recording.v1` | zuletzt gewählte Aufzeichnungsart |
+| `laufapp.export.v1` | Tag der letzten Sicherung |
 | `laufapp.installHint.dismissed` | Installationsbanner weggeklickt |
 
 ## Gestaltung
@@ -545,7 +562,7 @@ Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 node --test
 ```
 
-**725 Tests in 22 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
+**749 Tests in 22 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
 Testrunner von Node — keine Abhängigkeiten, kein Framework, nichts zu
 installieren.
 
@@ -553,11 +570,11 @@ installieren.
 |---|--:|---|
 | `tests/achievements.test.mjs` | 81 | jede Bedingung knapp darunter und darauf |
 | `tests/stats.test.mjs` | 70 | Summen, Serien mit Lücken, Raster, Pace-Verlauf, Bestzeiten |
+| `tests/transfer.test.mjs` | 68 | Export-Roundtrip, kaputte und halbe Importdateien |
 | `tests/training.test.mjs` | 59 | Abschnitte, Intervall-Vorgabe, Abgleich, Plantreue und XP |
-| `tests/transfer.test.mjs` | 56 | Export-Roundtrip, kaputte und halbe Importdateien |
 | `tests/validation.test.mjs` | 53 | Pflicht- und Optionalfelder, erfundene Kalendertage |
-| `tests/storage.test.mjs` | 43 | Anlegen/Ändern/Löschen/Ersetzen, Neuberechnung, volles Fach |
-| `tests/styles.test.mjs` | 43 | CSS- und Markup-Regeln, die Node nicht ausführen kann |
+| `tests/storage.test.mjs` | 50 | Anlegen/Ändern/Löschen/Ersetzen, Neuberechnung, volles Fach |
+| `tests/styles.test.mjs` | 48 | CSS- und Markup-Regeln, die Node nicht ausführen kann |
 | `tests/exercise-log.test.mjs` | 37 | Tageslimit, Zähler, Kategorien für Vielseitig |
 | `tests/route.test.mjs` | 33 | Projektion, Seitenverhältnis, Geraden, Ausdünnen |
 | `tests/geo.test.mjs` | 32 | Haversine gegen bekannte Strecken, alle GPS-Filtergrenzen |
