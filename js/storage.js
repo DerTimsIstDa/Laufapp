@@ -19,6 +19,104 @@ const PROFILE_KEY = 'laufapp.profile.v1';
 const EXERCISE_PLAN_KEY = 'laufapp.exercise-plan.v1';
 const RECORDING_KEY = 'laufapp.recording.v1';
 
+/* --------------------------------------------------- Schreiben ---- */
+
+/**
+ * Was passiert, wenn das Schreiben fehlschlägt.
+ *
+ * Bis hierher wurde jeder Fehler nur auf die Konsole gelegt. Auf dem Handy
+ * sieht die niemand: der Speicher ist voll, der Lauf ist weg, und die App tut,
+ * als sei nichts gewesen. Für eine App, in der eine Stunde Laufen in einem
+ * einzigen `setItem` steckt, ist das der schlimmste mögliche Ausgang.
+ *
+ * Deshalb darf sich eine Stelle eintragen, die den Fehler sichtbar macht –
+ * gesetzt wird sie beim Start in app.js. Absichtlich nur eine: zwei Melder
+ * hiessen zwei Meldungen für einen Fehler.
+ *
+ * @type {?(info: StorageError) => void}
+ */
+let fehlerMelder = null;
+
+/**
+ * @typedef {Object} StorageError
+ * @property {string} key    der betroffene Speicherschlüssel
+ * @property {string} was    was nicht gespeichert werden konnte, im Klartext
+ * @property {boolean} voll  der Speicher ist voll (im Unterschied zu gesperrt)
+ * @property {unknown} error der ursprüngliche Fehler
+ */
+
+/**
+ * Trägt die Meldestelle ein. `null` schaltet sie wieder ab.
+ * @param {?(info: StorageError) => void} melder
+ */
+export function setStorageErrorHandler(melder) {
+  fehlerMelder = typeof melder === 'function' ? melder : null;
+}
+
+/**
+ * Ist das ein „Speicher voll"? Firefox, Safari und Chrome melden das
+ * unterschiedlich – über `name`, über `code` oder gar nicht. Wer keine der
+ * bekannten Kennungen trägt, gilt als anderer Fehler; dann steht in der
+ * Meldung nicht fälschlich „voll".
+ */
+function istQuotaFehler(err) {
+  if (err === null || typeof err !== 'object') return false;
+
+  return (
+    err.name === 'QuotaExceededError' ||
+    err.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+    err.code === 22 ||
+    err.code === 1014
+  );
+}
+
+/**
+ * Schreibt einen Wert und meldet, wenn es schiefgeht.
+ *
+ * Alle Töpfe laufen hier durch, damit die Behandlung an einer Stelle steht und
+ * nicht sechsmal leicht verschieden.
+ *
+ * @param {string} key
+ * @param {unknown} wert wird als JSON abgelegt
+ * @param {string} was für die Meldung an den Nutzer
+ * @returns {boolean} true, wenn es geschrieben wurde
+ */
+function schreibe(key, wert, was) {
+  try {
+    localStorage.setItem(key, JSON.stringify(wert));
+    return true;
+  } catch (err) {
+    return melde(key, was, err);
+  }
+}
+
+/** Entfernt einen Wert; dieselbe Behandlung wie beim Schreiben. */
+function entferne(key, was) {
+  try {
+    localStorage.removeItem(key);
+    return true;
+  } catch (err) {
+    return melde(key, was, err);
+  }
+}
+
+function melde(key, was, err) {
+  // Doppelpunkt statt gebautem Satz: „was“ kommt mal im Singular, mal im
+  // Plural herein, und ein Verb dazwischen müsste sich beugen.
+  console.error(`${was}: nicht gespeichert.`, err);
+
+  // Die Meldestelle darf den Aufrufer nicht mitreissen: ein Fehler beim
+  // Anzeigen der Fehlermeldung wäre ein besonders dummer Weg, Daten zu
+  // verlieren.
+  try {
+    fehlerMelder?.({ key, was, voll: istQuotaFehler(err), error: err });
+  } catch (melderFehler) {
+    console.error('Die Fehlermeldung selbst ist fehlgeschlagen:', melderFehler);
+  }
+
+  return false;
+}
+
 /**
  * `timeOfDay` ("HH:MM") und `durationMinutes` sind optional. Sie werden nur
  * für die Achievements Frühaufsteher, Nachteule und Neue Bestzeit gebraucht;
@@ -64,13 +162,12 @@ export function loadRuns() {
   }
 }
 
-/** @param {Run[]} runs */
+/**
+ * @param {Run[]} runs
+ * @returns {boolean} false, wenn nicht geschrieben werden konnte
+ */
 export function saveRuns(runs) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(runs));
-  } catch (err) {
-    console.error('Läufe konnten nicht gespeichert werden:', err);
-  }
+  return schreibe(STORAGE_KEY, runs, 'Die Läufe');
 }
 
 /**
@@ -176,13 +273,12 @@ export function loadExerciseLog() {
   }
 }
 
-/** @param {ExerciseEntry[]} entries */
+/**
+ * @param {ExerciseEntry[]} entries
+ * @returns {boolean} false, wenn nicht geschrieben werden konnte
+ */
 export function saveExerciseLog(entries) {
-  try {
-    localStorage.setItem(EXERCISE_KEY, JSON.stringify(entries));
-  } catch (err) {
-    console.error('Übungen konnten nicht gespeichert werden:', err);
-  }
+  return schreibe(EXERCISE_KEY, entries, 'Die erledigten Übungen');
 }
 
 /**
@@ -234,13 +330,12 @@ export function loadSessions() {
   }
 }
 
-/** @param {Session[]} sessions */
+/**
+ * @param {Session[]} sessions
+ * @returns {boolean} false, wenn nicht geschrieben werden konnte
+ */
 export function saveSessions(sessions) {
-  try {
-    localStorage.setItem(TRAINING_KEY, JSON.stringify(sessions));
-  } catch (err) {
-    console.error('Trainingsplan konnte nicht gespeichert werden:', err);
-  }
+  return schreibe(TRAINING_KEY, sessions, 'Der Trainingsplan');
 }
 
 /**
@@ -338,13 +433,12 @@ export function loadExercisePlan() {
   }
 }
 
-/** @param {PlannedExercise[]} entries bereits geprüfte Einträge */
+/**
+ * @param {PlannedExercise[]} entries bereits geprüfte Einträge
+ * @returns {PlannedExercise[]} dieselben Einträge, zum Weiterreichen
+ */
 export function saveExercisePlan(entries) {
-  try {
-    localStorage.setItem(EXERCISE_PLAN_KEY, JSON.stringify(entries));
-  } catch (err) {
-    console.error('Übungsplan konnte nicht gespeichert werden:', err);
-  }
+  schreibe(EXERCISE_PLAN_KEY, entries, 'Der Übungsplan');
   return entries;
 }
 
@@ -402,14 +496,10 @@ export function loadProfile() {
 export function saveProfile({ name, weeklyGoal, goalSince }) {
   const profil = { name, weeklyGoal, goalSince };
 
-  try {
-    // Ohne Name und ohne Ziel gibt es nichts zu merken – dann weg damit,
-    // statt eine leere Hülle liegen zu lassen.
-    if (name === '' && weeklyGoal === 0) localStorage.removeItem(PROFILE_KEY);
-    else localStorage.setItem(PROFILE_KEY, JSON.stringify(profil));
-  } catch (err) {
-    console.error('Profil konnte nicht gespeichert werden:', err);
-  }
+  // Ohne Name und ohne Ziel gibt es nichts zu merken – dann weg damit,
+  // statt eine leere Hülle liegen zu lassen.
+  if (name === '' && weeklyGoal === 0) entferne(PROFILE_KEY, 'Das Profil');
+  else schreibe(PROFILE_KEY, profil, 'Das Profil');
 
   return profil;
 }
@@ -448,11 +538,7 @@ export function loadGpsPreference() {
 export function saveGpsPreference(gps) {
   const wert = gps === true;
 
-  try {
-    localStorage.setItem(RECORDING_KEY, JSON.stringify({ gps: wert }));
-  } catch (err) {
-    console.error('Aufzeichnungsart konnte nicht gespeichert werden:', err);
-  }
+  schreibe(RECORDING_KEY, { gps: wert }, 'Die Aufzeichnungsart');
 
   return wert;
 }

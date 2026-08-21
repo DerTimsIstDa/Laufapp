@@ -86,6 +86,23 @@
       <button type="button" id="update-reload" class="small">Neu laden</button>
     </aside>
 
+    <!-- Erscheint, wenn ein Schreibversuch in den Speicher fehlgeschlagen ist.
+         Bewusst ohne Merker: dass die Warnung weggeklickt wurde, liesse sich
+         nur dort ablegen, wo gerade nichts mehr ankommt. Sie kommt beim
+         nächsten Fehlschlag wieder - und das ist richtig so. -->
+    <aside class="install-hint storage-hint" id="storage-hint" role="alert" hidden>
+      <div class="install-hint-text">
+        <strong id="storage-hint-title">Nicht gespeichert</strong>
+        <span id="storage-hint-text"></span>
+      </div>
+      <button
+        type="button"
+        id="storage-hint-close"
+        class="icon-button"
+        aria-label="Hinweis schließen"
+      >×</button>
+    </aside>
+
     <!-- Erscheint nur im Browser-Tab, nicht in der installierten App. -->
     <aside class="install-hint" id="install-hint" role="note" hidden>
       <div class="install-hint-text">

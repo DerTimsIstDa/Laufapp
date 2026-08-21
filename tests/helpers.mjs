@@ -48,6 +48,9 @@ export function installFakeLocalStorage(initial = null) {
   const store = new Map();
   if (initial !== null) store.set('laufapp.runs.v1', JSON.stringify(initial));
 
+  /** Wird gesetzt, wirft jedes Schreiben diesen Fehler – siehe failWrites(). */
+  let schreibFehler = null;
+
   const previous = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
 
   Object.defineProperty(globalThis, 'localStorage', {
@@ -55,8 +58,14 @@ export function installFakeLocalStorage(initial = null) {
     writable: true,
     value: {
       getItem: (key) => (store.has(key) ? store.get(key) : null),
-      setItem: (key, value) => store.set(key, String(value)),
-      removeItem: (key) => store.delete(key),
+      setItem: (key, value) => {
+        if (schreibFehler !== null) throw schreibFehler;
+        store.set(key, String(value));
+      },
+      removeItem: (key) => {
+        if (schreibFehler !== null) throw schreibFehler;
+        store.delete(key);
+      },
       clear: () => store.clear(),
     },
   });
@@ -67,11 +76,31 @@ export function installFakeLocalStorage(initial = null) {
       const raw = store.get(key);
       return raw === undefined ? null : JSON.parse(raw);
     },
+
+    /**
+     * Lässt jedes weitere Schreiben scheitern.
+     *
+     * Der Vorgabefehler ist ein voller Speicher, weil das der Fall ist, der auf
+     * einem echten Gerät tatsächlich eintritt: eine Stunde GPS je Lauf, und der
+     * localStorage fasst nur wenige Megabyte. `null` schaltet wieder frei.
+     */
+    failWrites(err = quotaFehler()) {
+      schreibFehler = err;
+    },
+
     restore() {
       if (previous) Object.defineProperty(globalThis, 'localStorage', previous);
       else delete globalThis.localStorage;
     },
   };
+}
+
+/** Ein „Speicher voll", wie ihn Chrome und Safari werfen. */
+export function quotaFehler() {
+  const err = new Error('The quota has been exceeded.');
+  err.name = 'QuotaExceededError';
+  err.code = 22;
+  return err;
 }
 
 /**

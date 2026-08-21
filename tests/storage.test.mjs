@@ -2,9 +2,11 @@ import { test, describe, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  loadRuns, addRun, updateRun, removeRun, replaceRuns,
+  loadRuns, addRun, updateRun, removeRun, replaceRuns, saveRuns,
   loadSessions, addSession, updateSession, removeSession, replaceSessions,
   loadGpsPreference, saveGpsPreference,
+  saveExerciseLog, saveSessions, saveExercisePlan, saveProfile,
+  setStorageErrorHandler,
 } from '../js/storage.js';
 import { getProgress, totalXpFromRuns } from '../js/xp.js';
 import { evaluateAchievements, achievementXp } from '../js/achievements.js';
@@ -393,5 +395,114 @@ describe('Gemerkte Aufzeichnungsart', () => {
   test('nur ein echtes true zählt', () => {
     localStorage.setItem('laufapp.recording.v1', JSON.stringify({ gps: 'ja' }));
     assert.equal(loadGpsPreference(), false);
+  });
+});
+
+/**
+ * Was passiert, wenn der Speicher nicht mehr mitspielt.
+ *
+ * Der Fall ist nicht theoretisch: eine Stunde GPS sind ein paar tausend Punkte,
+ * gespeichert werden bis zu 500 je Lauf, und der localStorage fasst nur wenige
+ * Megabyte. Irgendwann ist Schluss – und dann darf der gerade beendete Lauf
+ * nicht stillschweigend verschwinden.
+ */
+describe('Schreibfehler', () => {
+  /** Sammelt, was die Meldestelle zu sehen bekommt. */
+  function melderMitProtokoll() {
+    const gemeldet = [];
+    setStorageErrorHandler((info) => gemeldet.push(info));
+    return gemeldet;
+  }
+
+  afterEach(() => {
+    setStorageErrorHandler(null);
+  });
+
+  test('saveRuns meldet false statt still zu scheitern', () => {
+    store.failWrites();
+    assert.equal(saveRuns([{ id: 'a', distanceKm: 5, date: '2026-08-14' }]), false);
+  });
+
+  test('bei heilem Speicher meldet saveRuns true', () => {
+    assert.equal(saveRuns([{ id: 'a', distanceKm: 5, date: '2026-08-14' }]), true);
+  });
+
+  test('die Meldestelle erfährt, was nicht gespeichert wurde', () => {
+    const gemeldet = melderMitProtokoll();
+    store.failWrites();
+
+    saveRuns([]);
+
+    assert.equal(gemeldet.length, 1);
+    assert.equal(gemeldet[0].key, 'laufapp.runs.v1');
+    assert.equal(gemeldet[0].was, 'Die Läufe');
+    assert.equal(gemeldet[0].voll, true, 'ein QuotaExceededError muss als "voll" ankommen');
+  });
+
+  test('ein anderer Fehler gilt nicht als voller Speicher', () => {
+    // Im Privatmodus ist der Speicher gesperrt, nicht voll. Stünde in der
+    // Meldung "Speicher voll", schickte sie den Nutzer Läufe löschen – und das
+    // hilft dort gar nichts.
+    const gemeldet = melderMitProtokoll();
+    store.failWrites(new TypeError('localStorage ist gesperrt'));
+
+    saveRuns([]);
+
+    assert.equal(gemeldet[0].voll, false);
+  });
+
+  test('jeder Topf meldet sich mit eigenem Namen', () => {
+    const gemeldet = melderMitProtokoll();
+    store.failWrites();
+
+    saveRuns([]);
+    saveExerciseLog([]);
+    saveSessions([]);
+    saveExercisePlan([]);
+    saveGpsPreference(true);
+
+    assert.deepEqual(
+      gemeldet.map((info) => info.was),
+      ['Die Läufe', 'Die erledigten Übungen', 'Der Trainingsplan', 'Der Übungsplan', 'Die Aufzeichnungsart']
+    );
+  });
+
+  test('auch das Löschen des Profils meldet sich', () => {
+    // saveProfile räumt den Schlüssel weg, statt eine leere Hülle abzulegen –
+    // dieser Weg darf nicht am try/catch vorbeilaufen.
+    const gemeldet = melderMitProtokoll();
+    store.failWrites();
+
+    saveProfile({ name: '', weeklyGoal: 0, goalSince: null });
+
+    assert.equal(gemeldet.length, 1);
+    assert.equal(gemeldet[0].was, 'Das Profil');
+  });
+
+  test('ohne Meldestelle wird trotzdem nichts geworfen', () => {
+    // Der Aufrufer darf nie mitgerissen werden: ein nicht abgefangener Fehler
+    // im Speichern liesse die halbe Oberfläche stehen.
+    store.failWrites();
+    assert.doesNotThrow(() => saveRuns([]));
+  });
+
+  test('eine kaputte Meldestelle reisst den Aufrufer nicht mit', () => {
+    setStorageErrorHandler(() => {
+      throw new Error('die Anzeige ist selbst kaputt');
+    });
+    store.failWrites();
+
+    assert.doesNotThrow(() => saveRuns([]));
+  });
+
+  test('addRun gibt die Liste auch dann zurück, wenn nicht geschrieben wurde', () => {
+    // Sonst stünde der gerade beendete Lauf nicht einmal mehr auf dem Schirm –
+    // im Speicher verloren und aus der Anzeige verschwunden.
+    store.failWrites();
+
+    const runs = addRun([], { distanceKm: 5, date: '2026-08-14' });
+
+    assert.equal(runs.length, 1);
+    assert.equal(runs[0].distanceKm, 5);
   });
 });

@@ -111,6 +111,7 @@ import {
   loadExercisePlan, saveExercisePlan,
   loadProfile, saveProfile,
   loadGpsPreference, saveGpsPreference,
+  setStorageErrorHandler,
 } from './storage.js';
 import {
   normalizePlan,
@@ -392,6 +393,10 @@ const el = {
   installHint: document.getElementById('install-hint'),
   installHintClose: document.getElementById('install-hint-close'),
   updateHint: document.getElementById('update-hint'),
+  storageHint: document.getElementById('storage-hint'),
+  storageHintTitle: document.getElementById('storage-hint-title'),
+  storageHintText: document.getElementById('storage-hint-text'),
+  storageHintClose: document.getElementById('storage-hint-close'),
   updateReload: document.getElementById('update-reload'),
 
   detailCard: document.getElementById('detail-card'),
@@ -503,6 +508,10 @@ function isRecording() {
 init();
 
 function init() {
+  // Als Allererstes, noch vor dem Laden: ab hier bleibt kein Schreibfehler
+  // mehr unbemerkt.
+  setStorageErrorHandler(showStorageError);
+
   runs = loadRuns();
   exerciseLog = loadExerciseLog();
   sessions = loadSessions();
@@ -523,6 +532,9 @@ function init() {
   bindTabs();
   el.refreshButton.addEventListener('click', handleRefresh);
   el.installHintClose.addEventListener('click', dismissInstallHint);
+  el.storageHintClose.addEventListener('click', () => {
+    el.storageHint.hidden = true;
+  });
   el.updateReload.addEventListener('click', () => location.reload());
   el.detailClose.addEventListener('click', closeDetail);
   el.periodWeek.addEventListener('click', () => setStatsPeriod('week'));
@@ -2947,6 +2959,34 @@ function buildStatBlocks(werte) {
     block.append(dt, dd);
     return block;
   });
+}
+
+/* ------------------------------------------------ Speicher-Warnung */
+
+/**
+ * Meldet, dass etwas nicht in den Speicher geschrieben werden konnte.
+ *
+ * Wird einmal in init() bei storage.js hinterlegt und von dort aus jedem
+ * fehlgeschlagenen Schreibversuch aufgerufen. Vorher landete so ein Fehler nur
+ * auf der Konsole – die auf einem Handy niemand sieht.
+ *
+ * Der Text sagt, was zu tun ist, und das hängt vom Grund ab: ein voller
+ * Speicher lässt sich durch Exportieren und Aufräumen beheben, ein gesperrter
+ * (Privatmodus, blockierte Website-Daten) nicht.
+ *
+ * @param {import('./storage.js').StorageError} info
+ */
+function showStorageError({ was, voll }) {
+  el.storageHintTitle.textContent = voll ? 'Speicher voll' : 'Nicht gespeichert';
+
+  // Doppelpunkt statt Satzbau: „was“ kommt mal im Singular („Der
+  // Trainingsplan“), mal im Plural („Die Läufe“) herein. Ein gebauter Satz
+  // müsste das Verb beugen; so passt eine Formulierung auf alle Fälle.
+  el.storageHintText.textContent = voll
+    ? `${was}: kein Platz mehr im Speicher. Sichere die Daten über „Daten sichern“ und lösche danach alte Läufe.`
+    : `${was}: das Speichern ist fehlgeschlagen. Läuft die App in einem privaten Fenster oder sind Website-Daten blockiert?`;
+
+  el.storageHint.hidden = false;
 }
 
 /* ----------------------------------------------- Installationshinweis */

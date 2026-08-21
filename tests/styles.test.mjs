@@ -345,3 +345,58 @@ describe('Die Intervall-Stoppuhr ist ein eigener Vollbild-Schirm', () => {
     assert.match(css, /\.interval-screen\s*\{[^}]*justify-content:\s*safe center/);
   });
 });
+
+/**
+ * app.js greift die Oberfläche ausschliesslich über getElementById ab. Eine ID,
+ * die es im Markup nicht gibt, liefert `null` – und der Fehler fällt erst
+ * beim ersten Zugriff auf, oft in einem Zweig, den man beim Ausprobieren nicht
+ * durchläuft.
+ *
+ * Node kann die Seite nicht bauen, aber diesen Abgleich schafft es.
+ */
+describe('Markup und app.js kennen dieselben Elemente', () => {
+  const app = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
+
+  const angefragt = [
+    ...new Set([...app.matchAll(/getElementById\('([^']+)'\)/g)].map((m) => m[1])),
+  ];
+
+  test('es wird überhaupt über IDs zugegriffen', () => {
+    // Fällt der Zugriffsweg irgendwann weg, prüft der Test unten nur noch die
+    // leere Menge und sagt trotzdem "grün".
+    assert.ok(angefragt.length > 50, `nur ${angefragt.length} IDs gefunden – Zugriffsweg geändert?`);
+  });
+
+  test('jede angefragte ID steht im Markup', () => {
+    const fehlend = angefragt.filter((id) => !html.includes(`id="${id}"`));
+    assert.deepEqual(fehlend, [], `diese IDs gibt es im Markup nicht: ${fehlend.join(', ')}`);
+  });
+});
+
+describe('Speicher-Warnung', () => {
+  const app = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
+
+  test('der Hinweis steht im Markup und meldet sich als Alarm', () => {
+    // role="alert" statt "status": Hilfsmittel sollen das sofort vorlesen und
+    // nicht erst beim nächsten Innehalten. Ein verlorener Lauf kann warten.
+    assert.match(
+      html,
+      /id="storage-hint"[^>]*role="alert"|role="alert"[^>]*id="storage-hint"/,
+      'die Speicher-Warnung fehlt oder trägt kein role="alert"'
+    );
+  });
+
+  test('sie hebt sich von den übrigen Hinweisen ab', () => {
+    // Alle anderen Hinweise sind neongrün. Dieser meldet einen Verlust und
+    // darf nicht wie eine Erfolgsmeldung aussehen.
+    const regel = /\.storage-hint\s*\{([^}]*)\}/.exec(css);
+    assert.ok(regel, '.storage-hint fehlt im Stylesheet');
+    assert.match(regel[1], /var\(--danger/);
+  });
+
+  test('app.js trägt sich bei storage.js als Meldestelle ein', () => {
+    // Ohne diesen Aufruf bleibt die Warnung für immer versteckt, und der
+    // ganze Weg darunter ist tot.
+    assert.match(app, /setStorageErrorHandler\(showStorageError\)/);
+  });
+});

@@ -265,6 +265,19 @@ h1 {
   color: var(--accent);
 }
 
+/* Der einzige Hinweis, der nicht neongrün ist. Er meldet keinen Fortschritt,
+   sondern einen Verlust – und darf sich nicht wie die übrigen anfühlen. */
+.storage-hint {
+  align-items: center;
+  border-color: var(--danger-line);
+  border-left-color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.storage-hint strong {
+  color: var(--danger);
+}
+
 h2 {
   margin: 0 0 var(--space-3);
   font-size: 0.6875rem;
