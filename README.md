@@ -128,7 +128,8 @@ Eine Tab-Leiste am unteren Rand führt durch fünf Bereiche:
 - **Training** – eigene Einheiten auf ein Datum planen, der Abgleich mit den
   tatsächlichen Läufen und die Intervall-Stoppuhr, siehe unten
 - **Trophäen** – alle Trophäen als grosse Kacheln, freigeschaltete mit
-  Datum, offene mit Fortschrittsbalken sofern die Bedingung einen Zähler hat
+  Datum, offene mit Fortschrittsbalken oder – wo ein Balken in die Irre
+  führte – mit dem Stand als Zeile
 - **Profil** – Name, Titel und Level gross mit XP-Balken bis zum nächsten
   Level, Wochenziel, Trophäen-Übersicht je Gruppe, Titel-Historie,
   Gesamtstatistik, Aktivitätsraster, Pace-Verlauf, Bestzeiten und die
@@ -562,13 +563,13 @@ Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 node --test
 ```
 
-**887 Tests in 26 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
+**895 Tests in 26 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
 Testrunner von Node — keine Abhängigkeiten, kein Framework, nichts zu
 installieren.
 
 | Datei | Tests | prüft |
 |---|--:|---|
-| `tests/achievements.test.mjs` | 81 | jede Bedingung knapp darunter und darauf |
+| `tests/achievements.test.mjs` | 89 | jede Bedingung knapp darunter und darauf, und dass jede offene Trophäe ihren Stand zeigt |
 | `tests/stats.test.mjs` | 77 | Summen, Serien mit Lücken, Raster, Pace-Verlauf, Bestzeiten |
 | `tests/transfer.test.mjs` | 68 | Export-Roundtrip, kaputte und halbe Importdateien |
 | `tests/imports.test.mjs` | 60 | jeder Import-Pfad und -Name gegen den Dateibaum |
@@ -740,9 +741,24 @@ Die Route überlebt Bearbeiten, Export und Import. Das Formular kann sie nicht
 | Übungen | 14 | Zähler, Übungstage, Serien, Kategorien-Abdeckung |
 
 Zusammen **5055 Bonus-XP**. Sie werden bei jedem Render automatisch geprüft; die
-XP fliessen sofort in Level und Titel ein. **55 der 62** tragen eine
-`progress(stats)`-Funktion und zeigen deshalb in der Übersicht einen
-Fortschrittsbalken; die übrigen sind Ja/Nein-Bedingungen ohne sinnvollen Zähler.
+XP fliessen sofort in Level und Titel ein.
+
+**60 der 62 zeigen, wie weit es noch ist** – und zwar auf zwei Arten, weil eine
+nicht reicht:
+
+- **55 mit Balken** (`progress(stats)`): ein Zähler, der zum Ziel hochläuft.
+  „78 / 100 km".
+- **5 mit einer Zeile** (`standing(stats)`): „Beste Pace: 6:15 · nötig: unter
+  6:00 min/km". Für die Fälle, in denen ein Balken schlicht falsch wäre. Eine
+  Pace läuft **nach unten** – bei „5,8 von 6,0" stünde der Balken fast am Ende
+  und wäre doch schon erfüllt, bei 7:00 auf ein Ziel von 6:00 stünde er über
+  100 %. Und beim **langen Atem** wächst das Ziel mit dem Stand mit (120 % des
+  längsten Laufs): der Balken stünde für immer bei 83 % und bewegte sich nie.
+
+**Zwei zeigen nichts, mit Absicht.** An einer **Bestzeit** gibt es nichts zu
+zählen – sie fällt in dem Moment, in dem sie fällt. Und beim **Comeback**
+(14 Tage Pause) wäre ein Fortschrittsbalken die Aufforderung, länger nicht zu
+laufen. Eine Lauf-App, die zum Nichtlaufen gratuliert, hat sich vertan.
 
 Auslegungen, die in der Spezifikation offen waren:
 
@@ -839,9 +855,15 @@ tests/                Node-Tests, laufen mit `node --test`
 
 **Neue Trophäe:** einen Eintrag in `ACHIEVEMENTS` (`js/achievements.js`)
 ergänzen – `id`, `name`, `description`, `xp`, `category`, `check(stats)` und
-optional `progress(stats)` für den Zähler in der Übersicht. Reicht die
-vorhandene Statistik nicht, ein Feld in `buildRunStats()` ergänzen. Anzeige und
+**eines von beiden**: `progress(stats)` für den Balken oder `standing(stats)`
+für die Zeile, wenn ein Balken in die Irre führen würde. Reicht die vorhandene
+Statistik nicht, ein Feld in `buildRunStats()` ergänzen. Anzeige und
 XP-Verrechnung laufen automatisch mit.
+
+⚠️ **Ohne beides wird die Testsuite rot.** Die Ausnahmeliste hat genau zwei
+Einträge, und die sind über `ACHIEVEMENTS` begründet. Wer eine dritte Trophäe
+stumm lassen will, muss die Begründung dazuschreiben – nicht nur die Liste
+verlängern.
 
 ⚠️ Die Bedingung **muss monoton sein** – was einmal erfüllt war, muss erfüllt
 bleiben. Sonst zerfallen die Freischaltdaten (siehe „Zeitpunkte statt nur

@@ -1,9 +1,10 @@
 # FunRun – Leitfaden & Roadmap
 
-> **Stand: 2026-08-21** · Grundlage: `KONTEXT.md` (Stand `funrun-v50`, 62 Trophäen, 27 Übungen)
+> **Stand: 2026-08-21** · Grundlage: `KONTEXT.md` (Stand `funrun-v51`, 62 Trophäen, 27 Übungen)
 >
-> **Fortschritt: A1, A2, A3, A4, B1, B2, B3 und C1 sind erledigt und
-> committet** – siehe §5. Der nächste Punkt ist **C3** (Trophäen-Fortschritt).
+> **Fortschritt: A1, A2, A3, A4, B1, B2, B3, C1 und C3 sind erledigt und
+> committet** – siehe §5. Die nächsten Punkte sind **C2** (Notiz & Gefühl) und
+> **C4** (Wetter).
 >
 > Diese Datei beantwortet drei Fragen: **Was gibt es?**, **Was ist schwach?**,
 > **Was fehlt?** – und in welcher Reihenfolge das angegangen wird.
@@ -11,9 +12,18 @@
 
 **Wichtiger Vorbehalt:** Die Erstfassung dieses Plans war aus `KONTEXT.md`
 abgeleitet, nicht aus dem Quellcode. Was seither erledigt wurde (Block A, B1,
-B2, B3, C1), ist am Code geprüft. Alles **Offene** ist es nicht – Punkte, die vor
-der Umsetzung eine Prüfung brauchen, sind mit **[prüfen]** markiert. Wer sie ohne
-Prüfung als Fakt weitergibt, baut auf Sand.
+B2, B3, C1, C3), ist am Code geprüft. Alles **Offene** ist es nicht – Punkte, die
+vor der Umsetzung eine Prüfung brauchen, sind mit **[prüfen]** markiert. Wer sie
+ohne Prüfung als Fakt weitergibt, baut auf Sand.
+
+**Und der Vorbehalt hat sich bewährt:** C3 forderte einen Fortschrittsbalken an
+den Trophäen – den gab es zu dem Zeitpunkt längst, an 55 von 62. Schlimmer:
+`KONTEXT.md` §7 sagte das seit Commit `28b277a` wörtlich („Trophäen mit
+`progress()`: 55 von 62"). Die beiden Dateien lagen nebeneinander und
+widersprachen sich, und niemand hat hingesehen. Wer C3 ungeprüft eingeplant
+hätte, hätte einen halben Tag für etwas veranschlagt, das zu 90 % fertig war.
+**Vor jedem offenen Punkt: erst den Code fragen, dann planen** – und wenn schon
+nicht den Code, dann wenigstens die andere Datei.
 
 **Aufwandsskala:** **S** = eine Sitzung (< 2 h) · **M** = ein halber bis ganzer
 Tag · **L** = mehrere Sitzungen, braucht vorher eine eigene Skizze.
@@ -23,16 +33,17 @@ Tag · **L** = mehrere Sitzungen, braucht vorher eine eigene Skizze.
 ## 0. Wo wir stehen
 
 **Block A ist vollständig abgeschlossen.** Aus Block B sind B1, B2 und B3
-erledigt, aus Block C der Punkt C1. Alles davon ist committet.
+erledigt, aus Block C die Punkte C1 und C3. Alles davon ist committet.
 
 ```
 A. Hygiene              B. Struktur               C. Produkt (hier sind
    ✅ A1 CSS geklärt       ✅ B1 app.js geteilt       wir gerade)
    ✅ A2 README            ✅ B2 Speicherfehler       ✅ C1 Sicherungs-
    ✅ A3 Testzahl          ✅ B3 Testlücken             erinnerung
-   ✅ A4 APP_SHELL         ○ B4, B5, B2b            ⬅ C3 Trophäen-
+   ✅ A4 APP_SHELL         ○ B4, B5, B2b            ✅ C3 Trophäen-
                                                       Fortschritt
-                                                    ○ C2, C4–C15 offen
+                                                 ⬅ C2 Notiz & Gefühl
+                                                    ○ C4–C15 offen
 ```
 
 **B1 ist in der kleinen Variante umgesetzt**: Trainingsformular und Statistik
@@ -40,8 +51,14 @@ liegen jetzt in `js/views/`, dazu die Markup-Verweise und die Formatierung.
 `app.js` ist von 4.132 auf **3.091 Zeilen** geschrumpft, ein Viertel weniger.
 Das Ergebnis samt der Frage, ob der Rest folgen soll, steht in §3.
 
-**Der nächste Punkt ist C3** – ein Fortschrittsbalken an den Trophäen. Nach
-drei Schritten an der Struktur ist das wieder etwas, das man sieht.
+**C3 war zu 90 % schon gebaut.** Der Balken hing an 55 von 62 Trophäen, seit
+dem Commit, der den Trophäen-Tab eingeführt hat. Offen waren die sieben, bei
+denen ein Balken lügen würde – Pace läuft nach unten, das Ziel des langen Atems
+wandert mit. Fünf davon zeigen jetzt eine Zeile statt eines Balkens, zwei
+bleiben mit Begründung leer. Das Ergebnis steht in §4.
+
+**Die nächsten Punkte sind C2 und C4** – Notiz & Gefühl pro Lauf, dazu das
+Wetter. Beides klein, beides am Formular.
 
 Die vollständige Reihenfolge mit Stand steht in **§5**.
 
@@ -72,6 +89,7 @@ Gruppiert nach dem, was der Nutzer erlebt, nicht nach Dateien.
 | Level & Aufstiegskosten `40 + 20×N` | `xp.js` | rund |
 | Titel und 6 Rang-Abzeichen, endlos ab Level 80 | `titles.js` | rund |
 | 62 Trophäen in 3 Kategorien | `achievements.js` | rund, wächst stetig |
+| Stand jeder offenen Trophäe: Balken (55) oder Zeile (5) | `achievements.js`, `app.js` | rund seit C3; zwei zeigen bewusst nichts |
 | Freischaltdaten per Replay | `history.js` | rund, aber **O(n²)** – siehe B4 |
 
 ### 1.3 Training & Übungen
@@ -206,7 +224,7 @@ Ein-Personen-Projekt mehr Aufwand als Nutzen. Der Test läuft dagegen immer.
 ## 3. Block B – Struktur
 
 **Stand:** B1, B2 und B3 ✅ erledigt · B2b, B4, B5 offen. Keiner der drei steht
-als Nächstes an – die Reihenfolge geht erst über C3, C2 und C4 (siehe §5).
+als Nächstes an – die Reihenfolge geht erst über C2 und C4 (siehe §5).
 
 ### ✅ B1 · `js/app.js` entflechten · `js/app.js` → `js/views/`, `js/format.js`
 
@@ -452,8 +470,8 @@ auf dem dunklen Hintergrund, `prefers-reduced-motion` für Animationen. **[prüf
 Ideen, nach Verhältnis von Nutzen zu Aufwand sortiert. Alles hier ist optional –
 FunRun ist heute schon eine vollständige App.
 
-**Stand:** C1 ✅ erledigt · C2 bis C15 offen. Der nächste Punkt der Reihenfolge
-ist **C3**.
+**Stand:** C1 und C3 ✅ erledigt · C2, C4 bis C15 offen. Die nächsten Punkte der
+Reihenfolge sind **C2** und **C4**.
 
 ### Naheliegend (hoher Nutzen, kleiner Aufwand)
 
@@ -461,7 +479,7 @@ ist **C3**.
 |---|---|--:|---|
 | ✅ C1 | **Erinnerung an die Sicherung.** Erledigt – siehe unten. | S | `transfer.js`, `storage.js`, `index.html`, `app.js` |
 | C2 | **Notiz und Gefühl pro Lauf.** Ein Freitextfeld und eine 1–5-Skala („wie war's?"). Öffnet später Auswertungen („Läufe, bei denen es sich gut anfühlte, waren im Schnitt 40 s/km langsamer"). | S | `validation.js`, `storage.js`, `app.js` |
-| C3 | **Trophäen-Fortschritt anzeigen.** Statt nur offen/erfüllt: „78 / 100 km". Der stärkste Gamification-Hebel überhaupt – ein sichtbarer Fortschrittsbalken zieht deutlich mehr als ein verschlossenes Feld. Braucht pro Trophäe eine `progress(stats)`-Funktion neben der Bedingung. | M | `achievements.js`, `app.js` |
+| ✅ C3 | **Trophäen-Fortschritt anzeigen.** Erledigt – siehe unten. Der Balken war zu 90 % schon da. | S | `achievements.js`, `app.js`, `css/style.css` |
 | C4 | **Wetter zum Lauf – manuell.** Vier Symbole zum Antippen. Kein API-Aufruf, keine Abhängigkeit, kein Backend. Passt zur Architektur. | S | `validation.js`, `app.js` |
 | C5 | **Läufe filtern und suchen.** Nach Zeitraum, Distanzbereich, Quelle (GPS/manuell), Intervall. Wird ab ein paar hundert Läufen unverzichtbar. | M | `stats.js` oder neues `filter.js`, `app.js` |
 
@@ -507,6 +525,73 @@ Zeitpunkt grün:
 **Lehre daraus:** eine grüne Testsuite sagt über `app.js` weiterhin fast
 nichts. Das ist genau der Punkt, den **B1** angeht.
 
+#### ✅ C3 · Trophäen-Fortschritt anzeigen
+
+**Zuerst der Befund, weil er den Punkt umschreibt:** Der Fortschrittsbalken war
+längst da. `createTrophyProgress()` in `app.js` und eine `progress(stats)`-Funktion
+an **55 der 62** Trophäen, seit dem Commit, der den Trophäen-Tab eingeführt hat
+(`8c9308c`). Aufwand deshalb **S** statt **M** – der Punkt war zu 90 % erledigt,
+bevor er begonnen wurde.
+
+**Und es stand sogar geschrieben.** `KONTEXT.md` §7 führt seit `28b277a` die
+Zeile „Trophäen mit `progress()`: 55 von 62". Diese Datei behauptete daneben,
+es gebe keinen Fortschritt. Der C3-Eintrag stammt aus der Erstfassung, aus
+einer Zeit vor jener Zeile, und wurde nie gegengelesen. **Zwei Dateien, die
+denselben Stand beschreiben, driften auseinander, sobald nur eine gepflegt
+wird** – genau der Fall, gegen den §9 in `KONTEXT.md` antritt, nur zwischen
+Roadmap und Kontext statt zwischen README und Code.
+
+**Offen waren die sieben ohne Balken** – und die waren es aus gutem Grund:
+
+- **Eine Pace läuft nach unten.** `flott-unterwegs`, `zuegig`, `unter-fuenf`,
+  `tempo-im-intervall`: bei „5,8 von 6,0" stünde der Balken fast am Ende, wäre
+  aber schon erfüllt. Bei 7:00 min/km auf ein Ziel von 6:00 stünde er über 100 %.
+- **Beim langen Atem wandert das Ziel mit** (120 % des bisher längsten Laufs).
+  Der Balken stünde für immer bei 83 % und bewegte sich nie – einer, der sich
+  nicht bewegt, sagt nichts.
+
+**Gebaut:** ein zweites, schmaleres Feld `standing(stats)` neben `progress`, das
+statt eines Balkens eine Zeile liefert: `Beste Pace: 6:15 · nötig: unter 6:00
+min/km`, `Längster Lauf: 10,00 · nötig: ab 12,00 km`. Fünf der sieben haben es
+jetzt. Gerendert von `createTrophyStanding()` in `app.js`, Klasse
+`.trophy-standing` im selben Rasterfeld wie der Balken.
+
+**Zwei bleiben leer, und das ist die Entscheidung, nicht die Lücke:**
+
+- `neue-bestzeit` – an einem Rekord gibt es nichts zu zählen. Er fällt in dem
+  Moment, in dem er fällt.
+- `comeback` – 14 Tage Pause. Ein Fortschritt wäre die Aufforderung, länger
+  nicht zu laufen. Eine Lauf-App, die zum Nichtlaufen gratuliert, hat sich
+  vertan.
+
+Beides steht als Kommentar über `ACHIEVEMENTS`, damit die nächste Runde nicht
+wieder danach sucht.
+
+**Entscheidungen, die beim Bauen anfielen:**
+
+- **Die Einheit steht einmal, hinten am Ziel.** Erst hieß es „Beste Pace: 6:15
+  min/km · nötig: unter 6:00 min/km". Am Telefon nachgemessen: zwei Zeilen. Ohne
+  das erste `min/km`: eine. Gleiche Aussage, halber Platz.
+- **`current: null` ist nicht `0`.** Wer keinen Lauf mit Dauer hat, steht nicht
+  bei 0:00 min/km. Dort steht „noch kein Wert".
+- **Der Faktor 1,2 steht jetzt an einer Stelle** (`LONG_RUN_FACTOR`). Vorher
+  stand er nur in `buildRunStats`. Sobald ihn auch die Anzeige braucht, sind es
+  zwei Zahlen, die auseinanderlaufen können – und dann zeigt die Kachel eine
+  Ziellinie, die nicht die Bedingung ist. Ein Test hält beide zusammen: er
+  nimmt die **angezeigte** Zahl und prüft, dass genau sie die Trophäe auslöst.
+
+**Der Fehler, den wieder erst der Browser zeigte** – `node --test` war grün:
+ohne einen einzigen Lauf stand beim langen Atem „nötig: ab 0,00 km". Das Ziel
+hängt am längsten Lauf, und ohne Lauf ist es null. Jetzt gibt `standing` in dem
+Fall `target: null` zurück und die Zeile hört nach dem Stand auf. **Zum dritten
+Mal in dieser Roadmap:** die Testsuite prüft die Rechnung, nicht die Zeile, die
+daraus wird.
+
+**Der Test, der den Punkt in Zukunft offenhält:** eine neue Trophäe ohne Balken
+und ohne Zeile macht die Suite rot – die Ausnahmeliste hat genau zwei Einträge.
+Nachgeprüft, dass er anschlägt: ein `standing` entfernt → rot, zurück → grün.
+Dazu ein zweiter, der kein Ziel von `0` durchlässt. 887 → **895 Tests**.
+
 ### Mittelfristig
 
 | # | Idee | Aufwand | Module |
@@ -541,8 +626,8 @@ nichts. Das ist genau der Punkt, den **B1** angeht.
 | 5 | **C1** Export-Erinnerung | S | ✅ erledigt |
 | 6 | **B3** Testlücken der jungen Module | M | ✅ erledigt |
 | 7 | **B1** app.js entflechten – **kleine Variante** (Training + Statistik) | M | ✅ erledigt |
-| 8 | **C3** Trophäen-Fortschritt | M | ⬅ **als Nächstes** |
-| 9 | **C2** Notiz & Gefühl, **C4** Wetter | S+S | offen |
+| 8 | **C3** Trophäen-Fortschritt | S | ✅ erledigt |
+| 9 | **C2** Notiz & Gefühl, **C4** Wetter | S+S | ⬅ **als Nächstes** |
 | 10 | **B4** history.js messen | S | offen |
 | 11 | **B2b** GPS-Fehlerpfade am Gerät prüfen | M | offen |
 | 12 | danach frei nach Lust: C5, C8, C10, C15 | – | offen |
@@ -566,6 +651,9 @@ Ein Punkt = ein Commit (§6, Regel 1). So sind sie gefallen:
 | 11 | B1 | `061d0ba` | app.js entflechten: Markup-Verweise und Formatierung heraus |
 | 12 | B1 | `2378c00` | app.js entflechten: das Trainingsformular heraus |
 | 13 | B1 | `96bfbf2` | app.js entflechten: die Statistik heraus |
+| 14 | – | `102107b` | Haekchen-Runde nach B1 |
+| 15 | – | `bb66779` | Nach dem Push nachgezogen: der Hinweis auf den ausstehenden Push |
+| 16 | C3 | `414b55c` | Stand statt Balken, wo ein Balken luegen wuerde |
 
 **B1 hat drei Commits statt einem** – das ist keine Ausnahme von Regel 1 in §6,
 sondern stand so im Punkt selbst: einen Bereich pro Commit, nach jedem Commit
@@ -671,4 +759,6 @@ Fleißaufgabe, sondern der halbe Zweck dieser Datei.
 | 2026-08-21 | **B3** umgesetzt. §3 um den Ergebnisabschnitt ergänzt, §0/§1/§5 nachgezogen. Der Punkt war zur Hälfte falsch gestellt: zwei der vier genannten Grenzen waren längst geprüft, dafür hatten `beep.js` und `wake-lock.js` gar keine Testdatei. 749 → 802 Tests. Nächster Punkt: **B1**. |
 | 2026-08-21 | Nachgezogen: `63fe111` in der Commit-Tabelle. §6 um die Ausnahme erweitert – ein Doku-Commit kann nicht in der eigenen Tabelle stehen, und ein Live-Hash in einer Datei ist ab dem nächsten Commit falsch. |
 | 2026-08-21 | **B1** umgesetzt, kleine Variante, in drei Commits (`061d0ba`, `2378c00`, `96bfbf2`). `app.js` 4.132 → 3.091 Zeilen; neu sind `js/format.js` und `js/views/{dom,training,stats}.js`. §3 komplett neu geschrieben (Ergebnis statt Vorhaben, samt der Frage, ob der Rest folgt), §0 mit neuem Schaubild, §1.5 mit der Einordnung der Modul-Zahl, §5-Tabelle und Commit-Block nachgezogen. §1 bekam **keine** neue Zeile: B1 hat für den Nutzer nichts geändert, und eine Zeile dafür wäre eine Behauptung. 802 → 887 Tests, `sw` v47 → v50. Nächster Punkt: **C3**. |
+| 2026-08-21 | **C3** umgesetzt. Der Punkt war zu 90 % schon gebaut – Balken an 55 von 62 Trophäen seit `8c9308c`, und `KONTEXT.md` §7 sagte das seit `28b277a` wörtlich, während diese Datei das Gegenteil behauptete. Offen waren die sieben, bei denen ein Balken lügt; fünf haben jetzt eine Zeile (`standing`), zwei bleiben mit Begründung leer. §0/§1.2/§4/§5 nachgezogen, Aufwand von M auf S korrigiert. 887 → 895 Tests, `sw` v50 → v51. Nächste Punkte: **C2** und **C4**. |
+| 2026-08-21 | Der Vorbehalt im Kopf hat sich zum ersten Mal ausgezahlt und steht jetzt schärfer da: **vor jedem offenen Punkt erst den Code fragen.** C3 hätte sonst einen halben Tag für etwas veranschlagt, das fast fertig war. |
 | 2026-08-21 | Aus B1 mitgenommen, weil es dreimal passierte: Tests, die im Quelltext nach einer Regel suchen, dürfen keinen festen Dateipfad tragen – sie werden beim Verschieben nicht rot, sondern finden nichts und bleiben grün. Der Warnhinweis dazu steht bei B1 in §3. |
