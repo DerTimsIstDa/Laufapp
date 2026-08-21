@@ -18,7 +18,7 @@ const LEGACY_CACHE_PREFIXES = ['laufapp-'];
 
 const OWN_PREFIXES = [CACHE_PREFIX, ...LEGACY_CACHE_PREFIXES];
 
-const CACHE_VERSION = `${CACHE_PREFIX}v47`;
+const CACHE_VERSION = `${CACHE_PREFIX}v48`;
 
 const APP_SHELL = [
   './',
@@ -48,6 +48,8 @@ const APP_SHELL = [
   './js/beep.js',
   './js/training.js',
   './js/storage.js',
+  './js/format.js',
+  './js/views/dom.js',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',

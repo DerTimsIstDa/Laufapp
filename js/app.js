@@ -21,6 +21,10 @@
  *   goal.js         Wochenziel: erreichte Wochen und Bonus-XP
  *   share-card.js   Teilen-Karte auf einem Canvas
  *   storage.js      Persistenz
+ *   format.js       Zahlen, Daten und Zeiten in Anzeigeform
+ *
+ * Die Ansichten liegen seit B1 unter js/views/:
+ *   views/dom.js    Verweise auf das Markup, gemeinsam genutzt
  */
 
 import { getProgress, totalXpFromRuns, xpForDistance } from './xp.js';
@@ -139,6 +143,22 @@ import {
   XP_PER_EXERCISE,
   MAX_EXERCISE_COUNT,
 } from './exercise-log.js';
+import { el, SVG_NS, createSvg } from './views/dom.js';
+import {
+  numberFormat,
+  distanceFormat,
+  shortMonthFormat,
+  weekdayFormat,
+  todayIso,
+  toIsoDate,
+  toTimeOfDay,
+  formatDate,
+  formatDays,
+  formatMonth,
+  formatAveragePace,
+  round,
+  r1,
+} from './format.js';
 
 /** @type {import('./storage.js').Run[]} */
 let runs = [];
@@ -238,225 +258,6 @@ let unlockStartedAt = null;
 /** Laufender Takt der Entsperr-Anzeige. */
 let unlockFrame = null;
 
-const el = {
-  level: document.getElementById('level'),
-  title: document.getElementById('title'),
-  titleBadgeIcon: document.getElementById('title-badge-icon'),
-  totalXp: document.getElementById('total-xp'),
-  progressBar: document.getElementById('progress-bar'),
-  progressFill: document.getElementById('progress-fill'),
-  xpIntoLevel: document.getElementById('xp-into-level'),
-  xpForLevel: document.getElementById('xp-for-level'),
-  xpToNext: document.getElementById('xp-to-next'),
-  nextLevel: document.getElementById('next-level'),
-  runXp: document.getElementById('run-xp'),
-  bonusXp: document.getElementById('bonus-xp'),
-  nextTitle: document.getElementById('next-title'),
-  nextTitleLevel: document.getElementById('next-title-level'),
-
-  trackDistance: document.getElementById('track-distance'),
-  trackDuration: document.getElementById('track-duration'),
-  trackPace: document.getElementById('track-pace'),
-  trackGpsChoice: document.getElementById('track-gps-choice'),
-  trackGpsOn: document.getElementById('track-gps-on'),
-  trackGpsOff: document.getElementById('track-gps-off'),
-  trackStatus: document.getElementById('track-status'),
-  trackError: document.getElementById('track-error'),
-  trackStart: document.getElementById('track-start'),
-  trackPause: document.getElementById('track-pause'),
-  trackStop: document.getElementById('track-stop'),
-  trackDiscard: document.getElementById('track-discard'),
-  trackingCard: document.getElementById('tracking-card'),
-  trackLock: document.getElementById('track-lock'),
-  trackUnlock: document.getElementById('track-unlock'),
-  lockPanel: document.getElementById('lock-panel'),
-  unlockFill: document.getElementById('unlock-fill'),
-
-  formCard: document.getElementById('form-card'),
-  formTitle: document.getElementById('form-title'),
-  form: document.getElementById('run-form'),
-  formSubmit: document.getElementById('form-submit'),
-  formCancel: document.getElementById('form-cancel'),
-  distance: document.getElementById('distance'),
-  date: document.getElementById('date'),
-  time: document.getElementById('time'),
-  duration: document.getElementById('duration'),
-  pace: document.getElementById('pace'),
-  formError: document.getElementById('form-error'),
-  formWarning: document.getElementById('form-warning'),
-  unlockNotice: document.getElementById('unlock-notice'),
-
-  exportReminder: document.getElementById('export-reminder'),
-  exportButton: document.getElementById('export-button'),
-  importButton: document.getElementById('import-button'),
-  importInput: document.getElementById('import-input'),
-  importConfirm: document.getElementById('import-confirm'),
-  importSummary: document.getElementById('import-summary'),
-  importApply: document.getElementById('import-apply'),
-  importCancel: document.getElementById('import-cancel'),
-  dataStatus: document.getElementById('data-status'),
-  dataError: document.getElementById('data-error'),
-
-  periodWeek: document.getElementById('period-week'),
-  periodMonth: document.getElementById('period-month'),
-  periodCaption: document.getElementById('period-caption'),
-  periodEmpty: document.getElementById('period-empty'),
-  periodStats: document.getElementById('period-stats'),
-  chartTitle: document.getElementById('chart-title'),
-  chartList: document.getElementById('chart-list'),
-
-  tabbar: document.getElementById('tabbar'),
-  tabs: [...document.querySelectorAll('.tab')],
-  views: {
-    start: document.getElementById('view-start'),
-    exercises: document.getElementById('view-exercises'),
-    training: document.getElementById('view-training'),
-    trophies: document.getElementById('view-trophies'),
-    profile: document.getElementById('view-profile'),
-  },
-
-  greeting: document.getElementById('greeting'),
-
-  todayEmpty: document.getElementById('today-empty'),
-  todaySessionsTitle: document.getElementById('today-sessions-title'),
-  todaySessions: document.getElementById('today-sessions'),
-  todayExercisesTitle: document.getElementById('today-exercises-title'),
-  todayExercises: document.getElementById('today-exercises'),
-
-  exerciseFilter: document.getElementById('exercise-filter'),
-  exerciseList: document.getElementById('exercise-list'),
-  exerciseNote: document.getElementById('exercise-note'),
-  exerciseFeedback: document.getElementById('exercise-feedback'),
-  exerciseXp: document.getElementById('exercise-xp'),
-
-  trophyFilter: document.getElementById('trophy-filter'),
-  trophyCount: document.getElementById('trophy-count'),
-  trophyTotal: document.getElementById('trophy-total'),
-  trophyXp: document.getElementById('trophy-xp'),
-  trophyLists: {
-    meilenstein: document.getElementById('trophies-meilenstein'),
-    herausforderung: document.getElementById('trophies-herausforderung'),
-    uebung: document.getElementById('trophies-uebung'),
-  },
-
-  profileName: document.getElementById('profile-name'),
-  profileNameForm: document.getElementById('profile-name-form'),
-  profileNameInput: document.getElementById('profile-name-input'),
-  profileNameStatus: document.getElementById('profile-name-status'),
-  profileGoalInput: document.getElementById('profile-goal-input'),
-  goal: document.getElementById('goal'),
-  goalBar: document.getElementById('goal-bar'),
-  goalCount: document.getElementById('goal-count'),
-  goalCaption: document.getElementById('goal-caption'),
-  goalTally: document.getElementById('goal-tally'),
-  profileTitleName: document.getElementById('profile-title-name'),
-  profileBadge: document.getElementById('profile-badge'),
-  profileLevel: document.getElementById('profile-level'),
-  profileXp: document.getElementById('profile-xp'),
-  profileNext: document.getElementById('profile-next'),
-  profileProgress: document.getElementById('profile-progress'),
-  profileProgressFill: document.getElementById('profile-progress-fill'),
-  profileProgressCaption: document.getElementById('profile-progress-caption'),
-  profileTrophySummary: document.getElementById('profile-trophy-summary'),
-
-  shareOpen: document.getElementById('share-open'),
-  sharePanel: document.getElementById('share-panel'),
-  shareRunPicker: document.getElementById('share-run-picker'),
-  shareRun: document.getElementById('share-run'),
-  shareCreate: document.getElementById('share-create'),
-  shareCancel: document.getElementById('share-cancel'),
-  shareStatus: document.getElementById('share-status'),
-  shareError: document.getElementById('share-error'),
-
-  intervalScreen: document.getElementById('interval-screen'),
-  intervalBar: document.getElementById('interval-bar'),
-  intervalIcon: document.getElementById('interval-icon'),
-  intervalRepeat: document.getElementById('interval-repeat'),
-  intervalRepeats: document.getElementById('interval-repeats'),
-  intervalTime: document.getElementById('interval-time'),
-  intervalPhase: document.getElementById('interval-phase'),
-  intervalNextPhase: document.getElementById('interval-next-phase'),
-  intervalNextTime: document.getElementById('interval-next-time'),
-  intervalStatus: document.getElementById('interval-status'),
-  intervalPauseButton: document.getElementById('interval-pause'),
-  intervalStopButton: document.getElementById('interval-stop'),
-  intervalSettingsButton: document.getElementById('interval-settings'),
-  intervalPanel: document.getElementById('interval-panel'),
-  intervalSound: document.getElementById('interval-sound'),
-  intervalConfirm: document.getElementById('interval-confirm'),
-  intervalStopConfirm: document.getElementById('interval-stop-confirm'),
-  intervalStopCancel: document.getElementById('interval-stop-cancel'),
-
-  quickWork: document.getElementById('quick-work'),
-  quickRest: document.getElementById('quick-rest'),
-  quickRepeats: document.getElementById('quick-repeats'),
-  quickGpsOn: document.getElementById('quick-gps-on'),
-  quickGpsOff: document.getElementById('quick-gps-off'),
-  quickTotal: document.getElementById('quick-total'),
-  quickError: document.getElementById('quick-error'),
-  quickStart: document.getElementById('quick-start'),
-  heatmap: document.getElementById('heatmap'),
-  heatmapMonths: document.getElementById('heatmap-months'),
-  heatmapGrid: document.getElementById('heatmap-grid'),
-  heatmapDetail: document.getElementById('heatmap-detail'),
-  paceTrend: document.getElementById('pace-trend'),
-  paceTrendCaption: document.getElementById('pace-trend-caption'),
-  paceTrendEmpty: document.getElementById('pace-trend-empty'),
-  bestTimes: document.getElementById('best-times'),
-  profileStats: document.getElementById('profile-stats'),
-  profileStatsEmpty: document.getElementById('profile-stats-empty'),
-
-  refreshButton: document.getElementById('refresh-button'),
-  installHint: document.getElementById('install-hint'),
-  installHintClose: document.getElementById('install-hint-close'),
-  updateHint: document.getElementById('update-hint'),
-  storageHint: document.getElementById('storage-hint'),
-  storageHintTitle: document.getElementById('storage-hint-title'),
-  storageHintText: document.getElementById('storage-hint-text'),
-  storageHintClose: document.getElementById('storage-hint-close'),
-  updateReload: document.getElementById('update-reload'),
-
-  detailCard: document.getElementById('detail-card'),
-  detailFacts: document.getElementById('detail-facts'),
-  detailClose: document.getElementById('detail-close'),
-  routeContainer: document.getElementById('route-container'),
-
-  planXpTotal: document.getElementById('plan-xp-total'),
-  goalXpTotal: document.getElementById('goal-xp-total'),
-  sessionForm: document.getElementById('session-form'),
-  sessionDate: document.getElementById('session-date'),
-  sessionType: document.getElementById('session-type'),
-  sessionTypeHint: document.getElementById('session-type-hint'),
-  sessionNote: document.getElementById('session-note'),
-  sessionError: document.getElementById('session-error'),
-  sessionSubmit: document.getElementById('session-submit'),
-  sessionCancel: document.getElementById('session-cancel'),
-  sessionIntervalBox: document.getElementById('session-interval-box'),
-  sessionWork: document.getElementById('session-work'),
-  sessionRest: document.getElementById('session-rest'),
-  sessionRepeats: document.getElementById('session-repeats'),
-  sessionIntervalTotal: document.getElementById('session-interval-total'),
-  sessionSegmentsBox: document.getElementById('session-segments-box'),
-  sessionSegments: document.getElementById('session-segments'),
-  sessionSegmentsEmpty: document.getElementById('session-segments-empty'),
-  sessionAddSegment: document.getElementById('session-add-segment'),
-  sessionXpHint: document.getElementById('session-xp-hint'),
-  planEmpty: document.getElementById('plan-empty'),
-  planBody: document.getElementById('plan-body'),
-  planList: document.getElementById('plan-list'),
-  planFulfilled: document.getElementById('plan-fulfilled'),
-  planDecided: document.getElementById('plan-decided'),
-  planAdherence: document.getElementById('plan-adherence'),
-  planOpen: document.getElementById('plan-open'),
-  planXp: document.getElementById('plan-xp'),
-
-  runCount: document.getElementById('run-count'),
-  runsEmpty: document.getElementById('runs-empty'),
-  runsList: document.getElementById('runs-list'),
-};
-
-const SVG_NS = 'http://www.w3.org/2000/svg';
-
 /** Umfang des Stoppuhr-Rings, 2·π·110 – der Radius steht im Markup. */
 const INTERVAL_RING = 2 * Math.PI * 110;
 
@@ -479,21 +280,6 @@ const STATUS_TEXT = {
  * stroke-dasharray im Stylesheet übereinstimmen, sonst füllt der Bogen falsch.
  */
 const RING_UMFANG = 2 * Math.PI * 52;
-
-const numberFormat = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 });
-const distanceFormat = new Intl.NumberFormat('de-DE', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-const dateFormat = new Intl.DateTimeFormat('de-DE', {
-  day: '2-digit',
-  month: '2-digit',
-  year: 'numeric',
-});
-const monthFormat = new Intl.DateTimeFormat('de-DE', { month: 'short', year: 'numeric' });
-/** Ohne Jahr – über einer Spalte des Aktivitätsrasters ist dafür kein Platz. */
-const shortMonthFormat = new Intl.DateTimeFormat('de-DE', { month: 'short' });
-const weekdayFormat = new Intl.DateTimeFormat('de-DE', { weekday: 'short' });
 
 const tracker = createTracker({
   onUpdate: renderTracking,
@@ -2902,16 +2688,6 @@ function formatTrendPoint(isoDate, period) {
   return `${String(day).padStart(2, '0')}.${String(month).padStart(2, '0')}.`;
 }
 
-/** Kleiner Helfer, damit die Diagramm-Bausteine nicht in setAttribute ertrinken. */
-function createSvg(tag, attribute, text = null) {
-  const knoten = document.createElementNS(SVG_NS, tag);
-  for (const [name, wert] of Object.entries(attribute)) {
-    knoten.setAttribute(name, String(wert));
-  }
-  if (text !== null) knoten.textContent = text;
-  return knoten;
-}
-
 /**
  * Bestzeiten über die gängigen Distanzen.
  *
@@ -2952,14 +2728,6 @@ function renderBestTimes() {
       return zeile;
     })
   );
-}
-
-/**
- * Ø-Pace als "5:30 min/km". Ohne einen einzigen Lauf mit Pace steht dort ein
- * Strich – "0:00" wäre eine Behauptung.
- */
-function formatAveragePace(minPerKm) {
-  return minPerKm === null ? '–' : `${formatPace(minPerKm)} min/km`;
 }
 
 /** Kacheln fürs .stat-grid – dieselbe Form für Zeitraum und Gesamtstand. */
@@ -3279,11 +3047,6 @@ function createRouteLegend(pointCount) {
 
   legend.append(start, end, count);
   return legend;
-}
-
-/** Eine Nachkommastelle reicht für Pixel und hält das Markup kurz. */
-function r1(value) {
-  return Math.round(value * 10) / 10;
 }
 
 /* ------------------------------------------------------------ Bearbeiten */
@@ -3837,21 +3600,6 @@ function createChartRow(label, bucket, maximum) {
   return item;
 }
 
-function formatDays(count) {
-  return count === 0 ? '–' : `${count} ${count === 1 ? 'Tag' : 'Tage'}`;
-}
-
-/** "2026-08" -> "Aug 2026". */
-function formatMonth(month) {
-  const [year, monthNumber] = month.split('-').map(Number);
-  return monthFormat.format(new Date(year, monthNumber - 1, 1));
-}
-
-/** Zwei Nachkommastellen, ohne Fließkomma-Rauschen wie 17.999999999. */
-function round(value) {
-  return Math.round(value * 100) / 100;
-}
-
 /**
  * Live-Anzeige der Aufzeichnung.
  * Die Statuszeile wird nur während tracking/paused gesetzt – im Ruhezustand
@@ -4117,31 +3865,6 @@ function clearError() {
   // Der Hinweis gehört zur letzten Eingabe. Wird neu getippt oder ein anderer
   // Lauf bearbeitet, wäre er von gestern.
   showWarnings([]);
-}
-
-/* ----------------------------------------------------------------- Utils */
-
-function todayIso() {
-  return toIsoDate(new Date());
-}
-
-/** Date -> "YYYY-MM-DD" in lokaler Zeit (nicht UTC). */
-function toIsoDate(date) {
-  const offsetMs = date.getTimezoneOffset() * 60_000;
-  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 10);
-}
-
-/** Date -> "HH:MM" in lokaler Zeit. */
-function toTimeOfDay(date) {
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  return `${hours}:${minutes}`;
-}
-
-function formatDate(isoDate) {
-  const [year, month, day] = isoDate.split('-').map(Number);
-  if (!year || !month || !day) return isoDate;
-  return dateFormat.format(new Date(year, month - 1, day));
 }
 
 function registerServiceWorker() {

@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 
 import { ACTIVITY_WEEKS } from '../js/stats.js';
 
@@ -354,8 +354,25 @@ describe('Die Intervall-Stoppuhr ist ein eigener Vollbild-Schirm', () => {
  *
  * Node kann die Seite nicht bauen, aber diesen Abgleich schafft es.
  */
-describe('Markup und app.js kennen dieselben Elemente', () => {
-  const app = readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
+describe('Markup und die Module kennen dieselben Elemente', () => {
+  /**
+   * Alle Module unter js/, samt Unterverzeichnissen.
+   *
+   * Bis B1 stand hier nur `app.js`. Die Verweise aufs Markup liegen seitdem in
+   * `js/views/dom.js` – ein Test, der weiter nur `app.js` liest, fände null IDs
+   * und bliebe trotzdem grün. Deshalb das ganze Verzeichnis.
+   */
+  const moduleUnter = (verzeichnis) =>
+    readdirSync(new URL(`../${verzeichnis}`, import.meta.url), { withFileTypes: true }).flatMap(
+      (eintrag) => {
+        if (eintrag.isDirectory()) return moduleUnter(`${verzeichnis}${eintrag.name}/`);
+        return eintrag.name.endsWith('.js') ? [`${verzeichnis}${eintrag.name}`] : [];
+      }
+    );
+
+  const app = moduleUnter('js/')
+    .map((pfad) => readFileSync(new URL(`../${pfad}`, import.meta.url), 'utf8'))
+    .join('\n');
 
   const angefragt = [
     ...new Set([...app.matchAll(/getElementById\('([^']+)'\)/g)].map((m) => m[1])),

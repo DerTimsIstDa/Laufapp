@@ -194,11 +194,19 @@ describe('App-Shell ist vollständig', () => {
     return [...treffer[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
   })();
 
-  /** Alle Dateien eines Verzeichnisses als Pfad in der Schreibweise der Shell. */
+  /**
+   * Alle Dateien eines Verzeichnisses als Pfad in der Schreibweise der Shell.
+   *
+   * Steigt in Unterverzeichnisse ab: seit B1 liegen die Ansichten unter
+   * `js/views/`, und ein Test, der nur die oberste Ebene liest, hätte den
+   * ganzen Ordner stillschweigend durchgewinkt – genau der Fehler, gegen den
+   * dieser Test antritt.
+   */
   const dateienIn = (verzeichnis, endung) =>
-    readdirSync(new URL(verzeichnis, wurzel))
-      .filter((name) => name.endsWith(endung))
-      .map((name) => `./${verzeichnis}${name}`);
+    readdirSync(new URL(verzeichnis, wurzel), { withFileTypes: true }).flatMap((eintrag) => {
+      if (eintrag.isDirectory()) return dateienIn(`${verzeichnis}${eintrag.name}/`, endung);
+      return eintrag.name.endsWith(endung) ? [`./${verzeichnis}${eintrag.name}`] : [];
+    });
 
   test('jedes Modul in js/ wird gecacht', () => {
     for (const pfad of dateienIn('js/', '.js')) {
