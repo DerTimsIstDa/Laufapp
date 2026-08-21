@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { ACTIVITY_WEEKS } from '../js/stats.js';
+import { WEATHERS, FEELINGS } from '../js/validation.js';
 import { quelltextDerModule } from './helpers.mjs';
 
 /**
@@ -21,6 +22,53 @@ const app = quelltextDerModule();
  */
 const css = readFileSync(new URL('../css/style.css', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+
+/**
+ * Die Kästchen-Reihen im Formular gegen ihre Datenquelle.
+ *
+ * Die Auswahl steht zweimal da: als Liste in `validation.js` (die prüft und
+ * beschriftet) und als Markup in `index.html` (das man antippt). Läuft eines
+ * dem anderen davon, gibt es keinen Fehler – es fehlt nur ein Kästchen, oder
+ * ein Symbol bleibt leer. Beides sieht man erst im Browser, und ein leeres
+ * <use> sieht man dort nicht einmal, weil an der Stelle einfach nichts steht.
+ */
+describe('Auswahlreihen im Formular decken sich mit den Daten', () => {
+  test('zu jedem Wetter gibt es ein Radiofeld', () => {
+    for (const { value } of WEATHERS) {
+      assert.ok(
+        html.includes(`name="weather" value="${value}"`),
+        `kein Radiofeld für '${value}'`
+      );
+    }
+  });
+
+  test('kein Radiofeld ohne Wetter dahinter', () => {
+    const werte = [...html.matchAll(/name="weather" value="([^"]+)"/g)].map((m) => m[1]);
+
+    assert.equal(werte.length, WEATHERS.length, 'Markup und Liste sind verschieden lang');
+    assert.deepEqual(werte.sort(), WEATHERS.map((w) => w.value).sort());
+  });
+
+  test('jedes genannte Symbol ist auch definiert', () => {
+    // Ein <use> auf eine id, die es nicht gibt, zeichnet nichts. Kein Fehler,
+    // keine Meldung – an der Stelle ist einfach Luft.
+    for (const { icon } of WEATHERS) {
+      assert.ok(html.includes(`<g id="${icon}">`), `${icon} steht nicht im Symbolvorrat`);
+      assert.ok(html.includes(`href="#${icon}"`), `${icon} wird nirgends geholt`);
+    }
+  });
+
+  test('zu jeder Stufe der Gefühlsskala gibt es ein Radiofeld', () => {
+    const werte = [...html.matchAll(/name="feeling" value="([^"]+)"/g)].map((m) => Number(m[1]));
+    assert.deepEqual(werte, FEELINGS.map((f) => f.value));
+  });
+
+  test('beide Reihen teilen sich dieselbe Bauart', () => {
+    // Zwei Fragen, die dasselbe tun, sollen sich nicht verschieden anfühlen.
+    assert.ok(css.includes('.choice-scale label'), 'die gemeinsame Regel fehlt');
+    assert.equal(css.includes('.feeling-scale'), false, 'alte Einzelregel noch da');
+  });
+});
 
 describe('[hidden] sticht jede eigene display-Regel', () => {
   test('die Rücksetzregel steht im Stylesheet', () => {

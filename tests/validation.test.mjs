@@ -17,6 +17,8 @@ import {
   MAX_RUN_NOTE_LENGTH,
   FEELINGS,
   feelingLabel,
+  WEATHERS,
+  weatherLabel,
 } from '../js/validation.js';
 
 /** Kurzform: gültige Basis, einzelne Felder überschreibbar. */
@@ -306,6 +308,64 @@ describe('feelingLabel', () => {
   test('was es nicht gibt, bekommt kein Wort', () => {
     for (const wert of [0, 6, 3.5, null, undefined, '3']) {
       assert.equal(feelingLabel(wert), null, `${JSON.stringify(wert)} hat ein Wort bekommen`);
+    }
+  });
+});
+
+describe('validateRun – Wetter', () => {
+  test('jedes der vier Kästchen wird genommen', () => {
+    for (const { value } of WEATHERS) {
+      const result = validateRun(input({ weather: value }));
+      assert.equal(result.ok, true, `${value} sollte gültig sein`);
+      assert.equal(result.run.weather, value);
+    }
+  });
+
+  test('ohne Angabe kein Feld', () => {
+    for (const weather of ['', '   ', undefined, null]) {
+      const result = validateRun(input({ weather }));
+      assert.equal(result.ok, true, `${JSON.stringify(weather)} sollte gültig sein`);
+      assert.equal('weather' in result.run, false);
+    }
+  });
+
+  test('was nicht in der Liste steht, wird gemeldet', () => {
+    // Aus einer fremden Importdatei kann hier alles stehen. Ein erfundenes
+    // Wetter still zu schlucken hiesse, es später beim Auswerten zu finden.
+    for (const weather of ['nebel', 'Sonne', 'sunny', 42]) {
+      assert.deepEqual(errorFields(validateRun(input({ weather }))), ['weather'],
+        `${JSON.stringify(weather)} kam durch`);
+    }
+  });
+
+  test('gespeichert wird der Wert, nicht die Beschriftung', () => {
+    // Sonst hinge jeder alte Lauf daran, dass die Beschriftung nie geändert
+    // wird. Werte sind kleingeschrieben und ohne Leerzeichen.
+    for (const { value } of WEATHERS) {
+      assert.equal(value, value.toLowerCase());
+      assert.equal(value.includes(' '), false);
+    }
+  });
+});
+
+describe('weatherLabel', () => {
+  test('zu jedem Wert gehört eine Beschriftung und ein Symbol', () => {
+    for (const { value, label, icon } of WEATHERS) {
+      assert.equal(weatherLabel(value), label);
+      assert.ok(label.length > 0);
+      assert.ok(icon.startsWith('icon-'), `${value}: ${icon} sieht nicht wie ein Symbolname aus`);
+    }
+  });
+
+  test('vier Möglichkeiten, jede genau einmal', () => {
+    assert.equal(WEATHERS.length, 4);
+    assert.equal(new Set(WEATHERS.map((w) => w.value)).size, 4);
+    assert.equal(new Set(WEATHERS.map((w) => w.icon)).size, 4);
+  });
+
+  test('was es nicht gibt, bekommt keine Beschriftung', () => {
+    for (const wert of ['nebel', '', null, undefined, 1]) {
+      assert.equal(weatherLabel(wert), null, `${JSON.stringify(wert)} hat eine bekommen`);
     }
   });
 });

@@ -63,6 +63,27 @@
       <g id="icon-stop">
         <rect x="6.5" y="6.5" width="11" height="11" rx="1.5"/>
       </g>
+
+      <!-- Wetter. Lange dünne Strahlen, damit die Sonne nicht mit dem
+           Zahnkranz darüber verwechselt wird – der hat kurze, dicke. -->
+      <g id="icon-sun">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2.5v2.2M12 19.3v2.2M21.5 12h-2.2M4.7 12H2.5"/>
+        <path d="m18.72 5.28-1.56 1.56M6.84 17.16l-1.56 1.56M18.72 18.72l-1.56-1.56M6.84 6.84 5.28 5.28"/>
+      </g>
+      <g id="icon-cloud">
+        <path d="M6 17.5A3.75 3.75 0 0 1 6.6 10.1 5.25 5.25 0 0 1 16.4 9.5 4.25 4.25 0 0 1 17.4 17.5Z"/>
+      </g>
+      <g id="icon-rain">
+        <path d="M6 15.5A3.75 3.75 0 0 1 6.6 8.1 5.25 5.25 0 0 1 16.4 7.5 4.25 4.25 0 0 1 17.4 15.5Z"/>
+        <path d="m9 18-1 3M12 18l-1 3M15 18l-1 3"/>
+      </g>
+      <!-- Sechs Arme über einen Mittelpunkt: als Wolke mit Flocken wäre es
+           bei dieser Grösse nicht mehr von Regen zu unterscheiden. -->
+      <g id="icon-snow">
+        <path d="M12 3.5v17M4.64 7.75l14.72 8.5M19.36 7.75 4.64 16.25"/>
+        <path d="m9.5 5.8 2.5 2 2.5-2M9.5 18.2l2.5-2 2.5 2"/>
+      </g>
     </defs>
   </svg>
 
@@ -357,17 +378,34 @@
              begreifen; sichtbar sind sie als Chips, nicht als Punkte. -->
         <fieldset class="feeling">
           <legend>Wie war's? <span class="optional">optional</span></legend>
-          <div class="feeling-scale">
+          <div class="choice-scale choice-five">
             <input type="radio" id="feeling-1" name="feeling" value="1">
-            <label for="feeling-1"><span class="feeling-zahl">1</span><span class="feeling-wort">mies</span></label>
+            <label for="feeling-1"><span class="choice-mark">1</span><span class="choice-word">mies</span></label>
             <input type="radio" id="feeling-2" name="feeling" value="2">
-            <label for="feeling-2"><span class="feeling-zahl">2</span><span class="feeling-wort">zäh</span></label>
+            <label for="feeling-2"><span class="choice-mark">2</span><span class="choice-word">zäh</span></label>
             <input type="radio" id="feeling-3" name="feeling" value="3">
-            <label for="feeling-3"><span class="feeling-zahl">3</span><span class="feeling-wort">geht so</span></label>
+            <label for="feeling-3"><span class="choice-mark">3</span><span class="choice-word">geht so</span></label>
             <input type="radio" id="feeling-4" name="feeling" value="4">
-            <label for="feeling-4"><span class="feeling-zahl">4</span><span class="feeling-wort">gut</span></label>
+            <label for="feeling-4"><span class="choice-mark">4</span><span class="choice-word">gut</span></label>
             <input type="radio" id="feeling-5" name="feeling" value="5">
-            <label for="feeling-5"><span class="feeling-zahl">5</span><span class="feeling-wort">stark</span></label>
+            <label for="feeling-5"><span class="choice-mark">5</span><span class="choice-word">stark</span></label>
+          </div>
+        </fieldset>
+
+        <!-- Dieselbe Bauart wie die Skala darüber: vier Kästchen, kein
+             Abruf im Netz. Die vier schliessen einander aus – Wind täte das
+             nicht und gehört deshalb in die Notiz. -->
+        <fieldset class="feeling">
+          <legend>Wetter <span class="optional">optional</span></legend>
+          <div class="choice-scale choice-four">
+            <input type="radio" id="weather-sonne" name="weather" value="sonne">
+            <label for="weather-sonne"><span class="choice-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-sun"></use></svg></span><span class="choice-word">Sonne</span></label>
+            <input type="radio" id="weather-wolken" name="weather" value="wolken">
+            <label for="weather-wolken"><span class="choice-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-cloud"></use></svg></span><span class="choice-word">Wolken</span></label>
+            <input type="radio" id="weather-regen" name="weather" value="regen">
+            <label for="weather-regen"><span class="choice-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-rain"></use></svg></span><span class="choice-word">Regen</span></label>
+            <input type="radio" id="weather-schnee" name="weather" value="schnee">
+            <label for="weather-schnee"><span class="choice-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-snow"></use></svg></span><span class="choice-word">Schnee</span></label>
           </div>
         </fieldset>
 

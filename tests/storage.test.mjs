@@ -183,12 +183,13 @@ describe('Kein Feld geht auf dem Weg in den Speicher verloren', () => {
       paceMinPerKm: '6:12',
       note: 'Gegenwind auf dem Rückweg',
       feeling: 4,
+      weather: 'wolken',
       source: 'manual',
     });
 
     assert.equal(geprueft.ok, true, 'die Vorlage selbst muss gültig sein');
     // Wäre hier nur das Pflichtfeld übrig, prüften die Tests unten nichts.
-    assert.ok(Object.keys(geprueft.run).length >= 8, 'die Vorlage deckt zu wenige Felder ab');
+    assert.ok(Object.keys(geprueft.run).length >= 9, 'die Vorlage deckt zu wenige Felder ab');
     return geprueft.run;
   };
 

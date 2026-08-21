@@ -49,6 +49,32 @@ export function feelingLabel(value) {
   return FEELINGS.find((eintrag) => eintrag.value === value)?.label ?? null;
 }
 
+/**
+ * Das Wetter beim Lauf – vier Kästchen zum Antippen, kein Abruf im Netz.
+ *
+ * Eine Wetter-Schnittstelle wäre genauer und würde drei Dinge kosten, die
+ * dieses Projekt trägt: eine Abhängigkeit, eine Netzverbindung und einen
+ * Schlüssel, der irgendwo liegen muss. Vier Kästchen kosten nichts und
+ * beantworten dieselbe Frage gut genug.
+ *
+ * **Warum diese vier und nicht Wind:** Die vier schliessen einander aus –
+ * jeder Lauf fällt in genau eins. Wind tut das nicht; es kann sonnig *und*
+ * windig sein. Wind gehört deshalb entweder in eine eigene Angabe oder in
+ * die Notiz, aber nicht in diese Reihe. Eine Auswahl, bei der zwei Antworten
+ * gleichzeitig stimmen, ist später nicht auswertbar.
+ */
+export const WEATHERS = [
+  { value: 'sonne', label: 'Sonne', icon: 'icon-sun' },
+  { value: 'wolken', label: 'Wolken', icon: 'icon-cloud' },
+  { value: 'regen', label: 'Regen', icon: 'icon-rain' },
+  { value: 'schnee', label: 'Schnee', icon: 'icon-snow' },
+];
+
+/** Beschriftung zu einem Wetterwert; `null`, wenn es den Wert nicht gibt. */
+export function weatherLabel(value) {
+  return WEATHERS.find((eintrag) => eintrag.value === value)?.label ?? null;
+}
+
 /** Zweimal am Tag ist reichlich; darüber ist es ein Vertipper. */
 export const MAX_WEEKLY_GOAL = 14;
 
@@ -337,6 +363,15 @@ export function validateRun(input) {
     }
   }
 
+  let weather;
+  if (isFilled(input.weather)) {
+    const candidate = String(input.weather).trim();
+    // Der Wert wird gespeichert, nicht die Beschriftung: "Sonne" kann
+    // umbenannt werden, 'sonne' steht dann immer noch in jedem alten Lauf.
+    if (WEATHERS.some((eintrag) => eintrag.value === candidate)) weather = candidate;
+    else errors.push({ field: 'weather', message: 'Dieses Wetter gibt es nicht.' });
+  }
+
   if (errors.length > 0) return { ok: false, errors };
 
   // Unbekannte Felder fallen hier absichtlich weg.
@@ -346,6 +381,7 @@ export function validateRun(input) {
   if (paceMinPerKm) run.paceMinPerKm = paceMinPerKm;
   if (note) run.note = note;
   if (feeling) run.feeling = feeling;
+  if (weather) run.weather = weather;
   if (input.source === 'gps' || input.source === 'manual') run.source = input.source;
 
   const warnings = [];

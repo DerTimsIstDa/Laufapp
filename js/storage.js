@@ -139,6 +139,7 @@ function melde(key, was, err) {
  *   paceMinPerKm?: number,
  *   note?: string,
  *   feeling?: 1 | 2 | 3 | 4 | 5,
+ *   weather?: 'sonne' | 'wolken' | 'regen' | 'schnee',
  *   source?: 'manual' | 'gps'
  * }} Run
  */
@@ -188,6 +189,7 @@ export function addRun(
     paceMinPerKm,
     note,
     feeling,
+    weather,
     source,
     track,
     interval,
@@ -206,6 +208,7 @@ export function addRun(
   if (paceMinPerKm) run.paceMinPerKm = paceMinPerKm;
   if (note) run.note = note;
   if (feeling) run.feeling = feeling;
+  if (weather) run.weather = weather;
   if (source) run.source = source;
   if (interval) run.interval = interval;
   if (track?.length) run.track = track;
@@ -230,7 +233,7 @@ export function addRun(
 export function updateRun(
   runs,
   id,
-  { distanceKm, date, timeOfDay, durationMinutes, paceMinPerKm, note, feeling }
+  { distanceKm, date, timeOfDay, durationMinutes, paceMinPerKm, note, feeling, weather }
 ) {
   const existing = runs.find((run) => run.id === id);
   if (!existing) return runs;
@@ -244,6 +247,7 @@ export function updateRun(
   // in validateRun und hierher.
   if (note) updated.note = note;
   if (feeling) updated.feeling = feeling;
+  if (weather) updated.weather = weather;
   if (existing.source) updated.source = existing.source;
   // Wie die Route: das Formular kennt das Intervall-Merkmal nicht und darf es
   // deshalb auch nicht wegwerfen.

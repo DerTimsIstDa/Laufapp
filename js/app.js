@@ -48,6 +48,7 @@ import {
   normalizeWeeklyGoal,
   isValidIsoDate,
   feelingLabel,
+  weatherLabel,
   MAX_WEEKLY_GOAL,
 } from './validation.js';
 import {
@@ -2083,7 +2084,8 @@ function handleSubmit(event) {
     durationMinutes: el.duration.value,
     paceMinPerKm: el.pace.value,
     note: el.note.value,
-    feeling: feelingValue(),
+    feeling: choiceValue('feeling'),
+    weather: choiceValue('weather'),
   });
 
   if (!result.ok) return showError(firstErrorMessage(result));
@@ -2109,18 +2111,19 @@ function handleSubmit(event) {
 }
 
 /**
- * Das angetippte Gefühl, oder '' wenn keins.
+ * Der angetippte Wert einer Kästchen-Reihe, oder '' wenn keiner.
  *
- * Fünf Radiofelder teilen sich einen Namen; das Formular fasst sie deshalb
- * als eine Liste zusammen, deren `value` das angehakte Feld ist. Kein
- * eigener Zustand in der App – das Markup weiss es bereits.
+ * Die Radiofelder einer Reihe teilen sich einen Namen; das Formular fasst
+ * sie deshalb als eine Liste zusammen, deren `value` das angehakte Feld ist.
+ * Kein eigener Zustand in der App – das Markup weiss es bereits.
  */
-function feelingValue() {
-  return el.form.elements.feeling.value;
+function choiceValue(name) {
+  return el.form.elements[name].value;
 }
 
 /**
- * Setzt die Radiogruppe – und nimmt das Häkchen weg, wenn es keinen Wert gibt.
+ * Setzt eine Kästchen-Reihe – und nimmt das Häkchen weg, wenn es keinen Wert
+ * gibt.
  *
  * Jedes Feld einzeln, obwohl die Gruppe ein `value` hat: dessen Setzer hakt
  * nur an, er hakt nie ab. Ein Wert, den es nicht gibt – und `undefined` ist
@@ -2128,8 +2131,8 @@ function feelingValue() {
  * mit Gefühl auf einen ohne blieb damit das alte Häkchen stehen und wanderte
  * beim Speichern in den falschen Lauf.
  */
-function setFeelingValue(value) {
-  for (const feld of el.form.elements.feeling) {
+function setChoiceValue(name, value) {
+  for (const feld of el.form.elements[name]) {
     feld.checked = feld.value === String(value);
   }
 }
@@ -2230,6 +2233,7 @@ function buildDetailFacts(run) {
   // Das Gefühl mit Zahl und Wort: die Zahl allein sagt niemandem, ob 2 gut
   // oder schlecht war, das Wort allein verliert die Ordnung der Skala.
   if (run.feeling) facts.push(['Gefühl', `${run.feeling} – ${feelingLabel(run.feeling)}`]);
+  if (run.weather) facts.push(['Wetter', weatherLabel(run.weather)]);
 
   facts.push(['Erfasst', run.source === 'gps' ? 'GPS-Aufzeichnung' : 'von Hand']);
   facts.push(['Verdient', `${numberFormat.format(xpForDistance(run.distanceKm))} XP`]);
@@ -2342,7 +2346,8 @@ function startEditing(id) {
   // wenn die Distanz sich ändert.
   el.pace.value = run.paceMinPerKm === undefined ? '' : formatPace(run.paceMinPerKm);
   el.note.value = run.note ?? '';
-  setFeelingValue(run.feeling);
+  setChoiceValue('feeling', run.feeling);
+  setChoiceValue('weather', run.weather);
 
   clearError();
   renderFormMode();
