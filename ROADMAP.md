@@ -516,6 +516,7 @@ Ein Punkt = ein Commit (§6, Regel 1). So sind sie gefallen:
 | 6 | C1 | `ddb579b` | Erinnerung an die Sicherung nach dreissig Tagen |
 | 7 | – | `af9b35f` | Haekchen-Runde nach C1 nachgeholt |
 | 8 | B3 | `a18a661` | Testluecken der jungen Module geschlossen |
+| 9 | – | `63fe111` | Kontext und Roadmap auf den Stand nach dem Push |
 
 `css/style.css` wurde **sauber getrennt**: die gelöschte Regel in Commit 1,
 die `.storage-hint`-Regel in Commit 4. Interaktives `git add -p` war dafür
@@ -584,7 +585,14 @@ Die Runde, in dieser Reihenfolge:
 | 5 | **§1 Bestandsaufnahme** | Neue Funktion als Zeile ergänzen, geänderte Reifegrade anpassen |
 | 6 | **§7 Änderungsverlauf** | Eine Zeile, was sich geändert hat |
 
-Danach `KONTEXT.md` §7 (Zahlen, Commits, Live-Stand) und §11 (Verlauf).
+Danach `KONTEXT.md` §7 (Zahlen, Commits) und §11 (Verlauf).
+
+**Die eine Ausnahme:** Der Doku-Commit, der die Runde festhält, kann nicht in
+der eigenen Tabelle stehen – er entsteht erst danach. Diese Zeile trägt die
+*nächste* Runde nach, oder gar niemand. Keinen Live-Hash pflegen: GitHub Pages
+liefert ohnehin immer den letzten Stand von `master`, und ein Hash in einer
+Datei ist ab dem nächsten Commit falsch. Wer den echten Stand braucht, fragt
+`git log`.
 
 **Warum das eine Liste ist und keine gute Absicht:** Bei der letzten Runde
 wurden §5 und die Einzelpunkte abgehakt, aber §0, die Block-Überschriften und
@@ -604,3 +612,4 @@ Fleißaufgabe, sondern der halbe Zweck dieser Datei.
 | 2026-08-21 | A1, A2, A4 und B2 committet und gepusht (`e99b96a` … `28b277a`). Kopf, §2 (A1), §5-Tabelle und der Commit-Block auf den Stand danach gezogen. `css/style.css` sauber getrennt statt zusammengelegt. Nächster Punkt: **C1**. |
 | 2026-08-21 | **C1** umgesetzt und gepusht. §4 um den Ergebnisabschnitt ergänzt, §5-Tabelle nachgezogen. Nächster Punkt: **B3**. |
 | 2026-08-21 | **B3** umgesetzt. §3 um den Ergebnisabschnitt ergänzt, §0/§1/§5 nachgezogen. Der Punkt war zur Hälfte falsch gestellt: zwei der vier genannten Grenzen waren längst geprüft, dafür hatten `beep.js` und `wake-lock.js` gar keine Testdatei. 749 → 802 Tests. Nächster Punkt: **B1**. |
+| 2026-08-21 | Nachgezogen: `63fe111` in der Commit-Tabelle. §6 um die Ausnahme erweitert – ein Doku-Commit kann nicht in der eigenen Tabelle stehen, und ein Live-Hash in einer Datei ist ab dem nächsten Commit falsch. |

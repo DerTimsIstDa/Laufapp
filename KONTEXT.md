@@ -337,9 +337,15 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 
 ### Roadmap-Block A, B2, B3 und C1 sind committet
 
-Die Änderungen aus A1, A2, A4, B2, B3 und C1 liegen seit dem 2026-08-21 in acht
-Commits auf `master` und sind gepusht; auf `dertimsistda.github.io` läuft
-`a18a661`. Das Arbeitsverzeichnis ist sauber.
+Die Änderungen aus A1, A2, A4, B2, B3 und C1 liegen seit dem 2026-08-21 auf
+`master` und sind gepusht; `dertimsistda.github.io` liefert immer den letzten
+Stand von `master`. Das Arbeitsverzeichnis ist sauber.
+
+> **Zur Tabelle:** Der Commit, der diese Zeilen schreibt, kann nicht in ihr
+> stehen – er entsteht erst danach. Die Doku-Commits (`1134dca`, `af9b35f`, …)
+> sind deshalb immer einen Schritt unvollständig, und das ist kein Fehler,
+> sondern die Natur der Sache. Wer den wirklich letzten Stand braucht, fragt
+> `git log`, nicht diese Datei.
 
 | Roadmap | Commit | Was |
 |---|---|---|
@@ -351,6 +357,7 @@ Commits auf `master` und sind gepusht; auf `dertimsistda.github.io` läuft
 | C1 | `ddb579b` | Erinnerung an die Sicherung nach 30 Tagen; `CACHE_VERSION` auf v47 |
 | – | `af9b35f` | Häkchen-Runde nach C1 nachgeholt (§7-Tabelle, §8 Schritt 9) |
 | B3 | `a18a661` | Testlücken der jungen Module; neue Dateien für `beep.js` und `wake-lock.js` |
+| – | `63fe111` | `KONTEXT.md`, `ROADMAP.md` und `README.md` auf den Stand nach B3 |
 
 `css/style.css` steckte in A1 und B2 und wurde auf beide Commits aufgeteilt –
 die gelöschte Regel in A1, die `.storage-hint`-Regel in B2. Jeder Commit ist
@@ -459,3 +466,4 @@ Bugfix in einer Render-Funktion braucht keinen Eintrag.
 | 2026-08-21 | §7 nachgezogen: C1 und `1134dca` in der Commit-Tabelle ergänzt, Live-Stand auf `ddb579b` korrigiert (stand noch auf `28b277a`). |
 | 2026-08-21 | §8 um Schritt 9 und §10 um die Häkchen-Runde ergänzt: ein erledigter Roadmap-Punkt muss an sechs Stellen markiert werden, nicht nur in der Reihenfolge-Tabelle. |
 | 2026-08-21 | **B3** umgesetzt: Testlücken der jungen Module. Neue Testdateien für `beep.js` und `wake-lock.js` – beide standen bis dahin ungeprüft im Baum. 749 → **802 Tests in 24 Dateien**. Kein Produktivcode, `sw v47` bleibt. |
+| 2026-08-21 | §7 nachgezogen: `63fe111` ergänzt. Der gepflegte Live-Hash ist entfallen – er war ab dem jeweils nächsten Commit falsch und musste dreimal hintereinander korrigiert werden. Pages liefert ohnehin den letzten Stand von `master`. |
