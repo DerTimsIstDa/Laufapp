@@ -1,9 +1,10 @@
 # FunRun – Leitfaden & Roadmap
 
-> **Stand: 2026-08-21** · Grundlage: `KONTEXT.md` (Stand `funrun-v52`, 62 Trophäen, 27 Übungen)
+> **Stand: 2026-08-21** · Grundlage: `KONTEXT.md` (Stand `funrun-v53`, 62 Trophäen, 27 Übungen)
 >
-> **Fortschritt: A1, A2, A3, A4, B1, B2, B3, C1, C2 und C3 sind erledigt und
-> committet** – siehe §5. Der nächste Punkt ist **C4** (Wetter).
+> **Fortschritt: A1, A2, A3, A4, B1, B2, B3, C1, C2, C3 und C4 sind erledigt
+> und committet** – siehe §5. Der nächste Punkt ist **B4** (`history.js`
+> messen).
 >
 > Diese Datei beantwortet drei Fragen: **Was gibt es?**, **Was ist schwach?**,
 > **Was fehlt?** – und in welcher Reihenfolge das angegangen wird.
@@ -11,7 +12,7 @@
 
 **Wichtiger Vorbehalt:** Die Erstfassung dieses Plans war aus `KONTEXT.md`
 abgeleitet, nicht aus dem Quellcode. Was seither erledigt wurde (Block A, B1,
-B2, B3, C1, C2, C3), ist am Code geprüft. Alles **Offene** ist es nicht – Punkte, die
+B2, B3, C1, C2, C3, C4), ist am Code geprüft. Alles **Offene** ist es nicht – Punkte, die
 vor der Umsetzung eine Prüfung brauchen, sind mit **[prüfen]** markiert. Wer sie
 ohne Prüfung als Fakt weitergibt, baut auf Sand.
 
@@ -32,17 +33,17 @@ Tag · **L** = mehrere Sitzungen, braucht vorher eine eigene Skizze.
 ## 0. Wo wir stehen
 
 **Block A ist vollständig abgeschlossen.** Aus Block B sind B1, B2 und B3
-erledigt, aus Block C die Punkte C1, C2 und C3. Alles davon ist committet.
+erledigt, aus Block C die Punkte C1 bis C4. Alles davon ist committet.
 
 ```
 A. Hygiene              B. Struktur               C. Produkt (hier sind
    ✅ A1 CSS geklärt       ✅ B1 app.js geteilt       wir gerade)
    ✅ A2 README            ✅ B2 Speicherfehler       ✅ C1 Sicherungs-
    ✅ A3 Testzahl          ✅ B3 Testlücken             erinnerung
-   ✅ A4 APP_SHELL         ○ B4, B5, B2b            ✅ C3 Trophäen-
-                                                      Fortschritt
-                                                    ✅ C2 Notiz & Gefühl
-                                                 ⬅ C4 Wetter
+   ✅ A4 APP_SHELL      ⬅ B4 history.js messen   ✅ C3 Trophäen-
+                           ○ B5, B2b                  Fortschritt
+                                                   ✅ C2 Notiz & Gefühl
+                                                   ✅ C4 Wetter
                                                     ○ C5–C15 offen
 ```
 
@@ -63,7 +64,14 @@ Testsuite; einer davon hätte ein Gefühl in den falschen Lauf geschrieben.
 Beide sind jetzt von Tests abgedeckt, die keine Feldliste kennen und deshalb
 von allein mitwachsen. Das Ergebnis steht in §4.
 
-**Der nächste Punkt ist C4** – das Wetter zum Antippen, am selben Formular.
+**C4 ist erledigt** – vier Kästchen am Formular, ohne Netz und ohne fremden
+Dienst. Die Kästchen aus C2 sind dabei zur gemeinsamen Bauart geworden. Zum
+ersten Mal in dieser Reihe **kein Fehler, den erst der Browser fand**: die zwei
+Wächter aus C2 haben die Lücke vorher gemeldet. Das Ergebnis steht in §4.
+
+**Der nächste Punkt ist B4** – messen, ob `history.js` mit seinem O(n²)
+tatsächlich ein Problem ist. Nach vier sichtbaren Punkten wieder einer unter
+der Haube, und einer, der erst misst und dann entscheidet.
 
 Die vollständige Reihenfolge mit Stand steht in **§5**.
 
@@ -86,6 +94,7 @@ Gruppiert nach dem, was der Nutzer erlebt, nicht nach Dateien.
 | Route als SVG aus der GPS-Spur | `route.js` | rund, max. 500 Punkte |
 | Lauf bearbeiten / löschen | `storage.js`, `app.js` | rund |
 | Notiz und Gefühl (1–5) zum Lauf | `validation.js`, `storage.js`, `app.js` | neu (C2); wird noch nirgends ausgewertet |
+| Wetter zum Lauf: vier Kästchen | `validation.js`, `storage.js`, `app.js` | neu (C4); ohne Netz, wird noch nirgends ausgewertet |
 
 ### 1.2 Gamification
 
@@ -476,8 +485,8 @@ auf dem dunklen Hintergrund, `prefers-reduced-motion` für Animationen. **[prüf
 Ideen, nach Verhältnis von Nutzen zu Aufwand sortiert. Alles hier ist optional –
 FunRun ist heute schon eine vollständige App.
 
-**Stand:** C1, C2 und C3 ✅ erledigt · C4 bis C15 offen. Der nächste Punkt der
-Reihenfolge ist **C4**.
+**Stand:** C1 bis C4 ✅ erledigt · C5 bis C15 offen. Der nächste Punkt der
+Reihenfolge steht in Block B: **B4**.
 
 ### Naheliegend (hoher Nutzen, kleiner Aufwand)
 
@@ -486,7 +495,7 @@ Reihenfolge ist **C4**.
 | ✅ C1 | **Erinnerung an die Sicherung.** Erledigt – siehe unten. | S | `transfer.js`, `storage.js`, `index.html`, `app.js` |
 | ✅ C2 | **Notiz und Gefühl pro Lauf.** Erledigt – siehe unten. | S | `validation.js`, `storage.js`, `app.js`, `index.html` |
 | ✅ C3 | **Trophäen-Fortschritt anzeigen.** Erledigt – siehe unten. Der Balken war zu 90 % schon da. | S | `achievements.js`, `app.js`, `css/style.css` |
-| C4 | **Wetter zum Lauf – manuell.** Vier Symbole zum Antippen. Kein API-Aufruf, keine Abhängigkeit, kein Backend. Passt zur Architektur. | S | `validation.js`, `app.js` |
+| ✅ C4 | **Wetter zum Lauf – manuell.** Erledigt – siehe unten. | S | `validation.js`, `storage.js`, `app.js`, `index.html` |
 | C5 | **Läufe filtern und suchen.** Nach Zeitraum, Distanzbereich, Quelle (GPS/manuell), Intervall. Wird ab ein paar hundert Läufen unverzichtbar. | M | `stats.js` oder neues `filter.js`, `app.js` |
 
 #### ✅ C1 · Erinnerung an die Sicherung
@@ -654,6 +663,44 @@ zurück → grün. 913 Tests.
 **Fehler 2 bleibt ungeprüft** – er steckt in `app.js`, und dort gibt es keine
 Tests. Das ist kein Versehen, sondern der offene Rest von **B1**: siehe §3.
 
+#### ✅ C4 · Wetter zum Lauf
+
+**Gebaut:** vier Kästchen unter der Gefühlsskala – Sonne, Wolken, Regen,
+Schnee, jedes mit eigenem Symbol. Optional, danach in der Detailansicht.
+
+**Entscheidungen, die beim Bauen anfielen:**
+
+- **Diese vier und nicht Wind.** Die vier schliessen einander aus: jeder Lauf
+  fällt in genau eins. Wind tut das nicht – es kann sonnig *und* windig sein.
+  Eine Auswahl, bei der zwei Antworten gleichzeitig stimmen, ist später nicht
+  auswertbar. Wind gehört in die Notiz oder in eine eigene Angabe.
+- **Gespeichert wird der Wert, nicht die Beschriftung.** „Sonne" lässt sich
+  umbenennen, `'sonne'` steht dann immer noch in jedem alten Lauf.
+- **Die Kästchen aus C2 sind zur gemeinsamen Bauart geworden**
+  (`.choice-scale`). Zwei Reihen, die verschieden aussehen, wären zwei Fragen,
+  die sich verschieden anfühlen, obwohl sie dasselbe tun. Die Spaltenzahl kommt
+  von aussen, alles andere ist geteilt.
+- **Symbole von Hand, keine Emoji.** Emoji sehen auf jedem Gerät anders aus,
+  und die App hat sonst keine. Die vier liegen im selben Symbolvorrat wie die
+  Stoppuhr-Symbole.
+
+**Der Test, der die zwei Hälften zusammenhält:** Die Auswahl steht zweimal da –
+als Liste in `validation.js` und als Markup in `index.html`. Läuft eines dem
+anderen davon, gibt es **keinen Fehler**: es fehlt nur ein Kästchen, oder ein
+Symbol bleibt leer. Ein `<use>` auf eine `id`, die es nicht gibt, zeichnet
+nichts – an der Stelle ist einfach Luft. Der Test prüft beide Richtungen und
+dass jedes genannte Symbol definiert *und* geholt wird. Gegengeprüft, dass er
+anschlägt: eine Symbol-`id` verdreht → rot.
+
+**Zum ersten Mal in dieser Reihe kein Fund im Browser.** Nach C1, C3 und C2
+war das hier der erste Punkt, bei dem die Testsuite den Fehler vor dem Browser
+hatte: die zwei Wächter aus C2 meldeten die fehlende Zeile in `addRun`, sobald
+`weather` in ihrer Vorlage stand. Der Browser-Durchgang bestätigte nur noch.
+**Das ist kein Zufall, sondern der Ertrag der Wächter** – und zugleich das
+Argument für B1: was `app.js` selbst tut, prüft weiterhin niemand.
+
+920 → **925 Tests**.
+
 ### Mittelfristig
 
 | # | Idee | Aufwand | Module |
@@ -690,8 +737,8 @@ Tests. Das ist kein Versehen, sondern der offene Rest von **B1**: siehe §3.
 | 7 | **B1** app.js entflechten – **kleine Variante** (Training + Statistik) | M | ✅ erledigt |
 | 8 | **C3** Trophäen-Fortschritt | S | ✅ erledigt |
 | 9 | **C2** Notiz & Gefühl | S | ✅ erledigt |
-| 10 | **C4** Wetter | S | ⬅ **als Nächstes** |
-| 11 | **B4** history.js messen | S | offen |
+| 10 | **C4** Wetter | S | ✅ erledigt |
+| 11 | **B4** history.js messen | S | ⬅ **als Nächstes** |
 | 12 | **B2b** GPS-Fehlerpfade am Gerät prüfen | M | offen |
 | 13 | danach frei nach Lust: C5, C8, C10, C15 | – | offen |
 
@@ -719,6 +766,8 @@ Ein Punkt = ein Commit (§6, Regel 1). So sind sie gefallen:
 | 16 | C3 | `414b55c` | Stand statt Balken, wo ein Balken luegen wuerde |
 | 17 | – | `351d5ad` | Haekchen-Runde nach C3 – und was sie zutage foerderte |
 | 18 | C2 | `12fd1cf` | Notiz und Gefuehl zu jedem Lauf |
+| 19 | – | `38e484d` | Haekchen-Runde nach C2 |
+| 20 | C4 | `20aaed8` | Wetter zum Antippen statt aus dem Netz |
 
 **B1 hat drei Commits statt einem** – das ist keine Ausnahme von Regel 1 in §6,
 sondern stand so im Punkt selbst: einen Bereich pro Commit, nach jedem Commit
@@ -826,6 +875,8 @@ Fleißaufgabe, sondern der halbe Zweck dieser Datei.
 | 2026-08-21 | **B1** umgesetzt, kleine Variante, in drei Commits (`061d0ba`, `2378c00`, `96bfbf2`). `app.js` 4.132 → 3.091 Zeilen; neu sind `js/format.js` und `js/views/{dom,training,stats}.js`. §3 komplett neu geschrieben (Ergebnis statt Vorhaben, samt der Frage, ob der Rest folgt), §0 mit neuem Schaubild, §1.5 mit der Einordnung der Modul-Zahl, §5-Tabelle und Commit-Block nachgezogen. §1 bekam **keine** neue Zeile: B1 hat für den Nutzer nichts geändert, und eine Zeile dafür wäre eine Behauptung. 802 → 887 Tests, `sw` v47 → v50. Nächster Punkt: **C3**. |
 | 2026-08-21 | **C3** umgesetzt. Der Punkt war zu 90 % schon gebaut – Balken an 55 von 62 Trophäen seit `8c9308c`, und `KONTEXT.md` §7 sagte das seit `28b277a` wörtlich, während diese Datei das Gegenteil behauptete. Offen waren die sieben, bei denen ein Balken lügt; fünf haben jetzt eine Zeile (`standing`), zwei bleiben mit Begründung leer. §0/§1.2/§4/§5 nachgezogen, Aufwand von M auf S korrigiert. 887 → 895 Tests, `sw` v50 → v51. Nächste Punkte: **C2** und **C4**. |
 | 2026-08-21 | **C2** umgesetzt: Notiz und Gefühl pro Lauf. §1.1 um eine Zeile ergänzt, §0/§4/§5 nachgezogen. Zwei Fehler fand wieder nur der Browser – der zweite hätte ein Gefühl in den falschen Lauf geschrieben. 895 → 913 Tests, `sw` v51 → v52. Nächster Punkt: **C4**. |
+| 2026-08-21 | **C4** umgesetzt: Wetter zum Antippen. §1.1 um eine Zeile ergänzt, §0/§4/§5 nachgezogen. Die Kästchen aus C2 sind zur gemeinsamen Bauart geworden. 913 → 925 Tests, `sw` v52 → v53. Nächster Punkt: **B4**. |
+| 2026-08-21 | **Der Offline-Modus ist geprüft und funktioniert** – die Frage stand seit B1 offen. Der erste Versuch schlug fehl, weil der „Aktualisieren"-Knopf den Offline-Speicher zuerst *löscht* und neu aufbaut: wer danach sofort in den Flugmodus geht, hat nichts. Zweiter Versuch mit einer Viertelminute Netz dazwischen: die App startet ohne Verbindung. **Der Knopf trägt diesen Preis nirgends an – die App sagt bis heute nicht, ob sie offline bereit ist.** Kein Roadmap-Punkt, aber notiert. |
 | 2026-08-21 | **Zum dritten Mal in Folge grüne Tests, kaputte Oberfläche.** Nach C1 und C3 jetzt C2. Das ist kein Zufall mehr, sondern die Kennzahl von B1: solange `app.js` untestbar ist, sagt eine grüne Suite über die Oberfläche nichts. Der Punkt steht in §3 und wird mit jedem Mal teurer. |
 | 2026-08-21 | Der Vorbehalt im Kopf hat sich zum ersten Mal ausgezahlt und steht jetzt schärfer da: **vor jedem offenen Punkt erst den Code fragen.** C3 hätte sonst einen halben Tag für etwas veranschlagt, das fast fertig war. |
 | 2026-08-21 | Aus B1 mitgenommen, weil es dreimal passierte: Tests, die im Quelltext nach einer Regel suchen, dürfen keinen festen Dateipfad tragen – sie werden beim Verschieben nicht rot, sondern finden nichts und bleiben grün. Der Warnhinweis dazu steht bei B1 in §3. |

@@ -342,9 +342,27 @@ Anzeige. Was eine 2 bedeutet, gehört zur Bedeutung des Werts, nicht zu seiner
 Darstellung: eine spätere Auswertung („Läufe, bei denen es sich gut anfühlte")
 braucht dieselbe Zuordnung.
 
-**Ausgewertet wird noch nichts.** Die Felder werden erfasst, gespeichert und
-angezeigt – mehr nicht. Das ist Absicht: eine Auswertung über drei Läufe wäre
-Zahlenspielerei.
+### Wetter
+
+Vier Kästchen darunter: **Sonne, Wolken, Regen, Schnee**. Kein Abruf im Netz —
+eine Wetter-Schnittstelle wäre genauer und würde drei Dinge kosten, die dieses
+Projekt tragen: eine Abhängigkeit, eine Netzverbindung und einen Schlüssel, der
+irgendwo liegen muss. Vier Kästchen kosten nichts und beantworten dieselbe
+Frage gut genug.
+
+**Warum diese vier und nicht Wind:** Sie schliessen einander aus — jeder Lauf
+fällt in genau eins. Wind tut das nicht; es kann sonnig *und* windig sein. Eine
+Auswahl, bei der zwei Antworten gleichzeitig stimmen, lässt sich später nicht
+auswerten. Wind gehört deshalb in die Notiz.
+
+Gespeichert wird der Wert (`'sonne'`), nicht die Beschriftung („Sonne") — die
+lässt sich dann umbenennen, ohne alte Läufe anzufassen. Die Symbole liegen im
+selben Vorrat wie die der Stoppuhr; Emoji wären es nicht geworden, weil sie auf
+jedem Gerät anders aussehen.
+
+**Ausgewertet wird noch nichts.** Notiz, Gefühl und Wetter werden erfasst,
+gespeichert und angezeigt – mehr nicht. Das ist Absicht: eine Auswertung über
+drei Läufe wäre Zahlenspielerei.
 
 ## Wochenziel
 
@@ -453,7 +471,7 @@ zu starten.
 ## Daten bearbeiten und sichern
 
 **Bearbeiten:** Der Stift an einem Lauf lädt ihn ins Formular. Distanz, Datum,
-Startzeit, Dauer, Notiz und Gefühl lassen sich ändern; `id`, die
+Startzeit, Dauer, Notiz, Gefühl und Wetter lassen sich ändern; `id`, die
 GPS-Markierung und die Strecke bleiben erhalten. Geleerte Felder verschwinden
 auch wirklich aus dem Datensatz.
 
@@ -593,7 +611,7 @@ Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 node --test
 ```
 
-**913 Tests in 26 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
+**925 Tests in 26 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
 Testrunner von Node — keine Abhängigkeiten, kein Framework, nichts zu
 installieren.
 
@@ -604,9 +622,9 @@ installieren.
 | `tests/transfer.test.mjs` | 69 | Export-Roundtrip, kaputte und halbe Importdateien |
 | `tests/imports.test.mjs` | 60 | jeder Import-Pfad und -Name gegen den Dateibaum |
 | `tests/training.test.mjs` | 59 | Abschnitte, Intervall-Vorgabe, Abgleich, Plantreue und XP |
-| `tests/validation.test.mjs` | 67 | Pflicht- und Optionalfelder, erfundene Kalendertage, die Gefühlsskala |
+| `tests/validation.test.mjs` | 74 | Pflicht- und Optionalfelder, erfundene Kalendertage, Gefühlsskala und Wetter |
 | `tests/storage.test.mjs` | 53 | Anlegen/Ändern/Löschen/Ersetzen, Neuberechnung, volles Fach, kein Feld geht verloren |
-| `tests/styles.test.mjs` | 48 | CSS- und Markup-Regeln, die Node nicht ausführen kann |
+| `tests/styles.test.mjs` | 53 | CSS- und Markup-Regeln, die Node nicht ausführen kann; Auswahlreihen gegen ihre Datenquelle |
 | `tests/exercise-log.test.mjs` | 37 | Tageslimit, Zähler, Kategorien für Vielseitig |
 | `tests/route.test.mjs` | 33 | Projektion, Seitenverhältnis, Geraden, Ausdünnen |
 | `tests/geo.test.mjs` | 32 | Haversine gegen bekannte Strecken, alle GPS-Filtergrenzen |
