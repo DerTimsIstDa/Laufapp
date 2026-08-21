@@ -1,19 +1,18 @@
 # FunRun – Leitfaden & Roadmap
 
-> **Stand: 2026-08-21** · Grundlage: `KONTEXT.md` (Stand `funrun-v47`, 62 Trophäen, 27 Übungen)
+> **Stand: 2026-08-21** · Grundlage: `KONTEXT.md` (Stand `funrun-v50`, 62 Trophäen, 27 Übungen)
 >
-> **Fortschritt: A1, A2, A3, A4, B2, B3 und C1 sind erledigt, committet und
-> gepusht** – siehe §5. Der nächste Punkt ist **B1** (`app.js` entflechten,
-> kleine Variante).
+> **Fortschritt: A1, A2, A3, A4, B1, B2, B3 und C1 sind erledigt und
+> committet** – siehe §5. Der nächste Punkt ist **C3** (Trophäen-Fortschritt).
 >
 > Diese Datei beantwortet drei Fragen: **Was gibt es?**, **Was ist schwach?**,
 > **Was fehlt?** – und in welcher Reihenfolge das angegangen wird.
 > `KONTEXT.md` beschreibt den Ist-Zustand, diese Datei den Weg nach vorn.
 
 **Wichtiger Vorbehalt:** Die Erstfassung dieses Plans war aus `KONTEXT.md`
-abgeleitet, nicht aus dem Quellcode. Was seither erledigt wurde (Block A, B2,
-B3, C1), ist am Code geprüft. Alles **Offene** ist es nicht – Punkte, die vor der
-Umsetzung eine Prüfung brauchen, sind mit **[prüfen]** markiert. Wer sie ohne
+abgeleitet, nicht aus dem Quellcode. Was seither erledigt wurde (Block A, B1,
+B2, B3, C1), ist am Code geprüft. Alles **Offene** ist es nicht – Punkte, die vor
+der Umsetzung eine Prüfung brauchen, sind mit **[prüfen]** markiert. Wer sie ohne
 Prüfung als Fakt weitergibt, baut auf Sand.
 
 **Aufwandsskala:** **S** = eine Sitzung (< 2 h) · **M** = ein halber bis ganzer
@@ -23,22 +22,26 @@ Tag · **L** = mehrere Sitzungen, braucht vorher eine eigene Skizze.
 
 ## 0. Wo wir stehen
 
-**Block A ist vollständig abgeschlossen.** Aus Block B sind B2 und B3 erledigt,
-aus Block C der Punkt C1. Alles davon ist committet und gepusht.
+**Block A ist vollständig abgeschlossen.** Aus Block B sind B1, B2 und B3
+erledigt, aus Block C der Punkt C1. Alles davon ist committet.
 
 ```
-A. Hygiene              B. Struktur (hier sind    C. Produkt
-   ✅ A1 CSS geklärt       wir gerade)               ✅ C1 Sicherungs-
-   ✅ A2 README            ⬅ B1 app.js teilen          erinnerung
-   ✅ A3 Testzahl          ○ B4, B5, B2b             ○ C2–C15 offen
-   ✅ A4 APP_SHELL         ✅ B2 Speicherfehler
-                          ✅ B3 Testlücken
+A. Hygiene              B. Struktur               C. Produkt (hier sind
+   ✅ A1 CSS geklärt       ✅ B1 app.js geteilt       wir gerade)
+   ✅ A2 README            ✅ B2 Speicherfehler       ✅ C1 Sicherungs-
+   ✅ A3 Testzahl          ✅ B3 Testlücken             erinnerung
+   ✅ A4 APP_SHELL         ○ B4, B5, B2b            ⬅ C3 Trophäen-
+                                                      Fortschritt
+                                                    ○ C2, C4–C15 offen
 ```
 
-**Der nächste Punkt ist B1** – `app.js` entflechten, und zwar in der kleinen
-Variante: nur Trainingsformular und Statistik herauslösen. Das ist der erste
-Punkt seit A1, der Produktivcode anfasst, und der riskanteste der ganzen
-Roadmap – die Begründung und das Vorgehen stehen in §3.
+**B1 ist in der kleinen Variante umgesetzt**: Trainingsformular und Statistik
+liegen jetzt in `js/views/`, dazu die Markup-Verweise und die Formatierung.
+`app.js` ist von 4.132 auf **3.091 Zeilen** geschrumpft, ein Viertel weniger.
+Das Ergebnis samt der Frage, ob der Rest folgen soll, steht in §3.
+
+**Der nächste Punkt ist C3** – ein Fortschrittsbalken an den Trophäen. Nach
+drei Schritten an der Struktur ist das wieder etwas, das man sieht.
 
 Die vollständige Reihenfolge mit Stand steht in **§5**.
 
@@ -102,11 +105,18 @@ Gruppiert nach dem, was der Nutzer erlebt, nicht nach Dateien.
 | PWA: Installierbar, App-Shell-Cache, Update-Hinweis | `sw.js`, `pwa.js` | rund; `APP_SHELL` seit A4 testgeprüft, `CACHE_VERSION` weiterhin von Hand |
 | Profil: Name, Wochenziel | `storage.js` | minimal |
 
-**Das architektonische Tafelsilber:** 20 von 24 Modulen sind pur – kein DOM,
+**Das architektonische Tafelsilber:** 20 von 28 Modulen sind pur – kein DOM,
 kein Storage. Deshalb laufen die Tests ohne Browser, ohne Framework, ohne
 Installation. Diese Eigenschaft ist der Grund, warum das Projekt trotz
 fehlendem Build-Step wartbar ist. **Jede Änderung, die sie aufweicht, ist ein
 Rückschritt – auch wenn sie kurzfristig bequem ist.**
+
+> **Zur Zahl:** Vor B1 stand hier „20 von 24". Die Module sind jetzt 28, weil
+> B1 vier neue angelegt hat – drei davon fassen das DOM an. Rein gewonnen hat
+> nur `format.js`. Der Anteil sieht damit schlechter aus, der Zustand ist es
+> nicht: dieselbe DOM-Logik liegt jetzt in vier lesbaren Dateien statt in einer
+> von 4.132 Zeilen, und mit `format.js` ist zum ersten Mal etwas aus `app.js`
+> testbar geworden. **Wer diesen Anteil als Kennzahl liest, misst das Falsche.**
 
 ---
 
@@ -193,45 +203,79 @@ Ein-Personen-Projekt mehr Aufwand als Nutzen. Der Test läuft dagegen immer.
 
 ---
 
-## 3. Block B – Struktur (hier stehen wir)
+## 3. Block B – Struktur
 
-**Stand:** B2 und B3 ✅ erledigt · B1, B2b, B4, B5 offen. Der nächste Punkt der
-Reihenfolge ist **B1**.
+**Stand:** B1, B2 und B3 ✅ erledigt · B2b, B4, B5 offen. Keiner der drei steht
+als Nächstes an – die Reihenfolge geht erst über C3, C2 und C4 (siehe §5).
 
-### B1 · `js/app.js` entflechten · **L** · `js/app.js` → neue Module
+### ✅ B1 · `js/app.js` entflechten · `js/app.js` → `js/views/`, `js/format.js`
 
-**Das Problem:** 4.092 Zeilen, 176 Funktionen, alle modulintern. `KONTEXT.md`
-selbst sagt: „dort **nie** komplett lesen". Eine Datei, die man nicht mehr lesen
+**Das Problem war:** 4.132 Zeilen, alle Funktionen modulintern. `KONTEXT.md`
+selbst sagte: „dort **nie** komplett lesen". Eine Datei, die man nicht mehr lesen
 kann, ist eine Datei, in der Fehler wohnen können, ohne gefunden zu werden. Und
-sie ist der einzige Ort, für den es keine Tests gibt – weil DOM.
+sie war der einzige Ort, für den es keine Tests gab – weil DOM.
 
-**Was zu tun ist, in dieser Reihenfolge:**
+**Umgesetzt wurde die kleine Variante**, in drei Commits, nach jedem ein
+Browser-Durchlauf:
 
-1. **Nichts umschreiben, sondern zuerst aufteilen.** `app.js` in
-   `js/views/*.js` zerlegen, entlang der Bereiche aus §4 von `KONTEXT.md`:
-   `views/runs.js`, `views/training.js`, `views/exercises.js`,
-   `views/trophies.js`, `views/profile.js`, `views/interval.js`,
-   `views/share.js`, `views/transfer-ui.js`, `views/pwa-ui.js`. Übrig bleibt
-   `app.js` als Verdrahtung: `init`, `bindTabs`, `setView`, `render`.
-   Reines Verschieben, keine Logikänderung.
-2. **Dabei zeigt sich, was noch Rechnen ist.** Jede Zeile in `app.js`, die
-   rechnet statt anzuzeigen, gehört in ein pures Modul. Das ist der eigentliche
-   Gewinn – nicht die kleineren Dateien, sondern die zusätzlich testbare Logik.
-3. **`APP_SHELL` in `sw.js` nachziehen**, `CACHE_VERSION` hoch.
+| Datei | Zeilen | Was |
+|---|--:|---|
+| `js/format.js` | 85 | rein: Intl-Formatierer, `todayIso`, `formatDate`, `round`, `r1`, `formatDays`, `formatMonth`, `formatAveragePace` |
+| `js/views/dom.js` | 242 | die `getElementById`-Verweise, `SVG_NS`, `createSvg` |
+| `js/views/training.js` | 498 | Trainingsformular, Planliste, Löschrückfrage |
+| `js/views/stats.js` | 422 | Profil-Kennzahlen, Aktivitätsraster, Pace-Verlauf, Bestzeiten, Trophäen-Übersicht |
 
-**Risiko, offen benannt:** Das ist der gefährlichste Punkt der ganzen Roadmap.
-Ohne Build-Step bedeutet jede neue Datei einen zusätzlichen HTTP-Request beim
-ersten Laden und einen Eintrag in `APP_SHELL`. Zehn neue Module heißt zehn
-Chancen, einen Import-Pfad zu vertippen – und der Fehler zeigt sich erst zur
-Laufzeit im Browser, nicht in `node --test`. **Deshalb: in mehreren Commits,
-einen Bereich pro Commit, nach jedem Commit die Live-Seite öffnen.** Nicht an
-einem Abend durchziehen.
+`app.js`: **4.132 → 3.091 Zeilen**, ein Viertel weniger. Reines Verschieben –
+geändert wurden nur die Stellen, die auf gemeinsamen Zustand zugreifen.
 
-**Alternative, falls das zu groß wirkt:** Nur die zwei größten Bereiche
-herauslösen (Training-Formular ~430 Zeilen, Statistik/Visualisierung ~400
-Zeilen). Das nimmt ein Fünftel der Datei weg bei einem Bruchteil des Risikos.
-**Meine Empfehlung: mit dieser Variante anfangen**, und erst nach der Erfahrung
-entscheiden, ob der Rest folgt.
+**Wie die Ansichten an den Zustand kommen.** Nicht per Import: ein Import wäre
+der Wert zum Ladezeitpunkt, und `runs` und `sessions` werden bei jeder Änderung
+neu zugewiesen. Stattdessen zwei Wege, je nach Bedarf:
+
+- `views/stats.js` **liest nur** und bekommt die Läufe als Parameter. Ihr
+  einziger Klick-Handler kommt ohne sie aus.
+- `views/training.js` **schreibt auch**, und ihre Handler feuern lange nach dem
+  Rendern. Sie bekommt einmal in `init()` ein Objekt mit Zugriffsfunktionen
+  (`getRuns`, `getSessions`, `setSessions`, `render`).
+
+**Regel für den Rest:** Wächst dieses Objekt bei einer weiteren Ansicht deutlich,
+holt sich die Ansicht zu viel aus `app.js` – dann ist der Schnitt falsch gelegt.
+
+**Der eigentliche Gewinn war nicht die kleinere Datei, sondern das Getestete.**
+`format.js` ist rein und hat jetzt eine Testdatei; dabei kamen zwei Verhalten
+ans Licht, die vorher niemand kannte: `round(1.005)` ergibt **1** und nicht 1,01,
+weil `1.005 * 100` als Gleitkommazahl knapp unter der Hälfte liegt, und
+`formatMonth` schreibt **„Aug. 2026" mit Punkt**, weil de-DE so abkürzt.
+
+**Das Risiko war richtig benannt, die Abwehr fehlte.** Ein vertippter
+Import-Pfad fällt ohne Build-Step erst im Browser auf. Deshalb gibt es jetzt
+`tests/imports.test.mjs`: liest die Importe aller Module aus dem Quelltext und
+prüft Pfad **und** Namen gegen den Dateibaum. Gegengeprüft mit einem erfundenen
+Namen und einem falschen Pfad – beide werden rot.
+
+**Was dabei dreimal schiefging und beim nächsten Mal nicht mehr soll:** Drei
+Tests suchten Regeln in `js/app.js`, weil das bis dahin dieselbe Datei war wie
+„die App". Nach dem Verschieben suchten sie in der falschen Datei. Der
+Pace-Verlauf-Test wurde rot und fiel auf – die beiden anderen (`APP_SHELL` liest
+`js/` nicht rekursiv, `getElementById` steht nicht mehr in `app.js`) wären
+**stillschweigend grün geblieben**, weil sie nichts mehr gefunden hätten. Seither
+steht `quelltextDerModule()` in `tests/helpers.mjs` und liest `js/` rekursiv.
+
+> **Für jede weitere Aufteilung:** Nach dem Verschieben `grep` auf den
+> Funktionsnamen in `tests/` – findet sich dort ein fest verdrahteter Dateipfad,
+> ist der Test nach dem Umzug wertlos, ohne rot zu werden.
+
+**Soll der Rest folgen?** Die Erfahrung sagt: ja, aber nicht als Nächstes. Die
+drei Schritte gingen glatt, und die beiden Ansichten sind jetzt lesbar. Die
+verbleibenden 3.091 Zeilen sind aber immer noch mehr, als sich am Stück lesen
+lässt – der nächste Kandidat wäre der Übungen-Bereich (~580 Zeilen), danach
+Intervall-Schirm und Lauf-Liste. Erst kommen jedoch drei sichtbare Punkte aus
+Block C: nach drei Commits ohne jede Änderung für den Nutzer ist das dran.
+
+**Nicht mitgemacht:** `paceScale()` und `formatTrendPoint()` in `views/stats.js`
+rechnen und wären als reine Funktionen testbar. Sie hängen aber an der
+Diagramm-Geometrie direkt darüber, und der Punkt hieß „kleine Variante". Wer den
+Rest von B1 angeht, nimmt sie mit.
 
 ### ✅ B2 · Fehlerpfade beim Speichern härten · `storage.js`, `app.js`
 
@@ -403,12 +447,13 @@ auf dem dunklen Hintergrund, `prefers-reduced-motion` für Animationen. **[prüf
 
 ---
 
-## 4. Block C – Produkt (danach)
+## 4. Block C – Produkt (hier stehen wir)
 
 Ideen, nach Verhältnis von Nutzen zu Aufwand sortiert. Alles hier ist optional –
 FunRun ist heute schon eine vollständige App.
 
-**Stand:** C1 ✅ erledigt · C2 bis C15 offen.
+**Stand:** C1 ✅ erledigt · C2 bis C15 offen. Der nächste Punkt der Reihenfolge
+ist **C3**.
 
 ### Naheliegend (hoher Nutzen, kleiner Aufwand)
 
@@ -495,8 +540,8 @@ nichts. Das ist genau der Punkt, den **B1** angeht.
 | — | **committen und pushen** | S | ✅ erledigt |
 | 5 | **C1** Export-Erinnerung | S | ✅ erledigt |
 | 6 | **B3** Testlücken der jungen Module | M | ✅ erledigt |
-| 7 | **B1** app.js entflechten – **kleine Variante** (Training + Statistik) | M | ⬅ **als Nächstes** |
-| 8 | **C3** Trophäen-Fortschritt | M | offen |
+| 7 | **B1** app.js entflechten – **kleine Variante** (Training + Statistik) | M | ✅ erledigt |
+| 8 | **C3** Trophäen-Fortschritt | M | ⬅ **als Nächstes** |
 | 9 | **C2** Notiz & Gefühl, **C4** Wetter | S+S | offen |
 | 10 | **B4** history.js messen | S | offen |
 | 11 | **B2b** GPS-Fehlerpfade am Gerät prüfen | M | offen |
@@ -517,6 +562,18 @@ Ein Punkt = ein Commit (§6, Regel 1). So sind sie gefallen:
 | 7 | – | `af9b35f` | Haekchen-Runde nach C1 nachgeholt |
 | 8 | B3 | `a18a661` | Testluecken der jungen Module geschlossen |
 | 9 | – | `63fe111` | Kontext und Roadmap auf den Stand nach dem Push |
+| 10 | – | `411098f` | Doku-Commit kann nicht in der eigenen Tabelle stehen |
+| 11 | B1 | `061d0ba` | app.js entflechten: Markup-Verweise und Formatierung heraus |
+| 12 | B1 | `2378c00` | app.js entflechten: das Trainingsformular heraus |
+| 13 | B1 | `96bfbf2` | app.js entflechten: die Statistik heraus |
+
+**B1 hat drei Commits statt einem** – das ist keine Ausnahme von Regel 1 in §6,
+sondern stand so im Punkt selbst: einen Bereich pro Commit, nach jedem Commit
+die Seite im Browser öffnen. Genau so ist es gelaufen.
+
+**Zahlendreher in `061d0ba`:** Die Nachricht sagt „4184 -> 3903 Zeilen". Richtig
+ist **4.184 → 3.907** – die vier Zeilen, die der Dateikopf danach noch bekam,
+sind nicht mitgezählt. Der Commit steht, die Zahl hier ist die geprüfte.
 
 `css/style.css` wurde **sauber getrennt**: die gelöschte Regel in Commit 1,
 die `.storage-hint`-Regel in Commit 4. Interaktives `git add -p` war dafür
@@ -613,3 +670,5 @@ Fleißaufgabe, sondern der halbe Zweck dieser Datei.
 | 2026-08-21 | **C1** umgesetzt und gepusht. §4 um den Ergebnisabschnitt ergänzt, §5-Tabelle nachgezogen. Nächster Punkt: **B3**. |
 | 2026-08-21 | **B3** umgesetzt. §3 um den Ergebnisabschnitt ergänzt, §0/§1/§5 nachgezogen. Der Punkt war zur Hälfte falsch gestellt: zwei der vier genannten Grenzen waren längst geprüft, dafür hatten `beep.js` und `wake-lock.js` gar keine Testdatei. 749 → 802 Tests. Nächster Punkt: **B1**. |
 | 2026-08-21 | Nachgezogen: `63fe111` in der Commit-Tabelle. §6 um die Ausnahme erweitert – ein Doku-Commit kann nicht in der eigenen Tabelle stehen, und ein Live-Hash in einer Datei ist ab dem nächsten Commit falsch. |
+| 2026-08-21 | **B1** umgesetzt, kleine Variante, in drei Commits (`061d0ba`, `2378c00`, `96bfbf2`). `app.js` 4.132 → 3.091 Zeilen; neu sind `js/format.js` und `js/views/{dom,training,stats}.js`. §3 komplett neu geschrieben (Ergebnis statt Vorhaben, samt der Frage, ob der Rest folgt), §0 mit neuem Schaubild, §1.5 mit der Einordnung der Modul-Zahl, §5-Tabelle und Commit-Block nachgezogen. §1 bekam **keine** neue Zeile: B1 hat für den Nutzer nichts geändert, und eine Zeile dafür wäre eine Behauptung. 802 → 887 Tests, `sw` v47 → v50. Nächster Punkt: **C3**. |
+| 2026-08-21 | Aus B1 mitgenommen, weil es dreimal passierte: Tests, die im Quelltext nach einer Regel suchen, dürfen keinen festen Dateipfad tragen – sie werden beim Verschieben nicht rot, sondern finden nichts und bleiben grün. Der Warnhinweis dazu steht bei B1 in §3. |

@@ -562,7 +562,7 @@ Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 node --test
 ```
 
-**802 Tests in 24 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
+**887 Tests in 26 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
 Testrunner von Node — keine Abhängigkeiten, kein Framework, nichts zu
 installieren.
 
@@ -571,6 +571,7 @@ installieren.
 | `tests/achievements.test.mjs` | 81 | jede Bedingung knapp darunter und darauf |
 | `tests/stats.test.mjs` | 77 | Summen, Serien mit Lücken, Raster, Pace-Verlauf, Bestzeiten |
 | `tests/transfer.test.mjs` | 68 | Export-Roundtrip, kaputte und halbe Importdateien |
+| `tests/imports.test.mjs` | 60 | jeder Import-Pfad und -Name gegen den Dateibaum |
 | `tests/training.test.mjs` | 59 | Abschnitte, Intervall-Vorgabe, Abgleich, Plantreue und XP |
 | `tests/validation.test.mjs` | 53 | Pflicht- und Optionalfelder, erfundene Kalendertage |
 | `tests/storage.test.mjs` | 50 | Anlegen/Ändern/Löschen/Ersetzen, Neuberechnung, volles Fach |
@@ -580,6 +581,7 @@ installieren.
 | `tests/geo.test.mjs` | 32 | Haversine gegen bekannte Strecken, alle GPS-Filtergrenzen |
 | `tests/pwa.test.mjs` | 29 | Installationshinweis, Cache-Trennung, `APP_SHELL` vollständig |
 | `tests/tracker.test.mjs` | 25 | Start/Pause/Beenden, Fehlerfälle, Geolocation-Attrappe |
+| `tests/format.test.mjs` | 25 | Zahlen, Daten, Zeiten – auch die Rundung genau auf der Hälfte |
 | `tests/interval.test.mjs` | 22 | Phasenwechsel, Restzeit, angebrochene Runden |
 | `tests/exercise-plan.test.mjs` | 20 | Tagesgrenze, Reihenfolge, Doppelte |
 | `tests/exercises.test.mjs` | 20 | Vollständigkeit der Übungsdaten, Filter, Zählung |
@@ -611,8 +613,8 @@ lädt das Modul deshalb über eine eindeutige Import-Adresse
 Projekt, an dem der Modul-Cache umgangen wird.
 
 Die App selbst läuft im Browser, die Tests laufen in Node. Möglich ist das,
-weil **alle Module ausser `app.js`, `storage.js`, `tracker.js`, `stopwatch.js`
-und `wake-lock.js` pur sind** – kein DOM, kein Storage. `tracker.js` liest
+weil **alle Module ausser `app.js`, `js/views/*`, `storage.js`, `tracker.js`,
+`stopwatch.js` und `wake-lock.js` pur sind** – kein DOM, kein Storage. `tracker.js` liest
 `navigator.geolocation` erst beim Start, nicht beim Laden — genau deshalb lässt
 es sich unterschieben.
 
@@ -780,8 +782,15 @@ voller Farbigkeit.
 
 ## Struktur
 
-24 Module in `js/`. Alle sind pur – kein DOM, kein Storage – ausser den fünf
-unten ausdrücklich markierten.
+28 Module: 25 in `js/`, 3 in `js/views/`. Alle sind pur – kein DOM, kein
+Storage – ausser den unten mit `*` markierten.
+
+Die Ansichten unter `js/views/` gibt es seit dem Umbau, der `app.js` von 4.132
+auf 3.091 Zeilen gebracht hat. Der Gedanke dahinter: eine Datei, die man nicht
+mehr am Stück lesen kann, ist eine Datei, in der Fehler wohnen können, ohne
+gefunden zu werden. Herausgelöst sind bisher das Trainingsformular und die
+Statistik – die grössten zwei Brocken. Der Rest folgt, wenn er sich lohnt, nicht
+weil eine Liste abgearbeitet werden will.
 
 ```
 index.html            Markup, alle fünf Bereiche in einem Dokument
@@ -789,7 +798,10 @@ css/style.css         Gestaltung; alle Werte als Tokens ganz oben
 manifest.json         PWA-Manifest
 sw.js                 Service Worker (App-Shell-Cache)
 
-js/app.js             DOM, Rendering, Verdrahtung – rechnet nichts selbst *
+js/app.js             Verdrahtung und die noch nicht herausgelösten Bereiche *
+js/views/dom.js       Die Verweise aufs Markup, einmal gesucht *
+js/views/training.js  Trainingsformular, Planliste, Löschrückfrage *
+js/views/stats.js     Statistik, Aktivitätsraster, Pace-Verlauf, Bestzeiten *
 js/storage.js         Laden/Speichern/Ändern aller Datentöpfe *
 js/tracker.js         Live-Aufzeichnung: watchPosition, Pausen *
 js/stopwatch.js       Aufzeichnung ohne GPS, gleiche Form wie tracker *
@@ -802,6 +814,7 @@ js/history.js         Freischaltdaten und Titel-Historie
 js/goal.js            Wochenziel: erreichte Wochen und Bonus-XP
 js/stats.js           Summen, Serien, Zeitreihen, Raster, Pace-Verlauf, Bestzeiten
 js/geo.js             Haversine, GPS-Filter, Pace-/Zeitformatierung
+js/format.js          Zahlen, Daten und Zeiten in Anzeigeform
 js/route.js           GPS-Strecke auf Zeichenflächen-Koordinaten
 js/validation.js      Prüfung aller Eingaben
 js/transfer.js        Export-/Importformat

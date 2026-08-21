@@ -1,6 +1,6 @@
 # FunRun – Projektkontext (Gedächtnisdatei)
 
-> **Stand: 2026-08-21** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v47`
+> **Stand: 2026-08-21** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v50`
 >
 > **Diese Datei ist das Gedächtnis des Projekts.** Sie ersetzt das Einlesen des
 > Quellcodes beim Start eines neuen Chats. Wird sie nicht gepflegt, ist sie
@@ -14,8 +14,10 @@
    Datenmodell und Regeln. Sie genügt für Planung, Beratung und Diskussion.
 2. **Erst konkret werden, dann Dateien laden.** Für eine Änderung nur die
    Dateien lesen, die die Modulkarte (§3) für das Anliegen nennt – plus die
-   zugehörige Testdatei. `js/app.js` ist 4.100 Zeilen: dort **nie** komplett
-   lesen, sondern gezielt nach Funktionsnamen aus §4 greifen.
+   zugehörige Testdatei. `js/app.js` ist seit B1 3.091 statt 4.132 Zeilen, aber
+   immer noch zu lang zum Am-Stück-Lesen: dort gezielt nach Funktionsnamen oder
+   Kommentarmarken aus §4 greifen. Die Ansichten unter `js/views/` sind klein
+   genug, um ganz gelesen zu werden.
 3. **Was hier steht, gilt als wahr, ist aber ein Schnappschuss.** Zahlen
    (Trophäenanzahl, Cache-Version, Zeilenzahlen) können veraltet sein. Wenn
    eine Zahl für die Aufgabe entscheidend ist: nachzählen statt vertrauen.
@@ -55,8 +57,9 @@ sw.js                 Service Worker, App-Shell-Cache (CACHE_VERSION hochzählen
 README.md             Erklärungen und Begründungen für Menschen
 KONTEXT.md            diese Datei
 css/style.css         ~61 KB, alle Werte als Custom Properties oben
-js/*.js               24 Module (siehe §3)
-tests/*.test.mjs      24 Testdateien + helpers.mjs
+js/*.js               25 Module (siehe §3)
+js/views/*.js         3 Ansichten – DOM und Interaktion, seit B1
+tests/*.test.mjs      26 Testdateien + helpers.mjs
 icons/icon-*.png      App-Icons (192, 512, maskable-512, 180)
 icons/badges/*.png    6 Rang-Abzeichen: neuling, laeufer, ausdauerlaeufer,
                       veteran, elite, legende
@@ -64,14 +67,22 @@ icons/badges/*.png    6 Rang-Abzeichen: neuling, laeufer, ausdauerlaeufer,
 
 ## 3. Modulkarte – „wo muss ich hin?"
 
-Grundprinzip: **alle Module außer `app.js`, `storage.js`, `tracker.js`,
-`stopwatch.js` und `wake-lock.js` sind pur** – kein DOM, kein Storage. Deshalb
-laufen die Tests in Node.
+Grundprinzip: **alle Module außer `app.js`, `js/views/*`, `storage.js`,
+`tracker.js`, `stopwatch.js` und `wake-lock.js` sind pur** – kein DOM, kein
+Storage. Deshalb laufen die Tests in Node.
+
+**Seit B1 gilt: „die App" ist nicht mehr `app.js`.** Wer eine Anzeige sucht,
+schaut zuerst unter `js/views/`, dann in `app.js`. Wer Code sucht, der rechnet,
+schaut nie in beide.
 
 | Datei | Zeilen | Zuständig für | Anfassen wenn … |
 |---|--:|---|---|
-| `js/app.js` | 4132 | DOM, Rendering, Verdrahtung, **rechnet nichts selbst** | irgendetwas sichtbar wird oder ein Klick etwas tun soll |
-| `js/storage.js` | 602 | Laden/Speichern/Ändern aller Datentöpfe | neues persistiertes Feld, neuer Datentopf |
+| `js/app.js` | 3091 | Verdrahtung und die noch nicht herausgelösten Bereiche | Start, Läufe, Übungen, Trophäen, Profil, Intervall, Teilen, Export |
+| `js/views/training.js` | 498 | Trainingsformular, Planliste, Löschrückfrage | irgendetwas am Trainingsplan |
+| `js/views/stats.js` | 422 | Profil-Kennzahlen, Aktivitätsraster, Pace-Verlauf, Bestzeiten, Trophäen-Übersicht | irgendetwas an der Statistik im Profil |
+| `js/views/dom.js` | 242 | die `getElementById`-Verweise (`el`), `SVG_NS`, `createSvg` | ein neues Element im Markup |
+| `js/format.js` | 85 | rein: Zahlen, Daten, Zeiten in Anzeigeform | eine neue Formatierung |
+| `js/storage.js` | 653 | Laden/Speichern/Ändern aller Datentöpfe | neues persistiertes Feld, neuer Datentopf |
 | `js/achievements.js` | 936 | Trophäen-Definitionen + `buildRunStats()` | neue Trophäe, neue Kennzahl für Bedingungen |
 | `js/training.js` | 590 | geplante Einheiten, Intervall-Vorgaben, Abgleich mit Läufen | Trainingsplan, Plantreue-XP |
 | `js/stats.js` | 551 | Summen, Serien, Zeitreihen, Aktivitätsraster, Pace-Trend, Bestzeiten | Statistik, Diagramme |
@@ -95,10 +106,23 @@ laufen die Tests in Node.
 | `js/lock.js` | 56 | Tastensperre: Halte-Fortschritt, Sperrregeln | Sperre |
 | `js/wake-lock.js` | 42 | Bildschirm wach halten | Wake Lock |
 
-Zu **jedem Modul ausser `app.js`** gibt es `tests/<name>.test.mjs` – seit B3
-auch zu `beep.js` und `wake-lock.js`, die bis dahin fehlten. Zusätzlich prüft
-`tests/styles.test.mjs` CSS- und Markup-Regeln, die Node nicht ausführen kann,
-und gleicht als Einziges auch `app.js` gegen den Quelltext ab.
+Zu **jedem reinen Modul** gibt es `tests/<name>.test.mjs` – seit B3 auch zu
+`beep.js` und `wake-lock.js`, seit B1 zu `format.js`. `app.js` und `js/views/*`
+fassen das DOM an und laden in Node nicht; für sie gibt es zwei Tests, die den
+**Quelltext** lesen statt ihn auszuführen:
+
+- `tests/imports.test.mjs` prüft jeden Import-Pfad und jeden importierten Namen
+  gegen den Dateibaum. Ohne Build-Step fiele ein Tippfehler dort sonst erst im
+  Browser auf.
+- `tests/styles.test.mjs` prüft CSS- und Markup-Regeln, die Node nicht ausführen
+  kann, und sucht Code-Regeln im Quelltext **aller** Module.
+
+> **Falle beim Verschieben von Code.** Ein Test, der einen festen Dateipfad
+> trägt und im Quelltext nach einer Regel sucht, wird beim Umzug der Regel
+> **nicht rot** – er findet nichts und bleibt grün. Bei B1 wäre das zweimal
+> passiert. Deshalb liest `quelltextDerModule()` aus `tests/helpers.mjs` `js/`
+> rekursiv, und kein Test in `styles.test.mjs` nennt mehr eine einzelne Datei.
+> **Nach jedem Verschieben: `grep` auf den Funktionsnamen in `tests/`.**
 
 ---
 
@@ -199,25 +223,75 @@ und gleicht als Einziges auch `app.js` gegen den Quelltext ab.
 **`stopwatch.js`** `createStopwatch({onUpdate})`
 **`wake-lock.js`** `createWakeLock(isActive)`
 
-### `js/app.js` – Orientierung (176 Funktionen, alle modulintern)
+**`format.js`** `numberFormat` · `distanceFormat` · `dateFormat` ·
+`monthFormat` · `shortMonthFormat` · `weekdayFormat` · `todayIso()` ·
+`toIsoDate(date)` · `toTimeOfDay(date)` · `formatDate(isoDate)` ·
+`formatDays(count)` · `formatMonth("JJJJ-MM")` · `formatAveragePace(minPerKm)` ·
+`round(v)` (2 Stellen) · `r1(v)` (1 Stelle)
 
-Grob in dieser Reihenfolge im File; Zeilennummern sind Richtwerte:
+**`views/dom.js`** `el` · `SVG_NS` · `createSvg(tag, attribute, text?)`
 
-| Bereich | Funktionen (Auswahl) |
-|---|---|
-| Start/Verdrahtung (~500) | `init`, `bindTabs`, `setView`, `recorder`, `isRecording` |
-| Training-Formular (~610–1040) | `setupSessionForm`, `handleSessionSubmit`, `startEditingSession`, `renderDraftSegments`, `renderTraining`, `createPlanItem` |
-| Heute/Übungen (~1040–1620) | `renderGreeting`, `renderToday`, `renderExercises`, `createExerciseCard`, `createCountEditor`, `handleCountCorrection`, `handlePlan/handleUnplan` |
-| Trophäen (~1620–1730) | `renderTrophies`, `renderTrophyFilter`, `createTrophyTile` |
-| Profil & Ziel (~1730–1910) | `renderProfile`, `fillProfileForm`, `handleProfileSubmit`, `renderGoal` |
-| Intervall-Schirm (~1900–2300) | `setupQuickInterval`, `startIntervalRun`, `renderIntervalScreen`, `finishIntervalRun`, `saveIntervalRun` |
-| Teilen (~2340–2550) | `setupShare`, `handleShare`, `buildShareData`, `downloadCard` |
-| Statistik/Visualisierung (~2550–2950) | `renderProfileStats`, `renderActivity`, `buildHeatmapCell`, `renderPaceTrend`, `createPaceChart`, `renderBestTimes` |
-| PWA/Update (~2950–3020, 4055–4092) | `maybeShowInstallHint`, `handleRefresh`, `clearOwnCaches`, `registerServiceWorker`, `markUpdateReady`, `maybeShowUpdateHint` |
-| Lauf-Formular & Liste (~3016–3260, 3918–4030) | `handleSubmit`, `handleListClick`, `toggleDetail`, `renderDetail`, `createRouteSvg`, `startEditing`, `renderRuns`, `createRunItem`, `fillDeleteConfirm` |
-| Export/Import (~3283–3410) | `handleExport`, `handleImportFile`, `buildImportSummary`, `handleImportApply` |
-| GPS-Aufzeichnung & Sperre (~3419–3620) | `setTrackGps`, `handleTrackStart/Pause/Stop/Discard`, `setLocked`, `bindUnlockHold`, `pollUnlockHold` |
-| Zentrales Rendern (~3623–3920) | `render({announceUnlocks})`, `renderPeriodStats`, `renderChart`, `renderTracking`, `renderProgress`, `renderAchievements` |
+**`views/training.js`** `connectTrainingView(verdrahtung)` ·
+`setupSessionForm()` · `resetSessionForm()` · `renderTraining()` ·
+`STATUS_TEXT`
+
+**`views/stats.js`** `renderTrophySummary(achievements)` ·
+`renderProfileStats(runs)` · `renderActivity(runs)` · `renderPaceTrend(runs)` ·
+`renderBestTimes(runs)` · `setupHeatmap()` · `buildStatBlocks(werte)`
+
+> **Wie die Ansichten an den Zustand kommen.** Nicht per Import – der wäre der
+> Wert zum Ladezeitpunkt, und `runs`/`sessions` werden bei jeder Änderung neu
+> zugewiesen. `views/stats.js` liest nur und bekommt die Läufe als Parameter.
+> `views/training.js` schreibt auch, und ihre Handler feuern lange nach dem
+> Rendern; sie bekommt einmal in `init()` ein Objekt mit `getRuns`,
+> `getSessions`, `setSessions` und `render`. **Wächst dieses Objekt bei der
+> nächsten Ansicht deutlich, ist der Schnitt falsch gelegt.**
+
+### `js/app.js` – Orientierung (135 Funktionen, alle modulintern)
+
+`app.js` trägt Kommentarmarken der Form `/* ---- Bereich */`. **Danach greifen,
+nicht nach Zeilennummern** – die stimmen nach der nächsten Änderung nicht mehr,
+die Marke schon:
+
+```bash
+grep -n '^/\* -' js/app.js
+```
+
+Stand nach B1 (Zeilennummern als Richtwert, Marken als Anker):
+
+| Marke | ab Zeile | Funktionen (Auswahl) |
+|---|--:|---|
+| (Kopf, ohne Marke) | 1 | `recorder`, `isRecording`, `verdrahtung`, `init` |
+| `Bereiche` | 367 | `bindTabs`, `setView` |
+| `Begrüßung` | 417 | `renderGreeting` |
+| `Heute geplant` | 438 | `renderToday`, `createTodaySession`, `createTodayItem` |
+| `Übungen` | 536 | `renderExercises`, `createExerciseCard`, `createCountEditor`, `handleCountCorrection`, `handlePlan/handleUnplan` |
+| `Trophäen` | 1002 | `renderTrophies`, `renderTrophyFilter`, `createTrophyTile` |
+| `Profil` | 1113 | `renderProfile`, `fillProfileForm`, `handleProfileSubmit`, `renderGoal` |
+| `Intervall-Stoppuhr` | 1260 | `setupQuickInterval`, `startIntervalRun`, `renderIntervalScreen`, `finishIntervalRun`, `saveIntervalRun` |
+| `Teilen` | 1718 | `setupShare`, `handleShare`, `buildShareData`, `downloadCard` |
+| `Speicher-Warnung` | 1934 | `showStorageError` |
+| `Installationshinweis` | 1962 | `maybeShowInstallHint`, `dismissInstallHint` |
+| `Aktualisieren` | 1987 | `handleRefresh`, `clearOwnCaches`, `unregisterOwnServiceWorkers` |
+| `Events` | 2024 | `handleSubmit`, `showWarnings`, `handleListClick` |
+| `Detailansicht` | 2099 | `toggleDetail`, `renderDetail`, `createRouteSvg`, `createRouteMarker` |
+| `Bearbeiten` | 2236 | `startEditing`, `stopEditing`, `renderFormMode` |
+| `Sichern` | 2286 | `renderExportReminder`, `handleExport`, `handleImportFile`, `buildImportSummary`, `handleImportApply` |
+| `Tracking` | 2447 | `setTrackGps`, `handleTrackStart/Pause/Stop/Discard` |
+| `Tastensperre` | 2546 | `setLocked`, `bindUnlockHold`, `pollUnlockHold` |
+| `Anzeige` | 2659 | nur `render({announceUnlocks})` |
+| `Statistik` | 2686 | `setStatsPeriod`, `renderPeriodStats`, `renderChart`, `renderTracking`, `renderProgress`, `renderAchievements`, `renderRuns`, `createRunItem`, `fillDeleteConfirm`, `showError`, `registerServiceWorker`, `markUpdateReady`, `maybeShowUpdateHint` |
+
+> **Achtung, die letzte Marke lügt.** `Statistik` ist die letzte im File und
+> begrenzt deshalb nichts – alles von Zeile 2686 bis zum Ende steht unter ihr,
+> auch die Lauf-Liste, die Fehleranzeige und der Service-Worker. Wer dort etwas
+> sucht und beim Namen der Marke stehen bleibt, sucht am falschen Ort. (Das war
+> schon vor B1 so; hier steht es zum ersten Mal.)
+
+**Nicht mehr hier** (seit B1): Trainingsformular und Planliste →
+`js/views/training.js` · Profil-Statistik, Aktivitätsraster, Pace-Verlauf,
+Bestzeiten → `js/views/stats.js` · `el` und `createSvg` → `js/views/dom.js` ·
+Formatierung → `js/format.js`.
 
 ---
 
@@ -325,21 +399,25 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Übungen: 27** in 5 Kategorien (`warmup`, `drills`, `kraft`, `mobility`, `regeneration`)
 - **Bereiche/Tabs: 5** – `start`, `exercises`, `training`, `trophies`, `profile`
   (`data-view` / `#view-…` in `index.html`)
-- **Tests: 802** in 24 Dateien (`node --test`, alle grün)
+- **Tests: 887** in 26 Dateien (`node --test`, alle grün)
 - **Trophäen mit `progress()`: 55 von 62** · Trophäen-XP gesamt: **5055**
-- **`sw.js`: `funrun-v47`**
+- **Module: 28** – 25 in `js/`, 3 in `js/views/`
+- **`js/app.js`: 3091 Zeilen**, 135 Funktionen (vor B1: 4132)
+- **`sw.js`: `funrun-v50`**
 - Letzte Commits (neueste zuerst, Stand des Repos):
-  1. Testluecken der jungen Module geschlossen
-  2. Haekchen-Runde nach C1 nachgeholt
-  3. Erinnerung an die Sicherung nach dreissig Tagen
-  4. Kontext und Roadmap auf den Stand nach dem Push
-  5. Fehlgeschlagenes Speichern wird sichtbar
+  1. app.js entflechten: die Statistik heraus
+  2. app.js entflechten: das Trainingsformular heraus
+  3. app.js entflechten: Markup-Verweise und Formatierung heraus
+  4. Doku-Commit kann nicht in der eigenen Tabelle stehen
+  5. Kontext und Roadmap auf den Stand nach dem Push
 
-### Roadmap-Block A, B2, B3 und C1 sind committet
+### Roadmap-Block A, B1, B2, B3 und C1 sind committet
 
-Die Änderungen aus A1, A2, A4, B2, B3 und C1 liegen seit dem 2026-08-21 auf
-`master` und sind gepusht; `dertimsistda.github.io` liefert immer den letzten
-Stand von `master`. Das Arbeitsverzeichnis ist sauber.
+Die Änderungen aus A1, A2, A4, B1, B2, B3 und C1 liegen seit dem 2026-08-21 auf
+`master`. `dertimsistda.github.io` liefert immer den letzten Stand von `master`.
+
+> **Noch nicht gepusht:** die drei B1-Commits und die beiden Doku-Commits
+> darum herum. Bis zum Push zeigt die Live-Seite den Stand von `63fe111`.
 
 > **Zur Tabelle:** Der Commit, der diese Zeilen schreibt, kann nicht in ihr
 > stehen – er entsteht erst danach. Die Doku-Commits (`1134dca`, `af9b35f`, …)
@@ -358,19 +436,25 @@ Stand von `master`. Das Arbeitsverzeichnis ist sauber.
 | – | `af9b35f` | Häkchen-Runde nach C1 nachgeholt (§7-Tabelle, §8 Schritt 9) |
 | B3 | `a18a661` | Testlücken der jungen Module; neue Dateien für `beep.js` und `wake-lock.js` |
 | – | `63fe111` | `KONTEXT.md`, `ROADMAP.md` und `README.md` auf den Stand nach B3 |
+| – | `411098f` | §6-Ausnahme: ein Doku-Commit kann nicht in der eigenen Tabelle stehen |
+| B1 | `061d0ba` | `js/format.js` und `js/views/dom.js`; `tests/imports.test.mjs` neu; `CACHE_VERSION` auf v48 |
+| B1 | `2378c00` | `js/views/training.js`; `CACHE_VERSION` auf v49 |
+| B1 | `96bfbf2` | `js/views/stats.js`; `quelltextDerModule()` in `helpers.mjs`; `CACHE_VERSION` auf v50 |
 
 `css/style.css` steckte in A1 und B2 und wurde auf beide Commits aufgeteilt –
 die gelöschte Regel in A1, die `.storage-hint`-Regel in B2. Jeder Commit ist
-für sich grün geprüft (706 / 706 / 711 / 725 / – / 749 / – / 802 Tests), damit
-ein späteres `git bisect` nicht in einem kaputten Stand landet. Die beiden
-Striche sind die reinen Dokument-Commits – dort ändert sich keine Testzahl.
+für sich grün geprüft (706 / 706 / 711 / 725 / – / 749 / – / 802 / – / – / 883 /
+885 / 887 Tests), damit ein späteres `git bisect` nicht in einem kaputten Stand
+landet. Die Striche sind die reinen Dokument-Commits – dort ändert sich keine
+Testzahl.
 
-**Nächster Punkt laut Roadmap §5: B1** – `js/app.js` entflechten, kleine
-Variante: nur Trainingsformular (~430 Zeilen) und Statistik (~400 Zeilen)
-herauslösen. **Der riskanteste Punkt der Roadmap**, weil ohne Build-Step jeder
-vertippte Import-Pfad erst im Browser auffällt, nicht in `node --test`. Deshalb
-ein Bereich pro Commit, und nach jedem Commit die Live-Seite öffnen. Details in
-`ROADMAP.md` §3.
+**B1 hat drei Commits statt einem.** Das ist keine Ausnahme von „ein Punkt =
+ein Commit", sondern stand so im Punkt: einen Bereich pro Commit, nach jedem
+die Seite im Browser öffnen. Genau so ist es gelaufen.
+
+**Nächster Punkt laut Roadmap §5: C3** – ein Fortschrittsbalken an den
+Trophäen. Nach drei Commits, die für den Nutzer nichts geändert haben, ist
+wieder etwas Sichtbares dran. Details in `ROADMAP.md` §4.
 
 **Aus B3 mitzunehmen:** `beep.js` und `wake-lock.js` hatten bis dahin gar keine
 Testdatei – Regel 3 aus `ROADMAP.md` §6 war bei beiden nur zur Hälfte befolgt
@@ -467,3 +551,6 @@ Bugfix in einer Render-Funktion braucht keinen Eintrag.
 | 2026-08-21 | §8 um Schritt 9 und §10 um die Häkchen-Runde ergänzt: ein erledigter Roadmap-Punkt muss an sechs Stellen markiert werden, nicht nur in der Reihenfolge-Tabelle. |
 | 2026-08-21 | **B3** umgesetzt: Testlücken der jungen Module. Neue Testdateien für `beep.js` und `wake-lock.js` – beide standen bis dahin ungeprüft im Baum. 749 → **802 Tests in 24 Dateien**. Kein Produktivcode, `sw v47` bleibt. |
 | 2026-08-21 | §7 nachgezogen: `63fe111` ergänzt. Der gepflegte Live-Hash ist entfallen – er war ab dem jeweils nächsten Commit falsch und musste dreimal hintereinander korrigiert werden. Pages liefert ohnehin den letzten Stand von `master`. |
+| 2026-08-21 | **B1** umgesetzt, kleine Variante, drei Commits. Neu: §3 mit vier Modulen (`format.js`, `views/{dom,training,stats}.js`) und dem Hinweis, dass „die App" nicht mehr `app.js` ist; §4 um die vier APIs und die Erklärung, wie die Ansichten an den Zustand kommen; §7 mit neuen Zahlen. Die `app.js`-Orientierung in §4 ist neu geschrieben: sie hängt jetzt an den Kommentarmarken statt an Zeilennummern, weil die nach jeder Änderung falsch sind. 802 → 887 Tests, `sw` v47 → v50. |
+| 2026-08-21 | Beim Nachzählen für B1 aufgefallen: §3 führte `storage.js` mit **602** Zeilen, tatsächlich sind es **653** – die Fehlerbehandlung aus B2 war nie in die Modulkarte nachgetragen worden. Korrigiert. Alle übrigen 21 Zeilenzahlen stimmten. Genau die Drift, gegen die A2 antrat, nur eine Datei weiter. |
+| 2026-08-21 | Ebenfalls beim Nachzählen aufgefallen und in §4 vermerkt: `Statistik` ist die **letzte** Kommentarmarke in `app.js` und begrenzt deshalb nichts – Lauf-Liste, Fehleranzeige und Service-Worker stehen mit unter ihr. Das war schon vor B1 so und stand nirgends. |
