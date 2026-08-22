@@ -1,6 +1,6 @@
 # FunRun – Projektkontext (Gedächtnisdatei)
 
-> **Stand: 2026-08-22** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v59`
+> **Stand: 2026-08-22** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v60`
 >
 > **Diese Datei ist das Gedächtnis des Projekts.** Sie ersetzt das Einlesen des
 > Quellcodes beim Start eines neuen Chats. Wird sie nicht gepflegt, ist sie
@@ -481,7 +481,7 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Übungen: 27** in 5 Kategorien (`warmup`, `drills`, `kraft`, `mobility`, `regeneration`)
 - **Bereiche/Tabs: 5** – `start`, `exercises`, `training`, `trophies`, `profile`
   (`data-view` / `#view-…` in `index.html`)
-- **Tests: 1008** in 27 Dateien (`node --test`, alle grün)
+- **Tests: 1012** in 27 Dateien (`node --test`, alle grün)
 - **Trophäen mit Anzeige: 60 von 62** – 55 mit Balken (`progress()`), 5 mit
   Zeile (`standing()`, seit C3). Ohne beides nur `neue-bestzeit` und
   `comeback`; warum, steht als Kommentar über `ACHIEVEMENTS`. Trophäen-XP
@@ -490,13 +490,13 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Werkzeuge: 1** – `tools/mess-history.mjs` (kein Teil der App: nicht in
   `APP_SHELL`, keine Testdatei; siehe den Dateikopf dort)
 - **`js/app.js`: 3375 Zeilen**, 145 Funktionen (vor B1: 4132)
-- **`sw.js`: `funrun-v59`**
+- **`sw.js`: `funrun-v60`**
 - Letzte Commits (neueste zuerst, Stand des Repos):
-  1. Symbole statt Zeichen an vier Knoepfen
-  2. Hoechstens ein Hinweis, und der nur wo er hingehoert
-  3. Der Akzent markiert wieder das Besondere
-  4. Haekchen-Runde nach C10
-  5. Ein helles Farbschema - und die Vorarbeit, die angeblich getan war
+  1. Eine Sache traegt einen Namen
+  2. Symbole statt Zeichen an vier Knoepfen
+  3. Hoechstens ein Hinweis, und der nur wo er hingehoert
+  4. Der Akzent markiert wieder das Besondere
+  5. Haekchen-Runde nach C10
 
 ### Roadmap-Block A, B1, B2, B3, B4, C1 bis C4, C8, C10 und C15 sind committet
 
@@ -672,3 +672,4 @@ Bugfix in einer Render-Funktion braucht keinen Eintrag.
 | 2026-08-22 | **D1** umgesetzt (Roadmap-Block D, neu in `ROADMAP.md` §4b): der Akzent ist wieder die Ausnahme. Neu in §6 die Regel zu `--accent-text` – `--accent` als Schrift auf `--sunken` sind im hellen Schema 4,34:1 und reissen die 4,5:1. Der Kommentar im hellen Block nannte 4,7:1 und 5,2:1, aber für `--bg` und `--surface`; die eingesenkte Fläche stand nicht in der Liste. 981 → **993 Tests**, `sw` v56 → v57. |
 | 2026-08-22 | **D2** umgesetzt: die zwei Hinweise über der Tab-Ebene sind einzeilig, und es steht höchstens einer da. Der Installationshinweis ist an den Start-Tab gebunden, der Update-Hinweis bleibt über allen fünf – er ist der einzige Weg aus einer hängenden alten Fassung. Die Regel steht als `shouldShowInstallHint()` in `pwa.js` und ist dort geprüft. 993 → **1002 Tests**, `sw` v57 → v58. |
 | 2026-08-22 | **D3** umgesetzt: `createIcon()` neu in §4 (`js/views/dom.js`). Die Zeichen `U+1F4C5` und `U+270E` an vier Knöpfen sind Inline-SVG aus der Symbolsammlung in `index.html`; sie erben ihre Farbe über `currentColor` und folgen damit beiden Schemata. 1002 → **1008 Tests**, `sw` v58 → v59. |
+| 2026-08-22 | **D4** umgesetzt: eine Sache, ein Name. Nur Text, den der Nutzer liest – `achievements.js`, die Exports und die Bezeichner bleiben. Ein Test hält das ausdrücklich fest, damit die Umbenennung nicht beim nächsten Aufräumen quer durch acht Dateien weiterläuft. 1008 → **1012 Tests**, `sw` v59 → v60. |

@@ -693,7 +693,7 @@ Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 node --test
 ```
 
-**1008 Tests in 27 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
+**1012 Tests in 27 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
 Testrunner von Node — keine Abhängigkeiten, kein Framework, nichts zu
 installieren.
 
@@ -701,8 +701,8 @@ installieren.
 |---|--:|---|
 | `tests/achievements.test.mjs` | 89 | jede Bedingung knapp darunter und darauf, und dass jede offene Trophäe ihren Stand zeigt |
 | `tests/stats.test.mjs` | 82 | Summen, Serien mit Lücken, Raster, Pace-Verlauf, Bestzeiten |
+| `tests/styles.test.mjs` | 82 | CSS- und Markup-Regeln, die Node nicht ausführen kann; Auswahlreihen gegen ihre Datenquelle; keine Farbe ausserhalb der Token |
 | `tests/validation.test.mjs` | 80 | Pflicht- und Optionalfelder, erfundene Kalendertage, Gefühlsskala, Wetter, Splits |
-| `tests/styles.test.mjs` | 78 | CSS- und Markup-Regeln, die Node nicht ausführen kann; Auswahlreihen gegen ihre Datenquelle; keine Farbe ausserhalb der Token |
 | `tests/transfer.test.mjs` | 69 | Export-Roundtrip, kaputte und halbe Importdateien |
 | `tests/storage.test.mjs` | 64 | Anlegen/Ändern/Löschen/Ersetzen, Neuberechnung, volles Fach, kein Feld geht verloren |
 | `tests/imports.test.mjs` | 62 | jeder Import-Pfad und -Name gegen den Dateibaum |

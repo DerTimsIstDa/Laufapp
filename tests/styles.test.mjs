@@ -852,3 +852,47 @@ describe('Knopfsymbole sind gezeichnet, nicht getippt', () => {
     assert.ok(block.includes('fill: none'), 'die Symbole sind Striche, keine Flaechen');
   });
 });
+
+/**
+ * Eine Sache, ein Name (D4).
+ *
+ * Auf dem Start-Tab stand "XP aus Achievements", waehrend der Tab daneben
+ * "Trophaeen" heisst - eine Sache, zwei Namen, auf demselben Bildschirm.
+ *
+ * Der Code heisst weiter achievements.js: die Datei, ihre Exports und die
+ * Bezeichner bleiben, wie sie sind. Geprueft wird ausschliesslich das, was
+ * der Nutzer liest.
+ */
+describe('Eine Sache traegt einen Namen', () => {
+  /** Der sichtbare Text des Markups - Tags und damit auch die ids raus. */
+  const sichtbar = html.replace(/<[^>]*>/g, ' ');
+
+  test('im Markup steht kein "Achievement"', () => {
+    assert.ok(
+      !sichtbar.includes('Achievement'),
+      'Der Tab heisst Trophaeen - dann heisst es ueberall Trophaeen'
+    );
+  });
+
+  test('"Trophaeen" steht sehr wohl da', () => {
+    // Gegenprobe: fiele das Wort ganz weg, waere der Test darueber aus dem
+    // falschen Grund gruen.
+    assert.ok(sichtbar.includes('Trophäen'), 'das Wort ist ganz verschwunden');
+  });
+
+  test('auch keine Beschriftung aus dem Code sagt "Achievement"', () => {
+    // Beschriftungen entstehen zur Laufzeit. Gesucht wird deshalb in den
+    // Zeichenketten der Module, nicht in den Bezeichnern daneben.
+    const texte = app.match(/'[^'\n]*'|"[^"\n]*"/g) ?? [];
+    const treffer = texte.filter((t) => t.includes('Achievement'));
+
+    assert.deepEqual(treffer, [], 'diese Zeichenketten sieht der Nutzer');
+  });
+
+  test('der Code darf weiter Achievement heissen', () => {
+    // Ausdruecklich festgehalten, damit niemand beim naechsten Aufraeumen
+    // die Exports mitnimmt: das waere eine Umbenennung quer durch acht
+    // Dateien fuer null sichtbaren Gewinn.
+    assert.ok(app.includes('evaluateAchievements'), 'der Export wurde umbenannt');
+  });
+});

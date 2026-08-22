@@ -57,7 +57,8 @@ A. Hygiene              B. Struktur               C. Produkt (hier sind
                                                     ○ C5–C14 offen
 
 D. Politur (aus der Sichtprüfung, §4b)
-   ✅ D1 Akzent   ✅ D2 Hinweisbanner   ✅ D3 Symbole   ⬅ D4 Sprache   ○ D5–D8 offen
+   ✅ D1 Akzent   ✅ D2 Hinweisbanner   ✅ D3 Symbole   ✅ D4 Sprache
+   ⬅ D5 Kachel-Waise   ○ D6–D8 offen
 ```
 
 **B1 ist in der kleinen Variante umgesetzt**: Trainingsformular und Statistik
@@ -1099,13 +1100,13 @@ Messung etwas anderes ergab als die Beschreibung, steht es im Ergebnis.
 | D1 | Der Akzent ist inflationär | M | ✅ |
 | D2 | Zwei Hinweisbanner fressen den halben ersten Bildschirm | S | ✅ |
 | D3 | Ein buntes Emoji in einer monochromen App | S | ✅ |
-| D4 | Sprachbruch: „Achievements" neben „Trophäen" | S | ⬜ |
+| D4 | Sprachbruch: „Achievements" neben „Trophäen" | S | ✅ |
 | D5 | Kachel-Waise in der Statistik | S | ⬜ |
 | D6 | Zeilenumbruch in der Pace-Kachel | S | ⬜ |
 | D7 | „Statistik" und „Gesamtstatistik" sind nicht unterscheidbar | S | ⬜ |
 | D8 | Filterchips im Trophäen-Tab | S | ⬜ |
 
-**Stand: 3 von 8 erledigt.** Als Nächstes D4.
+**Stand: 4 von 8 erledigt.** Als Nächstes D5.
 
 ### ✅ D1 · Der Akzent ist inflationär · `css/style.css`, `js/app.js`, `js/stats.js`
 
@@ -1220,9 +1221,25 @@ nicht. Ein Test prüft jede benutzte `id` gegen die Definitionen.
 **Der Strich ist 1,7 statt 1,8** wie in der Tab-Leiste: auf 20 px wirkt
 derselbe Strich schwerer als auf 22.
 
-### D4 · Sprachbruch: „Achievements" neben „Trophäen" · `index.html`, `README.md`
+### ✅ D4 · Sprachbruch: „Achievements" neben „Trophäen" · `index.html`
 
 Eine Sache, zwei Namen, auf demselben Bildschirm.
+
+**Ergebnis.** Ein Wort. Die Suche über das ganze Projekt ergab **genau eine**
+Stelle, die der Nutzer liest – `index.html`, die XP-Aufschlüsselung auf dem
+Start-Tab. Alle übrigen 30 Treffer sind Bezeichner und Kommentare
+(`evaluateAchievements`, `achievements.js`, `renderAchievements`) und bleiben
+unangetastet.
+
+**`README.md` brauchte nichts:** dort kam das Wort kein einziges Mal vor. Der
+Punkt vermutete es, der Code widerlegte es.
+
+**Vier Tests statt einem**, weil ein Wort leicht wieder hereinrutscht: einer
+prüft den sichtbaren Text des Markups, einer die Zeichenketten der Module
+(Beschriftungen entstehen zur Laufzeit), einer ist die Gegenprobe, dass
+„Trophäen" überhaupt noch dasteht, und einer hält ausdrücklich fest, dass die
+**Exports weiter `Achievement` heißen dürfen** – sonst nimmt sie das nächste
+Aufräumen mit, quer durch acht Dateien und für null sichtbaren Gewinn.
 
 ### D5 · Kachel-Waise in der Statistik · `css/style.css`, `js/app.js`
 
@@ -1297,8 +1314,8 @@ wieder Hierarchie hinzu. Andersherum hätte D1 sie gleich wieder eingerissen.
 | D1 | Der Akzent ist inflationär | M | ✅ erledigt |
 | D2 | Zwei Hinweisbanner über allen Tabs | S | ✅ erledigt |
 | D3 | Buntes Emoji in monochromer App | S | ✅ erledigt |
-| D4 | „Achievements" neben „Trophäen" | S | ⬅ **als Nächstes** |
-| D5 | Kachel-Waise in der Statistik | S | offen |
+| D4 | „Achievements" neben „Trophäen" | S | ✅ erledigt |
+| D5 | Kachel-Waise in der Statistik | S | ⬅ **als Nächstes** |
 | D6 | Zeilenumbruch in der Pace-Kachel | S | offen |
 | D7 | Statistik ≠ Gesamtstatistik | S | offen |
 | D8 | Filterchips im Trophäen-Tab | S | offen |
@@ -1488,3 +1505,4 @@ Fleißaufgabe, sondern der halbe Zweck dieser Datei.
 | 2026-08-22 | **D1** umgesetzt: der Akzent ist wieder die Ausnahme. Statistik-Karte von 13 auf 2 grüne Flächen. **Dabei einen Kontrastfehler gefunden, den es schon gab:** `--accent` als Schrift auf `--sunken` sind im hellen Schema 4,34:1 – der Kommentar im hellen Block nannte 4,7:1 und 5,2:1, aber für `--bg` und `--surface`. Neu ist `--accent-text` (4,73:1 gemessen). 981 → 993 Tests, `sw` v56 → v57. |
 | 2026-08-22 | **D2** umgesetzt: beide Hinweise einzeilig, höchstens einer gleichzeitig, der Installationshinweis nur im Start-Tab. Erste Trophäe von y=429 auf y=245. **Die Begründung neben dem Titel ist dabei entfallen** – bei 390 px hat die Zeile 278 px, der Titel braucht 205, mit Begründung wären es 340. Sie steht jetzt im `title` und im README. §1.5 nachgezogen. 993 → 1002 Tests, `sw` v57 → v58. |
 | 2026-08-22 | **D3** umgesetzt: die Zeichen an den Knöpfen sind Inline-SVG mit `currentColor`. **Es waren vier Stellen, nicht zwei** – denselben Stift trugen auch Lauf-Liste und Trainingsplan, und nur einen zu ersetzen hätte drei verschiedene Stifte hinterlassen. Der Kalender stand schon als Geometrie im Training-Tab und steht jetzt einmal in der Sammlung statt zweimal. 1002 → 1008 Tests, `sw` v58 → v59. |
+| 2026-08-22 | **D4** umgesetzt: „Achievements" heißt im sichtbaren Text jetzt „Trophäen". **Es war genau ein Wort** – alle übrigen 30 Treffer sind Bezeichner und Kommentare und bleiben. Das `README.md` brauchte nichts: dort kam das Wort nie vor, anders als der Punkt vermutete. 1008 → 1012 Tests, `sw` v59 → v60. |
