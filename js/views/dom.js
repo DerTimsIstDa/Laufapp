@@ -247,3 +247,24 @@ export function createSvg(tag, attribute, text = null) {
   if (text !== null) knoten.textContent = text;
   return knoten;
 }
+
+/**
+ * Ein Symbol aus der Sammlung oben in `index.html`.
+ *
+ * Immer `aria-hidden`: die Beschriftung sitzt als `aria-label` am Knopf, und
+ * zwei Quellen fuer denselben Namen waeren eine zu viel.
+ *
+ * Warum ueberhaupt: an diesen Stellen standen Zeichen - `U+1F4C5` als
+ * Kalender und `U+270E` als Stift. Das erste rendert als farbiges
+ * System-Emoji und ist in einer monochromen App der staerkste Stilbruch pro
+ * Flaeche; das zweite kippt je nach Font und Geraet ebenfalls in die
+ * Emoji-Darstellung. Ein `<use>` erbt seine Farbe ueber `currentColor` und
+ * folgt damit beiden Farbschemata von allein.
+ *
+ * @param {string} id z.B. 'icon-pencil'
+ */
+export function createIcon(id) {
+  const svg = createSvg('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true' });
+  svg.append(createSvg('use', { href: `#${id}` }));
+  return svg;
+}

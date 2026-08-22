@@ -767,3 +767,88 @@ describe('Hinweise ueber der Tab-Ebene bleiben schmal', () => {
     );
   });
 });
+
+/**
+ * Symbole statt Zeichen (D3).
+ *
+ * An vier Knoepfen standen Zeichen: U+1F4C5 als Kalender, U+270E als Stift.
+ * Das erste rendert als farbiges System-Emoji - in einer monochromen App der
+ * staerkste Stilbruch pro Flaeche. Das zweite ist ein Textzeichen und rendert
+ * meist einfarbig, kippt aber je nach Font und Geraet ebenfalls.
+ */
+describe('Knopfsymbole sind gezeichnet, nicht getippt', () => {
+  test('kein Emoji und kein Zeichen-Symbol im Quelltext der Module', () => {
+    // Der Bereich der Emoji-Bloecke plus die beiden Zeichen, die hier standen.
+    const verdaechtig = [...app].filter((z) => {
+      const c = z.codePointAt(0);
+      return c === 0x270e || c === 0x1f4c5 || (c >= 0x1f300 && c <= 0x1faff);
+    });
+
+    assert.deepEqual(
+      verdaechtig,
+      [],
+      'Symbole gehoeren als <use> in die Sammlung, nicht als Zeichen in den Code'
+    );
+  });
+
+  test('die vier Knoepfe holen ihr Symbol aus der Sammlung', () => {
+    assert.equal(
+      app.split("createIcon('icon-pencil')").length - 1,
+      3,
+      'erwartet: Uebungskarte, Lauf-Liste, Trainingsplan'
+    );
+    assert.equal(app.split("createIcon('icon-calendar-plus')").length - 1, 1);
+  });
+
+  test('jedes benutzte Symbol ist auch definiert', () => {
+    // Ein <use> auf eine unbekannte id zeichnet nichts - und ein leeres <use>
+    // sieht man im Browser nicht, weil an der Stelle einfach nichts steht.
+    // Zwei Schreibweisen: im Markup als href="#id", im Code als createIcon('id').
+    const benutzt = new Set();
+    for (const t of html.matchAll(/href="#(icon-[a-z-]+)"/g)) benutzt.add(t[1]);
+    for (const t of app.matchAll(/createIcon\('(icon-[a-z-]+)'\)/g)) benutzt.add(t[1]);
+
+    assert.ok(benutzt.size > 5, 'die Suche findet fast nichts - dann prueft sie nichts');
+
+    for (const id of benutzt) {
+      assert.ok(
+        html.includes('<g id="' + id + '">'),
+        id + ' wird benutzt, ist aber nicht definiert'
+      );
+    }
+
+    assert.ok(benutzt.has('icon-pencil'), 'der Stift wird nicht benutzt');
+    assert.ok(benutzt.has('icon-calendar-plus'), 'der Kalender wird nicht benutzt');
+  });
+
+  test('der Kalender steht einmal da, nicht zweimal', () => {
+    // Der Training-Tab zeigt dieselbe Zeichnung wie der Einplanen-Knopf.
+    // Zweimal dieselbe Geometrie laeuft irgendwann auseinander, und niemand
+    // bemerkt es - deshalb holen beide sie aus derselben Definition.
+    assert.equal(html.split('<g id="icon-calendar-plus">').length - 1, 1, 'einmal definiert');
+    assert.equal(html.split('href="#icon-calendar-plus"').length - 1, 1, 'der Tab holt sie');
+    assert.equal(
+      app.split("createIcon('icon-calendar-plus')").length - 1,
+      1,
+      'der Knopf holt sie'
+    );
+    assert.ok(
+      !html.includes('<rect x="4" y="5.5" width="16" height="14" rx="2.5"/><path d="M8 3.5v4"/>'),
+      'der Tab zeichnet den Kalender wieder selbst'
+    );
+  });
+
+  test('das Symbol traegt keinen Namen, der Knopf schon', () => {
+    assert.ok(app.includes("'aria-hidden': 'true'"), 'createIcon setzt kein aria-hidden');
+    assert.ok(app.includes('einplanen.setAttribute(\'aria-label\''), 'der Knopf verliert seine Beschriftung');
+  });
+
+  test('die Symbole erben ihre Farbe', () => {
+    const von = css.indexOf('.icon-button svg {');
+    assert.ok(von > 0, '.icon-button svg fehlt');
+    const block = css.slice(von, css.indexOf('}', von));
+
+    assert.ok(block.includes('stroke: currentColor'), 'ohne currentColor folgt das Symbol keinem Schema');
+    assert.ok(block.includes('fill: none'), 'die Symbole sind Striche, keine Flaechen');
+  });
+});

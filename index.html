@@ -28,7 +28,8 @@
     <code>http://localhost:…</code>-Adresse.
   </div>
 
-  <!-- Symbole der Stoppuhr, einmal definiert und per <use> geholt. -->
+  <!-- Symbole, einmal definiert und per <use> geholt. Sie erben ihre Farbe
+       ueber currentColor und folgen damit beiden Farbschemata von allein. -->
   <svg width="0" height="0" aria-hidden="true" style="position:absolute">
     <defs>
       <g id="icon-run">
@@ -83,6 +84,24 @@
       <g id="icon-snow">
         <path d="M12 3.5v17M4.64 7.75l14.72 8.5M19.36 7.75 4.64 16.25"/>
         <path d="m9.5 5.8 2.5 2 2.5-2M9.5 18.2l2.5-2 2.5 2"/>
+      </g>
+
+      <!-- Kalender mit Plus: "für einen Tag vormerken". Dieselbe Zeichnung
+           traegt der Training-Tab; sie steht deshalb hier einmal statt
+           zweimal, sonst laufen die beiden irgendwann auseinander. -->
+      <g id="icon-calendar-plus">
+        <rect x="4" y="5.5" width="16" height="14" rx="2.5"/>
+        <path d="M8 3.5v4"/>
+        <path d="M16 3.5v4"/>
+        <path d="M4 10h16"/>
+        <path d="M12 13v4"/>
+        <path d="M10 15h4"/>
+      </g>
+      <!-- Stift: "Zahl von Hand korrigieren". Ersetzt das Zeichen U+270E,
+           das je nach Font und Geraet in die Emoji-Darstellung kippt. -->
+      <g id="icon-pencil">
+        <path d="M16.5 4.5 19.5 7.5 8 19l-4 1 1-4z"/>
+        <path d="m14.5 6.5 3 3"/>
       </g>
     </defs>
   </svg>
@@ -973,7 +992,7 @@
         <span>Übungen</span>
       </button>
       <button type="button" class="tab" id="tab-training" role="tab" aria-selected="false" aria-controls="view-training" data-view="training" tabindex="-1">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14" rx="2.5"/><path d="M8 3.5v4"/><path d="M16 3.5v4"/><path d="M4 10h16"/><path d="M12 13v4"/><path d="M10 15h4"/></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-calendar-plus"></use></svg>
         <span>Training</span>
       </button>
       <button type="button" class="tab" id="tab-trophies" role="tab" aria-selected="false" aria-controls="view-trophies" data-view="trophies" tabindex="-1">

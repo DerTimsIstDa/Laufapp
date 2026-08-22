@@ -862,6 +862,19 @@ button:disabled {
   font-weight: 400;
 }
 
+/* Gleiche Bauart wie die Symbole der Tab-Leiste: currentColor, damit sie
+   beiden Farbschemata und jedem Hover-Zustand von allein folgen. Etwas
+   duenner als dort (1,8) - auf 20 px wirkt derselbe Strich schwerer. */
+.icon-button svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .icon-button:hover {
   background: var(--surface-hover);
   color: var(--text);
@@ -880,6 +893,11 @@ button:disabled {
     width: 2.75rem;
     height: 2.75rem;
     font-size: 1.2rem;
+  }
+
+  .icon-button svg {
+    width: 1.4rem;
+    height: 1.4rem;
   }
 
   button.small {

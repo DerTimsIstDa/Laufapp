@@ -57,7 +57,7 @@ A. Hygiene              B. Struktur               C. Produkt (hier sind
                                                     ○ C5–C14 offen
 
 D. Politur (aus der Sichtprüfung, §4b)
-   ✅ D1 Akzent aufgeräumt   ✅ D2 Hinweisbanner   ⬅ D3 Emoji   ○ D4–D8 offen
+   ✅ D1 Akzent   ✅ D2 Hinweisbanner   ✅ D3 Symbole   ⬅ D4 Sprache   ○ D5–D8 offen
 ```
 
 **B1 ist in der kleinen Variante umgesetzt**: Trainingsformular und Statistik
@@ -1098,14 +1098,14 @@ Messung etwas anderes ergab als die Beschreibung, steht es im Ergebnis.
 |---|---|--:|---|
 | D1 | Der Akzent ist inflationär | M | ✅ |
 | D2 | Zwei Hinweisbanner fressen den halben ersten Bildschirm | S | ✅ |
-| D3 | Ein buntes Emoji in einer monochromen App | S | ⬜ |
+| D3 | Ein buntes Emoji in einer monochromen App | S | ✅ |
 | D4 | Sprachbruch: „Achievements" neben „Trophäen" | S | ⬜ |
 | D5 | Kachel-Waise in der Statistik | S | ⬜ |
 | D6 | Zeilenumbruch in der Pace-Kachel | S | ⬜ |
 | D7 | „Statistik" und „Gesamtstatistik" sind nicht unterscheidbar | S | ⬜ |
 | D8 | Filterchips im Trophäen-Tab | S | ⬜ |
 
-**Stand: 2 von 8 erledigt.** Als Nächstes D3.
+**Stand: 3 von 8 erledigt.** Als Nächstes D4.
 
 ### ✅ D1 · Der Akzent ist inflationär · `css/style.css`, `js/app.js`, `js/stats.js`
 
@@ -1194,9 +1194,31 @@ eines Vorschlags und trägt eine wechselnde Meldung – da ist die zweite Zeile
 keine Verschwendung. Ein Test hält diese Ausnahme fest, damit sie nicht beim
 nächsten Aufräumen mitgeht.
 
-### D3 · Ein buntes Emoji in einer monochromen App · `index.html`, `js/app.js`
+### ✅ D3 · Ein buntes Emoji in einer monochromen App · `index.html`, `js/app.js`, `js/views/`
 
 `einplanen.textContent = '📅'` rendert als farbiges System-Emoji.
+
+**Ergebnis.** Zwei neue Symbole in der Sammlung – `icon-calendar-plus` und
+`icon-pencil` –, dazu `createIcon()` in `js/views/dom.js`. Beide tragen
+`aria-hidden`, das `aria-label` bleibt am Knopf.
+
+**Es waren vier Stellen, nicht zwei.** Der Punkt nannte den Kalender und den
+Stift daneben; denselben Stift tragen aber auch die Lauf-Liste und der
+Trainingsplan. Nur einen zu ersetzen hätte einen Stift in drei Ausführungen
+hinterlassen – schlimmer als vorher. Alle drei sind jetzt dasselbe Symbol.
+
+**Der Kalender stand schon im Haus.** Der Training-Tab zeichnete genau diese
+Geometrie inline. Statt sie ein zweites Mal hinzuschreiben, steht sie einmal
+in der Sammlung, und Tab wie Knopf holen sie von dort. Ein Test hält fest,
+dass der Tab sie nicht wieder selbst zeichnet.
+
+**Geprüft, nicht angenommen:** Beide Symbole zeichnen wirklich etwas – im
+Browser gemessen, `getBBox()` liefert 16×16 bzw. 15,5×15,5 im 24er-Feld. Ein
+`<use>` auf eine unbekannte `id` bleibt sonst stumm leer, und das sieht man
+nicht. Ein Test prüft jede benutzte `id` gegen die Definitionen.
+
+**Der Strich ist 1,7 statt 1,8** wie in der Tab-Leiste: auf 20 px wirkt
+derselbe Strich schwerer als auf 22.
 
 ### D4 · Sprachbruch: „Achievements" neben „Trophäen" · `index.html`, `README.md`
 
@@ -1274,8 +1296,8 @@ wieder Hierarchie hinzu. Andersherum hätte D1 sie gleich wieder eingerissen.
 |--:|---|--:|---|
 | D1 | Der Akzent ist inflationär | M | ✅ erledigt |
 | D2 | Zwei Hinweisbanner über allen Tabs | S | ✅ erledigt |
-| D3 | Buntes Emoji in monochromer App | S | ⬅ **als Nächstes** |
-| D4 | „Achievements" neben „Trophäen" | S | offen |
+| D3 | Buntes Emoji in monochromer App | S | ✅ erledigt |
+| D4 | „Achievements" neben „Trophäen" | S | ⬅ **als Nächstes** |
 | D5 | Kachel-Waise in der Statistik | S | offen |
 | D6 | Zeilenumbruch in der Pace-Kachel | S | offen |
 | D7 | Statistik ≠ Gesamtstatistik | S | offen |
@@ -1465,3 +1487,4 @@ Fleißaufgabe, sondern der halbe Zweck dieser Datei.
 | 2026-08-22 | **Block D angelegt** (§4b) – acht Punkte aus einer Sichtprüfung der laufenden App bei 390×844. Als `4b` nummeriert und nicht als neues `5`, weil §5, §6 und §7 überall zitiert werden und ein Verschieben jede dieser Verweisungen still falsch gemacht hätte; die Datei kennt die Buchstaben-Endung von `B2b` und `B4b` bereits. **Der Anlass ist neu:** A bis C kamen aus dem Lesen des Codes, D kommt aus dem Ansehen des Ergebnisses – kein Test der Suite hätte einen dieser acht Punkte gefunden. |
 | 2026-08-22 | **D1** umgesetzt: der Akzent ist wieder die Ausnahme. Statistik-Karte von 13 auf 2 grüne Flächen. **Dabei einen Kontrastfehler gefunden, den es schon gab:** `--accent` als Schrift auf `--sunken` sind im hellen Schema 4,34:1 – der Kommentar im hellen Block nannte 4,7:1 und 5,2:1, aber für `--bg` und `--surface`. Neu ist `--accent-text` (4,73:1 gemessen). 981 → 993 Tests, `sw` v56 → v57. |
 | 2026-08-22 | **D2** umgesetzt: beide Hinweise einzeilig, höchstens einer gleichzeitig, der Installationshinweis nur im Start-Tab. Erste Trophäe von y=429 auf y=245. **Die Begründung neben dem Titel ist dabei entfallen** – bei 390 px hat die Zeile 278 px, der Titel braucht 205, mit Begründung wären es 340. Sie steht jetzt im `title` und im README. §1.5 nachgezogen. 993 → 1002 Tests, `sw` v57 → v58. |
+| 2026-08-22 | **D3** umgesetzt: die Zeichen an den Knöpfen sind Inline-SVG mit `currentColor`. **Es waren vier Stellen, nicht zwei** – denselben Stift trugen auch Lauf-Liste und Trainingsplan, und nur einen zu ersetzen hätte drei verschiedene Stifte hinterlassen. Der Kalender stand schon als Geometrie im Training-Tab und steht jetzt einmal in der Sammlung statt zweimal. 1002 → 1008 Tests, `sw` v58 → v59. |

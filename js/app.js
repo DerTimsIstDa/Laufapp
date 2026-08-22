@@ -138,7 +138,7 @@ import {
   XP_PER_EXERCISE,
   MAX_EXERCISE_COUNT,
 } from './exercise-log.js';
-import { el, SVG_NS } from './views/dom.js';
+import { el, SVG_NS, createIcon } from './views/dom.js';
 import {
   connectTrainingView,
   setupSessionForm,
@@ -845,7 +845,7 @@ function createExerciseCard(exercise, position, { anzahl, heuteErledigt, heuteGe
   const einplanen = document.createElement('button');
   einplanen.type = 'button';
   einplanen.className = 'icon-button';
-  einplanen.textContent = '📅';
+  einplanen.append(createIcon('icon-calendar-plus'));
   einplanen.setAttribute('aria-label', `${exercise.name} einplanen`);
   einplanen.addEventListener('click', () => {
     planningExerciseId = planningExerciseId === exercise.id ? null : exercise.id;
@@ -856,7 +856,7 @@ function createExerciseCard(exercise, position, { anzahl, heuteErledigt, heuteGe
   const korrigieren = document.createElement('button');
   korrigieren.type = 'button';
   korrigieren.className = 'icon-button';
-  korrigieren.textContent = '✎';
+  korrigieren.append(createIcon('icon-pencil'));
   korrigieren.setAttribute('aria-label', `Zähler von ${exercise.name} korrigieren`);
   korrigieren.addEventListener('click', () => {
     editingExerciseId = exercise.id;
@@ -3283,7 +3283,7 @@ function createRunItem(run) {
   edit.type = 'button';
   edit.className = 'icon-button';
   edit.dataset.editId = run.id;
-  edit.textContent = '✎';
+  edit.append(createIcon('icon-pencil'));
   edit.setAttribute('aria-label', `Lauf vom ${formatDate(run.date)} bearbeiten`);
 
   const remove = document.createElement('button');

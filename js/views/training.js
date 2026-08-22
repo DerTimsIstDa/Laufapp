@@ -11,7 +11,7 @@
  * sieht diese Datei immer den aktuellen Stand.
  */
 
-import { el } from './dom.js';
+import { el, createIcon } from './dom.js';
 import { numberFormat, formatDate, todayIso, round } from '../format.js';
 import { firstErrorMessage } from '../validation.js';
 import { addSession, updateSession, removeSession } from '../storage.js';
@@ -432,7 +432,7 @@ function createPlanItem({ session, run, status, targetKm, xp }) {
   bearbeiten.type = 'button';
   bearbeiten.className = 'icon-button';
   bearbeiten.dataset.editSession = session.id;
-  bearbeiten.textContent = '✎';
+  bearbeiten.append(createIcon('icon-pencil'));
   bearbeiten.setAttribute('aria-label', `Einheit vom ${formatDate(session.date)} bearbeiten`);
 
   const entfernen = document.createElement('button');

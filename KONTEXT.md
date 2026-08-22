@@ -1,6 +1,6 @@
 # FunRun – Projektkontext (Gedächtnisdatei)
 
-> **Stand: 2026-08-22** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v58`
+> **Stand: 2026-08-22** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v59`
 >
 > **Diese Datei ist das Gedächtnis des Projekts.** Sie ersetzt das Einlesen des
 > Quellcodes beim Start eines neuen Chats. Wird sie nicht gepflegt, ist sie
@@ -80,7 +80,7 @@ schaut nie in beide.
 | `js/app.js` | 3375 | Verdrahtung und die noch nicht herausgelösten Bereiche | Start, Läufe, Übungen, Trophäen, Profil, Intervall, Teilen, Export |
 | `js/views/training.js` | 498 | Trainingsformular, Planliste, Löschrückfrage | irgendetwas am Trainingsplan |
 | `js/views/stats.js` | 422 | Profil-Kennzahlen, Aktivitätsraster, Pace-Verlauf, Bestzeiten, Trophäen-Übersicht | irgendetwas an der Statistik im Profil |
-| `js/views/dom.js` | 242 | die `getElementById`-Verweise (`el`), `SVG_NS`, `createSvg` | ein neues Element im Markup |
+| `js/views/dom.js` | 270 | die `getElementById`-Verweise (`el`), `SVG_NS`, `createSvg`, `createIcon` | ein neues Element im Markup, ein neues Symbol am Knopf |
 | `js/format.js` | 85 | rein: Zahlen, Daten, Zeiten in Anzeigeform | eine neue Formatierung |
 | `js/storage.js` | 786 | Laden/Speichern/Ändern aller Datentöpfe | neues persistiertes Feld, neuer Datentopf |
 | `js/achievements.js` | 997 | Trophäen-Definitionen + `buildRunStats()` | neue Trophäe, neue Kennzahl für Bedingungen, Stand einer offenen Trophäe |
@@ -245,7 +245,11 @@ fassen das DOM an und laden in Node nicht; für sie gibt es zwei Tests, die den
 `formatDays(count)` · `formatMonth("JJJJ-MM")` · `formatAveragePace(minPerKm)` ·
 `round(v)` (2 Stellen) · `r1(v)` (1 Stelle)
 
-**`views/dom.js`** `el` · `SVG_NS` · `createSvg(tag, attribute, text?)`
+**`views/dom.js`** `el` · `SVG_NS` · `createSvg(tag, attribute, text?)` ·
+`createIcon(id)` – ein `<svg><use href="#id">` aus der Symbolsammlung oben in
+`index.html`, immer `aria-hidden`; die Beschriftung bleibt als `aria-label` am
+Knopf. Seit D3, weil an vier Knöpfen Zeichen standen (`📅`, `✎`) und das erste
+als farbiges System-Emoji rendert.
 
 **`views/training.js`** `connectTrainingView(verdrahtung)` ·
 `setupSessionForm()` · `resetSessionForm()` · `renderTraining()` ·
@@ -477,7 +481,7 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Übungen: 27** in 5 Kategorien (`warmup`, `drills`, `kraft`, `mobility`, `regeneration`)
 - **Bereiche/Tabs: 5** – `start`, `exercises`, `training`, `trophies`, `profile`
   (`data-view` / `#view-…` in `index.html`)
-- **Tests: 1002** in 27 Dateien (`node --test`, alle grün)
+- **Tests: 1008** in 27 Dateien (`node --test`, alle grün)
 - **Trophäen mit Anzeige: 60 von 62** – 55 mit Balken (`progress()`), 5 mit
   Zeile (`standing()`, seit C3). Ohne beides nur `neue-bestzeit` und
   `comeback`; warum, steht als Kommentar über `ACHIEVEMENTS`. Trophäen-XP
@@ -486,13 +490,13 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Werkzeuge: 1** – `tools/mess-history.mjs` (kein Teil der App: nicht in
   `APP_SHELL`, keine Testdatei; siehe den Dateikopf dort)
 - **`js/app.js`: 3375 Zeilen**, 145 Funktionen (vor B1: 4132)
-- **`sw.js`: `funrun-v58`**
+- **`sw.js`: `funrun-v59`**
 - Letzte Commits (neueste zuerst, Stand des Repos):
-  1. Hoechstens ein Hinweis, und der nur wo er hingehoert
-  2. Der Akzent markiert wieder das Besondere
-  3. Haekchen-Runde nach C10
-  4. Ein helles Farbschema - und die Vorarbeit, die angeblich getan war
-  5. Haekchen-Runde nach C8
+  1. Symbole statt Zeichen an vier Knoepfen
+  2. Hoechstens ein Hinweis, und der nur wo er hingehoert
+  3. Der Akzent markiert wieder das Besondere
+  4. Haekchen-Runde nach C10
+  5. Ein helles Farbschema - und die Vorarbeit, die angeblich getan war
 
 ### Roadmap-Block A, B1, B2, B3, B4, C1 bis C4, C8, C10 und C15 sind committet
 
@@ -667,3 +671,4 @@ Bugfix in einer Render-Funktion braucht keinen Eintrag.
 | 2026-08-21 | **Diese Datei hatte recht und wurde überstimmt.** §7 führte seit `28b277a` die Zeile „Trophäen mit `progress()`: 55 von 62" – währenddessen stand C3 in der Roadmap als offener Punkt für M Aufwand. Niemand hat die beiden Dateien nebeneinandergelegt. Für die Roadmap ist daraus eine Regel geworden (erst den Code, sonst wenigstens die andere Datei); hier steht sie als Erinnerung, dass eine gepflegte Zahl nichts nützt, wenn sie keiner liest. |
 | 2026-08-22 | **D1** umgesetzt (Roadmap-Block D, neu in `ROADMAP.md` §4b): der Akzent ist wieder die Ausnahme. Neu in §6 die Regel zu `--accent-text` – `--accent` als Schrift auf `--sunken` sind im hellen Schema 4,34:1 und reissen die 4,5:1. Der Kommentar im hellen Block nannte 4,7:1 und 5,2:1, aber für `--bg` und `--surface`; die eingesenkte Fläche stand nicht in der Liste. 981 → **993 Tests**, `sw` v56 → v57. |
 | 2026-08-22 | **D2** umgesetzt: die zwei Hinweise über der Tab-Ebene sind einzeilig, und es steht höchstens einer da. Der Installationshinweis ist an den Start-Tab gebunden, der Update-Hinweis bleibt über allen fünf – er ist der einzige Weg aus einer hängenden alten Fassung. Die Regel steht als `shouldShowInstallHint()` in `pwa.js` und ist dort geprüft. 993 → **1002 Tests**, `sw` v57 → v58. |
+| 2026-08-22 | **D3** umgesetzt: `createIcon()` neu in §4 (`js/views/dom.js`). Die Zeichen `U+1F4C5` und `U+270E` an vier Knöpfen sind Inline-SVG aus der Symbolsammlung in `index.html`; sie erben ihre Farbe über `currentColor` und folgen damit beiden Schemata. 1002 → **1008 Tests**, `sw` v58 → v59. |
