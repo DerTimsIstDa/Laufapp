@@ -1067,3 +1067,81 @@ describe('Die Gesamtstatistik hat eine eigene Form', () => {
     }
   });
 });
+
+/**
+ * Die Filterchips brechen nicht mehr zufaellig um (D8).
+ *
+ * Drei Chips brauchen bei 390 px zusammen 444 px und haben 332. Zwei passten
+ * nebeneinander, der dritte fiel in die naechste Zeile - das sah nach
+ * umgebrochenem Flex aus, nicht nach Absicht.
+ */
+describe('Filterchips im Trophaeen-Tab', () => {
+  test('die Leiste steht untereinander, nicht umbrechend', () => {
+    assert.ok(
+      html.includes('filter-row filter-row--stack'),
+      'die Trophaeen-Leiste traegt die Stapel-Variante nicht'
+    );
+
+    const von = css.indexOf('.filter-row--stack {');
+    assert.ok(von > 0, '.filter-row--stack fehlt');
+    const block = css.slice(von, css.indexOf('}', von));
+
+    assert.ok(block.includes('flex-direction: column'), 'die Chips stehen nicht untereinander');
+    assert.ok(block.includes('flex-wrap: nowrap'), 'der Umbruch ist noch moeglich');
+  });
+
+  test('alle Chips sind gleich breit', () => {
+    const von = css.indexOf('.filter-row--stack > .chip {');
+    assert.ok(von > 0, 'die Chip-Regel fehlt');
+    const block = css.slice(von, css.indexOf('}', von));
+
+    assert.ok(block.includes('width: 100%'), 'die Chips sind verschieden breit');
+    assert.ok(block.includes('justify-content: space-between'), 'der Stand steht nicht rechts');
+  });
+
+  test('nur diese Leiste, nicht die im Uebungen-Tab', () => {
+    // Dort sind es sieben kurze Chips. Umbrechend lesen die sich als Wolke,
+    // untereinander waeren sie sieben Zeilen.
+    assert.equal(
+      html.split('filter-row--stack').length - 1,
+      1,
+      'die Stapel-Variante steht an mehr als einer Leiste'
+    );
+  });
+
+  test('Beschriftung und Stand stehen als eigene Teile', () => {
+    assert.ok(app.includes("stand.className = 'chip-count'"), 'der Stand steht nicht eigens da');
+  });
+
+  test('der Name bleibt lesbar, obwohl es zwei Teile sind', () => {
+    // Ohne Leerzeichen dazwischen hiesse der Knopf "Meilensteine21/30". Ein
+    // Textknoten dazwischen waere ein drittes Flex-Element und ruinierte die
+    // Ausrichtung - also traegt der Knopf den Namen selbst.
+    assert.ok(
+      app.includes("knopf.setAttribute('aria-label', `${label} ${unlocked}/${total}`)"),
+      'der Knopf hat keinen lesbaren Namen mehr'
+    );
+  });
+
+  test('der Stand tritt ueber das Gewicht zurueck, nicht ueber die Farbe', () => {
+    // --dim auf dem Chip-Grund sind im hellen Schema 4,15:1 und reissen die
+    // 4,5. Dieselbe Falle wie bei --accent in D1, eine Farbe weiter.
+    const von = css.indexOf('.chip-count {');
+    assert.ok(von > 0, '.chip-count fehlt');
+    const block = css.slice(von, css.indexOf('}', von));
+
+    assert.ok(!block.includes('var(--dim)'), '--dim reisst auf --sunken die 4,5:1');
+    assert.ok(block.includes('var(--muted)'), 'der Stand traegt nicht --muted');
+    assert.ok(block.includes('font-weight: 400'), 'ohne leichteres Gewicht tritt nichts zurueck');
+  });
+
+  test('der aktive Chip traegt den Akzent als Schrift richtig', () => {
+    const von = css.indexOf('.chip.active {');
+    const block = css.slice(von, css.indexOf('}', von));
+
+    assert.ok(
+      block.includes('color: var(--accent-text)'),
+      'der aktive Chip nutzt --accent statt --accent-text'
+    );
+  });
+});

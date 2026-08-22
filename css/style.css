@@ -1806,8 +1806,61 @@ textarea:focus {
 
 .chip.active {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
   border-color: var(--accent-line);
+}
+
+/**
+ * Chips untereinander statt umbrechend (D8).
+ *
+ * Die drei Trophaeen-Chips brauchen bei 390 px zusammen 444 px und haben 332.
+ * Zwei passen nebeneinander, der dritte fiel in die naechste Zeile - das sah
+ * nach umgebrochenem Flex aus, nicht nach Absicht.
+ *
+ * Nebeneinander geht nicht: "Herausforderungen 7/18" allein ist 172 px breit,
+ * drei gleiche Drittel waeren 105. Waagerecht scrollend ginge, hilft hier
+ * aber nicht - vom dritten Chip blieben 5 px sichtbar, und das liest sich als
+ * abgeschnitten statt als scrollbar. Also bewusst untereinander, alle gleich
+ * breit, mit dem Stand rechts. Dann stehen die drei Zaehlerstaende in einer
+ * Spalte und lassen sich vergleichen.
+ *
+ * Nur fuer diese Leiste. Der Uebungen-Tab hat sieben kurze Chips; die lesen
+ * sich umbrechend als Wolke, und untereinander waeren sie sieben Zeilen.
+ */
+.filter-row--stack {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: var(--space-1);
+}
+
+.filter-row--stack > .chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 100%;
+  border-radius: var(--radius-md);
+}
+
+/**
+ * Der Stand tritt hinter die Beschriftung zurueck - er beziffert sie, statt
+ * mit ihr um Aufmerksamkeit zu ringen. Im aktiven Chip erbt er dessen Farbe.
+ *
+ * Zurueck ueber das Gewicht, nicht ueber die Farbe: --dim auf dem Chip-Grund
+ * (--sunken) sind im hellen Schema gemessene **4,15:1** und reissen die 4,5.
+ * Der Kommentar an --dim nennt 4,6:1 - das gilt fuer --bg, nicht fuer die
+ * eingesenkte Flaeche. Dieselbe Falle wie bei --accent in D1, eine Farbe
+ * weiter. Mit --muted sind es 5,1:1, und 400 statt 600 laesst den Stand
+ * trotzdem zuruecktreten.
+ */
+.chip-count {
+  color: var(--muted);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.chip.active .chip-count {
+  color: inherit;
 }
 
 .chip:active {

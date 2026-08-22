@@ -1,6 +1,6 @@
 # FunRun – Projektkontext (Gedächtnisdatei)
 
-> **Stand: 2026-08-22** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v63`
+> **Stand: 2026-08-22** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v64`
 >
 > **Diese Datei ist das Gedächtnis des Projekts.** Sie ersetzt das Einlesen des
 > Quellcodes beim Start eines neuen Chats. Wird sie nicht gepflegt, ist sie
@@ -435,13 +435,21 @@ lässt eine neue Trophäe ohne beides nicht durch; die Ausnahmeliste hat genau
 zwei Einträge (`neue-bestzeit`, `comeback`) und ist über `ACHIEVEMENTS`
 begründet. `current: null` heißt „noch nichts gemessen" und ist nicht `0`.
 
-⚠️ **Der Akzent als Schrift ist `--accent-text`, nicht `--accent`** (seit D1).
-Im hellen Schema sind `--accent` (`#5a7600`) auf `--sunken` (`#e9ebe5`) nur
-**4,34:1** – unter den 4,5:1, die 13-px-Schrift braucht. Auf `--bg` und
-`--surface` hält `--accent` die Grenze, auf der eingesenkten Fläche nicht, und
-genau dort stehen Übungskarte und Trophäenkachel. Dieselbe Bauart wie
-`--danger-text`, nur andersherum: Rot muss im Dunklen heller werden, Grün im
-Hellen dunkler. **Wer Akzentschrift auf `--sunken` setzt, nimmt `--accent-text`.**
+⚠️ **`--sunken` ist die Falle im hellen Schema.** Die Kommentare an `--accent`
+und `--dim` nennen Kontrastzahlen, die stimmen – aber für `--bg` (`#f4f5f2`)
+und `--surface` (`#ffffff`). Auf der **eingesenkten** Fläche (`#e9ebe5`) reissen
+beide die 4,5:1, und genau dort sitzen Übungskarte, Trophäenkachel und Chip.
+Gemessen: `--accent` **4,34:1**, `--dim` **4,15:1**. In Block D dreimal
+aufgetreten, jedes Mal an einer anderen Farbe. Daraus folgt:
+
+- **Akzent als Schrift ist `--accent-text`** (`#547000` hell, `#c4f000` dunkel),
+  nie `--accent`. Gemessene 4,73:1. Dieselbe Bauart wie `--danger-text`, nur
+  andersherum: Rot muss im Dunklen heller werden, Grün im Hellen dunkler.
+- **Etwas zurücktreten lassen geht über Gewicht oder Grösse, nicht über
+  `--dim`.** `--dim` ist auf `--sunken` schon zu schwach; `--muted` mit
+  `font-weight: 400` erreicht dasselbe bei 5,1:1.
+- **Vor jeder neuen Farbe auf `--sunken`: nachmessen.** Kein Test fängt das –
+  `styles.test.mjs` liest Regeln, es rechnet keine Kontraste.
 
 ⚠️ **Farben gehören ausschliesslich in die Token-Blöcke** von `css/style.css`
 (`:root` und die zwei hellen). Eine Farbe mitten im Regelwerk lässt sich nicht
@@ -485,7 +493,7 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Übungen: 27** in 5 Kategorien (`warmup`, `drills`, `kraft`, `mobility`, `regeneration`)
 - **Bereiche/Tabs: 5** – `start`, `exercises`, `training`, `trophies`, `profile`
   (`data-view` / `#view-…` in `index.html`)
-- **Tests: 1032** in 27 Dateien (`node --test`, alle grün)
+- **Tests: 1039** in 27 Dateien (`node --test`, alle grün)
 - **Trophäen mit Anzeige: 60 von 62** – 55 mit Balken (`progress()`), 5 mit
   Zeile (`standing()`, seit C3). Ohne beides nur `neue-bestzeit` und
   `comeback`; warum, steht als Kommentar über `ACHIEVEMENTS`. Trophäen-XP
@@ -494,13 +502,13 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Werkzeuge: 1** – `tools/mess-history.mjs` (kein Teil der App: nicht in
   `APP_SHELL`, keine Testdatei; siehe den Dateikopf dort)
 - **`js/app.js`: 3375 Zeilen**, 145 Funktionen (vor B1: 4132)
-- **`sw.js`: `funrun-v63`**
+- **`sw.js`: `funrun-v64`**
 - Letzte Commits (neueste zuerst, Stand des Repos):
-  1. Die wichtigste Zahl sieht aus wie die wichtigste Zahl
-  2. Die Einheit steht kleiner als die Zahl
-  3. Keine Kachel bleibt allein in ihrer Zeile
-  4. Eine Sache traegt einen Namen
-  5. Symbole statt Zeichen an vier Knoepfen
+  1. Filterchips untereinander statt zufaellig umgebrochen
+  2. Die wichtigste Zahl sieht aus wie die wichtigste Zahl
+  3. Die Einheit steht kleiner als die Zahl
+  4. Keine Kachel bleibt allein in ihrer Zeile
+  5. Eine Sache traegt einen Namen
 
 ### Roadmap-Block A, B1, B2, B3, B4, C1 bis C4, C8, C10 und C15 sind committet
 
@@ -680,3 +688,4 @@ Bugfix in einer Render-Funktion braucht keinen Eintrag.
 | 2026-08-22 | **D5** umgesetzt: keine allein stehende Kachel mehr im `.stat-grid`. Reines CSS, kein JavaScript. Zu merken: **das Raster ist ab `40em` dreispaltig**, und dort steht die letzte Kachel bei Rest 1 allein, nicht bei ungerade – zwei Regeln, und die zweite muss die erste mit `grid-column: auto` zurücknehmen. 1012 → **1016 Tests**, `sw` v60 → v61. |
 | 2026-08-22 | **D6** umgesetzt: neu in §3/§4 `splitUnit()` in `format.js`. Die Einheit steht kleiner als die Zahl, damit die Pace-Kachel nicht umbricht. **Zu merken:** die Trennung am letzten Leerzeichen trägt nur, weil `Intl.NumberFormat` im Deutschen den Punkt als Tausendertrenner setzt. 1016 → **1026 Tests**, `sw` v61 → v62. |
 | 2026-08-22 | **D7** umgesetzt: Leitkachel in der Gesamtstatistik. **Zu merken:** eine Kachel, die eine ganze Zeile belegt, dreht die Waisen-Regel aus D5 um – und das `:not(.stat-lead)` an den vier Regeln trägt Gewicht, nicht Bedeutung. Ohne es gewinnt die Rücknahme. 1026 → **1032 Tests**, `sw` v62 → v63. |
+| 2026-08-22 | **D8** umgesetzt, **Block D abgeschlossen**. §6 neu gefasst: nicht nur der Akzent, sondern `--sunken` selbst ist die Falle im hellen Schema – `--accent` (4,34:1) und `--dim` (4,15:1) reissen beide die 4,5:1, während ihre Kommentare Zahlen für `--bg` und `--surface` nennen. Dreimal in einem Block aufgetreten, jedes Mal an einer anderen Farbe. 1032 → **1039 Tests**, `sw` v63 → v64. |

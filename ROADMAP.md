@@ -56,9 +56,9 @@ A. Hygiene              B. Struktur               C. Produkt (hier sind
                                                    ✅ C10 Helles Schema
                                                     ○ C5–C14 offen
 
-D. Politur (aus der Sichtprüfung, §4b)
+D. Politur (aus der Sichtprüfung, §4b) – abgeschlossen
    ✅ D1 Akzent   ✅ D2 Hinweisbanner   ✅ D3 Symbole   ✅ D4 Sprache
-   ✅ D5 Kachel-Waise   ✅ D6 Pace-Umbruch   ✅ D7 Gesamtstatistik   ⬅ D8 Filterchips
+   ✅ D5 Kachel-Waise   ✅ D6 Pace-Umbruch   ✅ D7 Gesamtstatistik   ✅ D8 Filterchips
 ```
 
 **B1 ist in der kleinen Variante umgesetzt**: Trainingsformular und Statistik
@@ -112,19 +112,27 @@ standen daneben mitten im Regelwerk**, und genau die machen ein Umschalten
 unmöglich. Sie sind jetzt Token, und ein Test lässt keine 24. mehr durch. Das
 Ergebnis steht in §4.
 
-**Block D ist neu und kommt vor C11.** Acht Punkte aus einer Sichtprüfung der
-laufenden App bei 390×844 – nichts davon stand vorher in einer der beiden
+**Block D ist abgeschlossen** – acht Punkte aus einer Sichtprüfung der
+laufenden App bei 390×844. Nichts davon stand vorher in einer der beiden
 Dateien, und **kein Test der Suite hätte einen davon gefunden**. Das ist der
 Unterschied zu A bis C: die kamen aus dem Lesen des Codes, dieser kommt aus
-dem Ansehen des Ergebnisses. Die acht stehen in §4b.
+dem Ansehen des Ergebnisses. Die acht stehen mit ihrem Ergebnis in §4b.
 
-**D1 ist erledigt – und der Kontrast war der eigentliche Fund.** Der
-vorgeschlagene Outline-Knopf hätte im hellen Schema 4,34:1 gehabt, unter den
-4,5:1. Der Kommentar im hellen Block nannte die Zahlen für `--bg` und
-`--surface`, nicht für `--sunken` – und auf der sitzen Übungskarte und
-Trophäenkachel. Das Ergebnis steht in §4b.
+**Was Block D über die Suite gelernt hat:** 981 → 1039 Tests, und die
+wenigsten davon prüfen Aussehen. Sie prüfen **Regeln, die sich als richtig
+erwiesen haben** – dass der Akzent die Ausnahme bleibt, dass ein `<use>` auf
+eine definierte `id` zeigt, dass `:not(.stat-lead)` an allen vier Regeln
+steht. Aussehen prüft weiterhin nur, wer hinsieht.
 
-**Danach ist C11 dran** – aber der ist saisonal: ein Jahresrückblick im
+**Der wiederkehrende Fund war der Kontrast, und zwar immer derselbe.**
+`--accent` und `--dim` halten ihre 4,5:1 auf `--bg` und `--surface`, aber
+**nicht auf `--sunken`** – und auf der eingesenkten Fläche sitzen Übungskarte,
+Trophäenkachel und Chip. Dreimal aufgetreten (D1 beim Outline-Knopf, D8 beim
+aktiven Chip und beim Zählerstand), jedes Mal an einer anderen Farbe. Die
+Kommentare an beiden Token nannten Zahlen, die stimmen – nur für einen anderen
+Grund. Daraus ist `--accent-text` geworden und die Regel in `KONTEXT.md` §6.
+
+**Als Nächstes ist C11 dran** – aber der ist saisonal: ein Jahresrückblick im
 August wirkt nicht. Wer im August weiterbauen will, nimmt besser **C5**
 (Läufe filtern) oder **C7** (Trainingsplan-Vorlagen). Die Reihenfolge in §5
 sagt es genauer.
@@ -1077,7 +1085,7 @@ als bestätigt.** Wer die Zeile in §1.1 anders liest, liest sie falsch.
 
 ---
 
-## 4b. Block D · Politur
+## 4b. ✅ Block D · Politur (abgeschlossen)
 
 **Warum „4b" und nicht „5":** Die Abschnittsnummern dieses Dokuments werden
 überall zitiert – in `KONTEXT.md` §8, in den Commit-Rümpfen, in den Regeln
@@ -1105,9 +1113,9 @@ Messung etwas anderes ergab als die Beschreibung, steht es im Ergebnis.
 | D5 | Kachel-Waise in der Statistik | S | ✅ |
 | D6 | Zeilenumbruch in der Pace-Kachel | S | ✅ |
 | D7 | „Statistik" und „Gesamtstatistik" sind nicht unterscheidbar | S | ✅ |
-| D8 | Filterchips im Trophäen-Tab | S | ⬜ |
+| D8 | Filterchips im Trophäen-Tab | S | ✅ |
 
-**Stand: 7 von 8 erledigt.** Als Nächstes D8.
+**Stand: 8 von 8 – Block D ist abgeschlossen.**
 
 ### ✅ D1 · Der Akzent ist inflationär · `css/style.css`, `js/app.js`, `js/stats.js`
 
@@ -1329,9 +1337,43 @@ Ein Test hält das fest.
 720 px: keine Waise, und die Leitkachel zieht in jedem Fall über die volle
 Breite.
 
-### D8 · Filterchips im Trophäen-Tab · `css/style.css`
+### ✅ D8 · Filterchips im Trophäen-Tab · `css/style.css`, `index.html`, `js/app.js`
 
 Drei Chips brechen zufällig um.
+
+**Ergebnis: bewusst untereinander, alle gleich breit**, Beschriftung links,
+Stand rechts – dadurch stehen die drei Zählerstände in einer Spalte und lassen
+sich vergleichen.
+
+**Nebeneinander war nicht möglich, und das ist nachgerechnet:** die drei Chips
+brauchen zusammen **444 px** und haben **332**. „Herausforderungen 7/18"
+allein ist 172 px breit; drei gleiche Drittel wären 105 px. Auch mit kleinerer
+Schrift und weniger Innenabstand geht es nicht auf.
+
+**Waagerecht scrollend – die andere angebotene Lösung – wurde verworfen**, und
+zwar an einer Zahl: 139 + 8 + 172 = 319, der dritte Chip begänne bei 327 in
+einer 332 px breiten Zeile. **Fünf Pixel sichtbar** liest sich als
+abgeschnitten, nicht als scrollbar; die dritte Kategorie wäre praktisch
+unsichtbar. Bei zwei Chips mehr wäre die Abwägung andersherum ausgegangen.
+
+**Der Preis steht dazu:** die Leiste ist 99 px hoch statt 68, die erste
+Trophäe beginnt bei y = 275 statt 245. Gegenüber dem Ausgangszustand (y = 429)
+bleibt es ein deutlicher Gewinn.
+
+**Nur diese Leiste.** Der Übungen-Tab hat sieben kurze Chips; die lesen sich
+umbrechend als Wolke und wären untereinander sieben Zeilen. Ein Test hält
+fest, dass die Variante an genau einer Leiste steht.
+
+**Zwei Nebenfunde, beide am Kontrast:**
+
+1. `.chip.active` trug `--accent` als Schrift – dieselbe Stelle, die D1 für
+   den Outline-Knopf gefunden hat, nur eine Regel weiter. Jetzt
+   `--accent-text`: gemessene **4,86:1** statt ~4,4.
+2. Der neue Stand sollte mit `--dim` zurücktreten. Auf dem Chip-Grund
+   (`--sunken`) sind das im hellen Schema **4,15:1** – gerissen. Der Kommentar
+   an `--dim` nennt 4,6:1, aber für `--bg`. **Dieselbe Falle wie in D1, eine
+   Farbe weiter.** Er tritt jetzt über das Gewicht zurück (400 statt 600) und
+   trägt `--muted`: 5,11:1.
 
 ---
 
@@ -1394,7 +1436,7 @@ wieder Hierarchie hinzu. Andersherum hätte D1 sie gleich wieder eingerissen.
 | D5 | Kachel-Waise in der Statistik | S | ✅ erledigt |
 | D6 | Zeilenumbruch in der Pace-Kachel | S | ✅ erledigt |
 | D7 | Statistik ≠ Gesamtstatistik | S | ✅ erledigt |
-| D8 | Filterchips im Trophäen-Tab | S | ⬅ **als Nächstes** |
+| D8 | Filterchips im Trophäen-Tab | S | ✅ erledigt |
 
 ### Später: erst beim Ausbauen
 
@@ -1449,6 +1491,34 @@ Ein Punkt = ein Commit (§6, Regel 1). So sind sie gefallen:
 | 27 | C8 | `b58687b` | Kilometer-Splits – aufgezeichnet statt nachgerechnet |
 | 28 | – | `278bb04` | Haekchen-Runde nach C8 |
 | 29 | C10 | `29eddae` | Ein helles Farbschema – und die Vorarbeit, die angeblich getan war |
+
+### Die Commits zu Block D – erledigt am 2026-08-22
+
+Ein Punkt = ein Commit (§6, Regel 1), acht Punkte, acht Commits.
+`CACHE_VERSION` von `funrun-v56` auf `funrun-v64` – **eine Fassung je
+Commit**, auch bei den kleinen ab D4. Acht Cache-Versionen kosten nichts, eine
+vergessene kostet eine Stunde Fehlersuche im falschen Code.
+
+| # | Punkt | Commit | `sw` | Betreff |
+|--:|---|---|--:|---|
+| 1 | D1 | `3a6fa86` | v57 | Der Akzent markiert wieder das Besondere |
+| 2 | D2 | `c4837b7` | v58 | Hoechstens ein Hinweis, und der nur wo er hingehoert |
+| 3 | D3 | `65c97e8` | v59 | Symbole statt Zeichen an vier Knoepfen |
+| 4 | D4 | `56d5308` | v60 | Eine Sache traegt einen Namen |
+| 5 | D5 | `45976c6` | v61 | Keine Kachel bleibt allein in ihrer Zeile |
+| 6 | D6 | `658d84e` | v62 | Die Einheit steht kleiner als die Zahl |
+| 7 | D7 | `8acdf02` | v63 | Die wichtigste Zahl sieht aus wie die wichtigste Zahl |
+| 8 | D8 | – | v64 | Filterchips untereinander statt zufaellig umgebrochen |
+
+Der achte trägt kein Hash, weil er diese Tabelle schreibt – die Ausnahme aus
+§6, diesmal am eigenen Block. Wer den Hash braucht, fragt `git log`.
+
+**Jeder der acht ist für sich grün geprüft** (993 / 1002 / 1008 / 1012 / 1016 /
+1026 / 1032 / 1039 Tests), in einem frisch ausgecheckten Worktree statt im
+Arbeitsverzeichnis. **Genau das hat sich diesmal ausgezahlt:** ein Test aus D1
+war im Arbeitsverzeichnis grün und im Worktree rot – Zeilenenden, siehe §4b.
+Ohne die Runde wäre er in acht Commits mitgereist und bei jedem Klon rot
+gewesen.
 
 **B1 hat drei Commits statt einem** – das ist keine Ausnahme von Regel 1 in §6,
 sondern stand so im Punkt selbst: einen Bereich pro Commit, nach jedem Commit
@@ -1585,3 +1655,4 @@ Fleißaufgabe, sondern der halbe Zweck dieser Datei.
 | 2026-08-22 | **D5** umgesetzt: die letzte Kachel zieht über die volle Breite, statt allein neben einem Loch zu stehen. **Das Raster ist ab 40em dreispaltig** – das stand nicht im Befund und braucht eine zweite Regel mit anderer Rechnung, plus die Zeile, die die erste zurücknimmt. Für 1 bis 10 Kacheln bei 390 und 720 px nachgemessen. 1012 → 1016 Tests, `sw` v60 → v61. |
 | 2026-08-22 | **D6** umgesetzt: die Einheit steht kleiner als die Zahl. `10:15 min/km` brauchte 131,4 von 134 px – **2 Prozent Luft**, jetzt 23. **Damit ist auch erklärt, warum der Befund hier zunächst nicht nachzustellen war:** auf Segoe UI passte es knapp, auf SF Pro nicht. Der Befund war richtig, nur die Maschine eine andere. 1016 → 1026 Tests, `sw` v61 → v62. |
 | 2026-08-22 | **D7** umgesetzt: die Gesamtdistanz führt als Leitkachel über die volle Breite, 2rem statt 1,25rem – und **nicht grün**, sonst wäre D1 gleich wieder eingerissen. **Zwei Fehler fand erst das Nachmessen:** die Größenregel stand vor der allgemeinen und blieb wirkungslos, und die Leitkachel dreht die Waisen-Rechnung aus D5 um. 1026 → 1032 Tests, `sw` v62 → v63. |
+| 2026-08-22 | **D8** umgesetzt – **Block D abgeschlossen**. Die Filterchips stehen bewusst untereinander: nebeneinander bräuchten sie 444 von 332 px, und waagerecht scrollend blieben vom dritten Chip 5 px sichtbar, was sich als abgeschnitten liest. **Zwei weitere Kontrastfunde**, beide dieselbe Falle wie D1: `--accent` und `--dim` halten ihre 4,5:1 nicht auf `--sunken`. 1032 → 1039 Tests, `sw` v63 → v64. |

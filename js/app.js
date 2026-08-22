@@ -1114,7 +1114,22 @@ function renderTrophyFilter(achievements) {
       knopf.className = aktiv ? 'chip active' : 'chip';
       knopf.dataset.trophyCategory = id;
       knopf.setAttribute('aria-pressed', String(aktiv));
-      knopf.textContent = `${label} ${unlocked}/${total}`;
+      // Zwei Elemente ohne Leerzeichen dazwischen ergeben als Name
+      // "Meilensteine21/30". Ein Textknoten dazwischen waere ein drittes
+      // Flex-Element und ruinierte die Ausrichtung - also der Name eigens.
+      knopf.setAttribute('aria-label', `${label} ${unlocked}/${total}`);
+
+      // Beschriftung und Stand als eigene Teile: untereinander stehend
+      // richtet sich der Stand rechts aus, und die drei Zahlen stehen
+      // dadurch in einer Spalte statt an drei verschiedenen Stellen.
+      const name = document.createElement('span');
+      name.textContent = label;
+
+      const stand = document.createElement('span');
+      stand.className = 'chip-count';
+      stand.textContent = `${unlocked}/${total}`;
+
+      knopf.append(name, stand);
       knopf.addEventListener('click', () => {
         trophyCategory = id;
         renderTrophies();

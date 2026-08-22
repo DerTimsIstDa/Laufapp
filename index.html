@@ -646,7 +646,14 @@
 
         <!-- Die Chips benennen die Kategorie, deshalb stehen über den Listen
              keine Überschriften mehr – das spart Höhe für die Trophäen. -->
-        <div class="filter-row" id="trophy-filter" role="group" aria-label="Nach Kategorie filtern"></div>
+        <!-- Untereinander statt umbrechend: die drei Beschriftungen brauchen
+             444 px und haben 332 (D8). Die Begruendung steht am Stylesheet. -->
+        <div
+          class="filter-row filter-row--stack"
+          id="trophy-filter"
+          role="group"
+          aria-label="Nach Kategorie filtern"
+        ></div>
 
         <ul class="trophies" id="trophies-meilenstein"></ul>
         <ul class="trophies" id="trophies-herausforderung" hidden></ul>
