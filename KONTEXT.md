@@ -633,10 +633,19 @@ Ausserdem steht in `js/interval.js` ein nachweislich unerreichbarer Zweig
 (`phaseProgress: phaseSeconds === 0 ? 1 : …`); er wurde bewusst stehen
 gelassen, weil B3 reine Testarbeit war.
 
-**Hinweis zum Ordner:** Das Repo liegt unter OneDrive
-(`C:\Users\tino2\OneDrive\Desktop\Laufapp`). OneDrive und `.git` vertragen sich
-schlecht – die Synchronisierung kann Git-interne Dateien anfassen, während Git
-sie schreibt. Ein Umzug nach `C:\Users\tino2\Projekte\Laufapp` steht aus.
+**Hinweis zum Ordner:** Das Repo liegt seit dem 2026-08-22 unter
+`C:\Users\tino2\Projekte\Laufapp` – **nicht mehr unter OneDrive**. Der Umzug
+geschah als frischer `git clone`, nicht als Verschieben: der alte Stand war
+sauber und vollständig gepusht, damit schleppt ein Klon nichts mit, was in
+`.git/` schon angeknackst gewesen sein könnte. Der alte Ordner ist gelöscht.
+
+Der Grund, falls jemand das Repo je zurückschieben will: OneDrive
+synchronisiert dateiweise und kann eine Git-interne Datei gelockt halten,
+während Git sie schreibt. Git legt Objekte und Refs als „schreiben, dann
+umbenennen" an – trifft der Sync genau dieses Fenster, bleibt eine
+`index.lock` stehen oder ein Objekt halb geschrieben. Dazu kommt „Dateien bei
+Bedarf": ein Platzhalter sieht für Git aus wie eine vorhandene Datei.
+**Ein Git-Repo gehört nicht in einen synchronisierten Ordner.**
 
 ---
 
@@ -751,3 +760,4 @@ Bugfix in einer Render-Funktion braucht keinen Eintrag.
 | 2026-08-22 | **§7 sagte seit dem 2026-08-21 „Nächster Punkt: C3"** – C3 wurde am selben Tag erledigt, sechs Punkte folgten danach. Die Zeile ist die einzige in §7, die keine Zahl ist, und wurde deshalb von keiner Nachzähl-Runde erwischt. Jetzt steht der echte Stand da und ein Hinweis, sie mitzuziehen. |
 | 2026-08-22 | **Block D (D1–D8)** eingearbeitet: §3 um `isCurrent` und die Hinweis-Vorrangregel, §4 um `createIcon()`, `splitUnit()`, `INSTALL_HINT_VIEW` und die erweiterte `shouldShowInstallHint`-Signatur, §6 um die `--sunken`-Kontrastfalle und die Rechenregeln des `.stat-grid`, §7 um acht Commit-Zeilen. §5 blieb unberührt – Block D hat kein persistiertes Feld angefasst. 981 → **1039 Tests**, `sw` v56 → **v64**. |
 | 2026-08-22 | Neu in §3 die **Zeilenenden-Falle**: ein Test, der im Quelltext über zwei Zeilen sucht und das Zeilenende als `\n` hinschreibt, ist bei `autocrlf` grün im Arbeitsverzeichnis und rot in jedem Klon. Zusammen mit der Falle aus B1 dieselbe Form – **ein Test, der grün ist, weil er nicht findet, wonach er sucht**. Gefunden hat es nur die Grünprüfung jedes Commits im frischen Worktree; im Arbeitsverzeichnis zu prüfen genügt dafür nicht. |
+| 2026-08-22 | **Das Repo ist aus OneDrive heraus umgezogen** nach `C:\Users\tino2\Projekte\Laufapp`. §7 führte den Umzug seit der Erstfassung als „steht aus"; jetzt steht dort der neue Pfad und der Grund, damit ihn niemand rückgängig macht. Umgesetzt als frischer Klon, weil `master` sauber und gepusht war – Umzugsrisiko damit null. |
