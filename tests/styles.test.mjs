@@ -896,3 +896,59 @@ describe('Eine Sache traegt einen Namen', () => {
     assert.ok(app.includes('evaluateAchievements'), 'der Export wurde umbenannt');
   });
 });
+
+/**
+ * Keine Kachel bleibt allein stehen (D5).
+ *
+ * Fuenf Kacheln in zwei Spalten liessen "Laengster Lauf" allein in der
+ * letzten Zeile, rechts daneben ein Loch. Die Zahl der Kacheln unterscheidet
+ * sich zwischen Woche, Monat und Gesamtstand - die Regel muss rechnen und
+ * darf nicht auf einer Zahl stehen.
+ */
+describe('Die letzte Kachel bleibt nicht allein', () => {
+  test('bei zwei Spalten zieht die ungerade letzte ueber beide', () => {
+    assert.ok(
+      css.includes('.stat-grid > .stat:last-child:nth-child(odd)'),
+      'die Regel fuer zwei Spalten fehlt'
+    );
+  });
+
+  test('bei drei Spalten rechnet sie anders', () => {
+    // Ab 40em sind es drei Spalten. Dort steht die letzte allein, wenn die
+    // Anzahl bei Teilung durch drei den Rest 1 laesst - nicht bei ungerade.
+    assert.ok(
+      css.includes('.stat-grid > .stat:last-child:nth-child(3n + 1)'),
+      'die Regel fuer drei Spalten fehlt'
+    );
+  });
+
+  test('die Drei-Spalten-Fassung nimmt die andere zurueck', () => {
+    // Ohne das zoege bei fuenf Kacheln in drei Spalten die letzte ueber
+    // alles, obwohl sie dort zu zweit steht.
+    const von = css.indexOf('@media (min-width: 40em)');
+    assert.ok(von > 0, 'der Breakpoint fehlt');
+    const breit = css.slice(von);
+
+    assert.ok(
+      breit.includes('grid-column: auto'),
+      'die Zwei-Spalten-Regel gilt im Dreispaltigen weiter'
+    );
+    assert.ok(
+      breit.indexOf('nth-child(odd)') < breit.indexOf('nth-child(3n + 1)'),
+      'erst zuruecknehmen, dann neu setzen - sonst gewinnt die falsche'
+    );
+  });
+
+  test('die Regel steht am Raster, nicht an einer Ansicht', () => {
+    // Zeitraum und Gesamtstand teilen sich .stat-grid und haben verschieden
+    // viele Kacheln. Eine Regel je Ansicht waere zweimal dieselbe Regel.
+    assert.ok(
+      !css.includes('#period-stats > .stat:last-child'),
+      'die Regel haengt an einer einzelnen Ansicht'
+    );
+    assert.ok(
+      !css.includes('#profile-stats > .stat:last-child'),
+      'die Regel haengt an einer einzelnen Ansicht'
+    );
+  });
+});

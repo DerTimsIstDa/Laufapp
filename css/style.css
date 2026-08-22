@@ -1459,6 +1459,24 @@ textarea:focus {
   margin: 0;
 }
 
+/**
+ * Die letzte Kachel bleibt nicht allein stehen (D5).
+ *
+ * Fuenf Kacheln in zwei Spalten heisst: zwei Reihen voll, und "Laengster
+ * Lauf" steht allein in der dritten, rechts daneben ein Loch. Die Zahl der
+ * Kacheln ist nicht fest - Woche, Monat und Gesamtstand haben verschiedene -,
+ * deshalb rechnet die Regel und steht nicht auf einer Zahl.
+ *
+ * Zwei Spalten: allein steht die letzte bei ungerader Anzahl.
+ * Drei Spalten (ab 40em, siehe unten): allein steht sie, wenn die Anzahl bei
+ * Teilung durch drei den Rest 1 laesst. Beide Faelle brauchen ihre eigene
+ * Regel, und die zweite muss die erste zuruecknehmen - sonst zoege bei fuenf
+ * Kacheln in drei Spalten die letzte ueber alles, obwohl sie zu zweit steht.
+ */
+.stat-grid > .stat:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
 .stat {
   min-width: 0;
   padding: var(--space-3);
@@ -3157,6 +3175,16 @@ button.heatmap-cell[aria-pressed="true"] {
 
   .stat-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  /* Drei Spalten rechnen anders als zwei - siehe die Regel oben. Erst die
+     Zwei-Spalten-Regel zuruecknehmen, dann die eigene setzen. */
+  .stat-grid > .stat:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+
+  .stat-grid > .stat:last-child:nth-child(3n + 1) {
+    grid-column: 1 / -1;
   }
 
   .view {

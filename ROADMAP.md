@@ -58,7 +58,7 @@ A. Hygiene              B. Struktur               C. Produkt (hier sind
 
 D. Politur (aus der Sichtprüfung, §4b)
    ✅ D1 Akzent   ✅ D2 Hinweisbanner   ✅ D3 Symbole   ✅ D4 Sprache
-   ⬅ D5 Kachel-Waise   ○ D6–D8 offen
+   ✅ D5 Kachel-Waise   ⬅ D6 Pace-Umbruch   ○ D7–D8 offen
 ```
 
 **B1 ist in der kleinen Variante umgesetzt**: Trainingsformular und Statistik
@@ -1101,12 +1101,12 @@ Messung etwas anderes ergab als die Beschreibung, steht es im Ergebnis.
 | D2 | Zwei Hinweisbanner fressen den halben ersten Bildschirm | S | ✅ |
 | D3 | Ein buntes Emoji in einer monochromen App | S | ✅ |
 | D4 | Sprachbruch: „Achievements" neben „Trophäen" | S | ✅ |
-| D5 | Kachel-Waise in der Statistik | S | ⬜ |
+| D5 | Kachel-Waise in der Statistik | S | ✅ |
 | D6 | Zeilenumbruch in der Pace-Kachel | S | ⬜ |
 | D7 | „Statistik" und „Gesamtstatistik" sind nicht unterscheidbar | S | ⬜ |
 | D8 | Filterchips im Trophäen-Tab | S | ⬜ |
 
-**Stand: 4 von 8 erledigt.** Als Nächstes D5.
+**Stand: 5 von 8 erledigt.** Als Nächstes D6.
 
 ### ✅ D1 · Der Akzent ist inflationär · `css/style.css`, `js/app.js`, `js/stats.js`
 
@@ -1241,9 +1241,25 @@ prüft den sichtbaren Text des Markups, einer die Zeichenketten der Module
 **Exports weiter `Achievement` heißen dürfen** – sonst nimmt sie das nächste
 Aufräumen mit, quer durch acht Dateien und für null sichtbaren Gewinn.
 
-### D5 · Kachel-Waise in der Statistik · `css/style.css`, `js/app.js`
+### ✅ D5 · Kachel-Waise in der Statistik · `css/style.css`
 
 Bei ungerader Kachelzahl bleibt die letzte allein in der Zeile stehen.
+
+**Ergebnis.** Zwei CSS-Regeln, kein JavaScript – `js/app.js` blieb
+unangetastet. Die Kachelzahl steht nirgends fest: Zeitraum hat 5, Gesamtstand
+8, und mit D7 werden es andere.
+
+**Das Raster ist ab `40em` dreispaltig** – das stand nicht im Befund und
+ändert die Rechnung. Bei zwei Spalten steht die letzte Kachel bei **ungerader**
+Anzahl allein; bei drei, wenn die Anzahl **bei Teilung durch drei den Rest 1**
+lässt. Beides braucht seine eigene Regel, **und die zweite muss die erste
+zurücknehmen** – sonst zöge bei fünf Kacheln in drei Spalten die letzte über
+die volle Breite, obwohl sie dort zu zweit steht. Genau diese Zeile
+(`grid-column: auto`) ist die, die man vergisst.
+
+**Nachgemessen statt angenommen:** im Browser für 1 bis 10 Kacheln, bei 390 px
+und bei 720 px. Keine Waise in keinem Fall; die volle Breite greift
+zweispaltig bei 1, 3, 5, 7, 9 und dreispaltig bei 1, 4, 7, 10.
 
 ### D6 · Zeilenumbruch in der Pace-Kachel · `css/style.css`, `js/app.js`
 
@@ -1315,8 +1331,8 @@ wieder Hierarchie hinzu. Andersherum hätte D1 sie gleich wieder eingerissen.
 | D2 | Zwei Hinweisbanner über allen Tabs | S | ✅ erledigt |
 | D3 | Buntes Emoji in monochromer App | S | ✅ erledigt |
 | D4 | „Achievements" neben „Trophäen" | S | ✅ erledigt |
-| D5 | Kachel-Waise in der Statistik | S | ⬅ **als Nächstes** |
-| D6 | Zeilenumbruch in der Pace-Kachel | S | offen |
+| D5 | Kachel-Waise in der Statistik | S | ✅ erledigt |
+| D6 | Zeilenumbruch in der Pace-Kachel | S | ⬅ **als Nächstes** |
 | D7 | Statistik ≠ Gesamtstatistik | S | offen |
 | D8 | Filterchips im Trophäen-Tab | S | offen |
 
@@ -1506,3 +1522,4 @@ Fleißaufgabe, sondern der halbe Zweck dieser Datei.
 | 2026-08-22 | **D2** umgesetzt: beide Hinweise einzeilig, höchstens einer gleichzeitig, der Installationshinweis nur im Start-Tab. Erste Trophäe von y=429 auf y=245. **Die Begründung neben dem Titel ist dabei entfallen** – bei 390 px hat die Zeile 278 px, der Titel braucht 205, mit Begründung wären es 340. Sie steht jetzt im `title` und im README. §1.5 nachgezogen. 993 → 1002 Tests, `sw` v57 → v58. |
 | 2026-08-22 | **D3** umgesetzt: die Zeichen an den Knöpfen sind Inline-SVG mit `currentColor`. **Es waren vier Stellen, nicht zwei** – denselben Stift trugen auch Lauf-Liste und Trainingsplan, und nur einen zu ersetzen hätte drei verschiedene Stifte hinterlassen. Der Kalender stand schon als Geometrie im Training-Tab und steht jetzt einmal in der Sammlung statt zweimal. 1002 → 1008 Tests, `sw` v58 → v59. |
 | 2026-08-22 | **D4** umgesetzt: „Achievements" heißt im sichtbaren Text jetzt „Trophäen". **Es war genau ein Wort** – alle übrigen 30 Treffer sind Bezeichner und Kommentare und bleiben. Das `README.md` brauchte nichts: dort kam das Wort nie vor, anders als der Punkt vermutete. 1008 → 1012 Tests, `sw` v59 → v60. |
+| 2026-08-22 | **D5** umgesetzt: die letzte Kachel zieht über die volle Breite, statt allein neben einem Loch zu stehen. **Das Raster ist ab 40em dreispaltig** – das stand nicht im Befund und braucht eine zweite Regel mit anderer Rechnung, plus die Zeile, die die erste zurücknimmt. Für 1 bis 10 Kacheln bei 390 und 720 px nachgemessen. 1012 → 1016 Tests, `sw` v60 → v61. |

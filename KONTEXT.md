@@ -1,6 +1,6 @@
 # FunRun – Projektkontext (Gedächtnisdatei)
 
-> **Stand: 2026-08-22** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v60`
+> **Stand: 2026-08-22** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v61`
 >
 > **Diese Datei ist das Gedächtnis des Projekts.** Sie ersetzt das Einlesen des
 > Quellcodes beim Start eines neuen Chats. Wird sie nicht gepflegt, ist sie
@@ -481,7 +481,7 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Übungen: 27** in 5 Kategorien (`warmup`, `drills`, `kraft`, `mobility`, `regeneration`)
 - **Bereiche/Tabs: 5** – `start`, `exercises`, `training`, `trophies`, `profile`
   (`data-view` / `#view-…` in `index.html`)
-- **Tests: 1012** in 27 Dateien (`node --test`, alle grün)
+- **Tests: 1016** in 27 Dateien (`node --test`, alle grün)
 - **Trophäen mit Anzeige: 60 von 62** – 55 mit Balken (`progress()`), 5 mit
   Zeile (`standing()`, seit C3). Ohne beides nur `neue-bestzeit` und
   `comeback`; warum, steht als Kommentar über `ACHIEVEMENTS`. Trophäen-XP
@@ -490,13 +490,13 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Werkzeuge: 1** – `tools/mess-history.mjs` (kein Teil der App: nicht in
   `APP_SHELL`, keine Testdatei; siehe den Dateikopf dort)
 - **`js/app.js`: 3375 Zeilen**, 145 Funktionen (vor B1: 4132)
-- **`sw.js`: `funrun-v60`**
+- **`sw.js`: `funrun-v61`**
 - Letzte Commits (neueste zuerst, Stand des Repos):
-  1. Eine Sache traegt einen Namen
-  2. Symbole statt Zeichen an vier Knoepfen
-  3. Hoechstens ein Hinweis, und der nur wo er hingehoert
-  4. Der Akzent markiert wieder das Besondere
-  5. Haekchen-Runde nach C10
+  1. Keine Kachel bleibt allein in ihrer Zeile
+  2. Eine Sache traegt einen Namen
+  3. Symbole statt Zeichen an vier Knoepfen
+  4. Hoechstens ein Hinweis, und der nur wo er hingehoert
+  5. Der Akzent markiert wieder das Besondere
 
 ### Roadmap-Block A, B1, B2, B3, B4, C1 bis C4, C8, C10 und C15 sind committet
 
@@ -673,3 +673,4 @@ Bugfix in einer Render-Funktion braucht keinen Eintrag.
 | 2026-08-22 | **D2** umgesetzt: die zwei Hinweise über der Tab-Ebene sind einzeilig, und es steht höchstens einer da. Der Installationshinweis ist an den Start-Tab gebunden, der Update-Hinweis bleibt über allen fünf – er ist der einzige Weg aus einer hängenden alten Fassung. Die Regel steht als `shouldShowInstallHint()` in `pwa.js` und ist dort geprüft. 993 → **1002 Tests**, `sw` v57 → v58. |
 | 2026-08-22 | **D3** umgesetzt: `createIcon()` neu in §4 (`js/views/dom.js`). Die Zeichen `U+1F4C5` und `U+270E` an vier Knöpfen sind Inline-SVG aus der Symbolsammlung in `index.html`; sie erben ihre Farbe über `currentColor` und folgen damit beiden Schemata. 1002 → **1008 Tests**, `sw` v58 → v59. |
 | 2026-08-22 | **D4** umgesetzt: eine Sache, ein Name. Nur Text, den der Nutzer liest – `achievements.js`, die Exports und die Bezeichner bleiben. Ein Test hält das ausdrücklich fest, damit die Umbenennung nicht beim nächsten Aufräumen quer durch acht Dateien weiterläuft. 1008 → **1012 Tests**, `sw` v59 → v60. |
+| 2026-08-22 | **D5** umgesetzt: keine allein stehende Kachel mehr im `.stat-grid`. Reines CSS, kein JavaScript. Zu merken: **das Raster ist ab `40em` dreispaltig**, und dort steht die letzte Kachel bei Rest 1 allein, nicht bei ungerade – zwei Regeln, und die zweite muss die erste mit `grid-column: auto` zurücknehmen. 1012 → **1016 Tests**, `sw` v60 → v61. |
