@@ -1,6 +1,6 @@
 # FunRun – Projektkontext (Gedächtnisdatei)
 
-> **Stand: 2026-08-22** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v61`
+> **Stand: 2026-08-22** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v62`
 >
 > **Diese Datei ist das Gedächtnis des Projekts.** Sie ersetzt das Einlesen des
 > Quellcodes beim Start eines neuen Chats. Wird sie nicht gepflegt, ist sie
@@ -79,9 +79,9 @@ schaut nie in beide.
 |---|--:|---|---|
 | `js/app.js` | 3375 | Verdrahtung und die noch nicht herausgelösten Bereiche | Start, Läufe, Übungen, Trophäen, Profil, Intervall, Teilen, Export |
 | `js/views/training.js` | 498 | Trainingsformular, Planliste, Löschrückfrage | irgendetwas am Trainingsplan |
-| `js/views/stats.js` | 422 | Profil-Kennzahlen, Aktivitätsraster, Pace-Verlauf, Bestzeiten, Trophäen-Übersicht | irgendetwas an der Statistik im Profil |
+| `js/views/stats.js` | 442 | Profil-Kennzahlen, Aktivitätsraster, Pace-Verlauf, Bestzeiten, Trophäen-Übersicht | irgendetwas an der Statistik im Profil |
 | `js/views/dom.js` | 270 | die `getElementById`-Verweise (`el`), `SVG_NS`, `createSvg`, `createIcon` | ein neues Element im Markup, ein neues Symbol am Knopf |
-| `js/format.js` | 85 | rein: Zahlen, Daten, Zeiten in Anzeigeform | eine neue Formatierung |
+| `js/format.js` | 113 | rein: Zahlen, Daten, Zeiten in Anzeigeform | eine neue Formatierung |
 | `js/storage.js` | 786 | Laden/Speichern/Ändern aller Datentöpfe | neues persistiertes Feld, neuer Datentopf |
 | `js/achievements.js` | 997 | Trophäen-Definitionen + `buildRunStats()` | neue Trophäe, neue Kennzahl für Bedingungen, Stand einer offenen Trophäe |
 | `js/training.js` | 590 | geplante Einheiten, Intervall-Vorgaben, Abgleich mit Läufen | Trainingsplan, Plantreue-XP |
@@ -243,7 +243,11 @@ fassen das DOM an und laden in Node nicht; für sie gibt es zwei Tests, die den
 `monthFormat` · `shortMonthFormat` · `weekdayFormat` · `todayIso()` ·
 `toIsoDate(date)` · `toTimeOfDay(date)` · `formatDate(isoDate)` ·
 `formatDays(count)` · `formatMonth("JJJJ-MM")` · `formatAveragePace(minPerKm)` ·
-`round(v)` (2 Stellen) · `r1(v)` (1 Stelle)
+`round(v)` (2 Stellen) · `r1(v)` (1 Stelle) · `splitUnit(text)` – zerlegt einen
+fertigen Anzeigewert am **letzten** Leerzeichen in `[Zahl, Einheit]`, für die
+Statistik-Kacheln (D6: die Einheit steht kleiner). Trägt nur, weil der
+Tausendertrenner im Deutschen ein Punkt ist – bei einer Sprache mit Leerzeichen
+wäre hier nachzusehen.
 
 **`views/dom.js`** `el` · `SVG_NS` · `createSvg(tag, attribute, text?)` ·
 `createIcon(id)` – ein `<svg><use href="#id">` aus der Symbolsammlung oben in
@@ -481,7 +485,7 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Übungen: 27** in 5 Kategorien (`warmup`, `drills`, `kraft`, `mobility`, `regeneration`)
 - **Bereiche/Tabs: 5** – `start`, `exercises`, `training`, `trophies`, `profile`
   (`data-view` / `#view-…` in `index.html`)
-- **Tests: 1016** in 27 Dateien (`node --test`, alle grün)
+- **Tests: 1026** in 27 Dateien (`node --test`, alle grün)
 - **Trophäen mit Anzeige: 60 von 62** – 55 mit Balken (`progress()`), 5 mit
   Zeile (`standing()`, seit C3). Ohne beides nur `neue-bestzeit` und
   `comeback`; warum, steht als Kommentar über `ACHIEVEMENTS`. Trophäen-XP
@@ -490,13 +494,13 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Werkzeuge: 1** – `tools/mess-history.mjs` (kein Teil der App: nicht in
   `APP_SHELL`, keine Testdatei; siehe den Dateikopf dort)
 - **`js/app.js`: 3375 Zeilen**, 145 Funktionen (vor B1: 4132)
-- **`sw.js`: `funrun-v61`**
+- **`sw.js`: `funrun-v62`**
 - Letzte Commits (neueste zuerst, Stand des Repos):
-  1. Keine Kachel bleibt allein in ihrer Zeile
-  2. Eine Sache traegt einen Namen
-  3. Symbole statt Zeichen an vier Knoepfen
-  4. Hoechstens ein Hinweis, und der nur wo er hingehoert
-  5. Der Akzent markiert wieder das Besondere
+  1. Die Einheit steht kleiner als die Zahl
+  2. Keine Kachel bleibt allein in ihrer Zeile
+  3. Eine Sache traegt einen Namen
+  4. Symbole statt Zeichen an vier Knoepfen
+  5. Hoechstens ein Hinweis, und der nur wo er hingehoert
 
 ### Roadmap-Block A, B1, B2, B3, B4, C1 bis C4, C8, C10 und C15 sind committet
 
@@ -674,3 +678,4 @@ Bugfix in einer Render-Funktion braucht keinen Eintrag.
 | 2026-08-22 | **D3** umgesetzt: `createIcon()` neu in §4 (`js/views/dom.js`). Die Zeichen `U+1F4C5` und `U+270E` an vier Knöpfen sind Inline-SVG aus der Symbolsammlung in `index.html`; sie erben ihre Farbe über `currentColor` und folgen damit beiden Schemata. 1002 → **1008 Tests**, `sw` v58 → v59. |
 | 2026-08-22 | **D4** umgesetzt: eine Sache, ein Name. Nur Text, den der Nutzer liest – `achievements.js`, die Exports und die Bezeichner bleiben. Ein Test hält das ausdrücklich fest, damit die Umbenennung nicht beim nächsten Aufräumen quer durch acht Dateien weiterläuft. 1008 → **1012 Tests**, `sw` v59 → v60. |
 | 2026-08-22 | **D5** umgesetzt: keine allein stehende Kachel mehr im `.stat-grid`. Reines CSS, kein JavaScript. Zu merken: **das Raster ist ab `40em` dreispaltig**, und dort steht die letzte Kachel bei Rest 1 allein, nicht bei ungerade – zwei Regeln, und die zweite muss die erste mit `grid-column: auto` zurücknehmen. 1012 → **1016 Tests**, `sw` v60 → v61. |
+| 2026-08-22 | **D6** umgesetzt: neu in §3/§4 `splitUnit()` in `format.js`. Die Einheit steht kleiner als die Zahl, damit die Pace-Kachel nicht umbricht. **Zu merken:** die Trennung am letzten Leerzeichen trägt nur, weil `Intl.NumberFormat` im Deutschen den Punkt als Tausendertrenner setzt. 1016 → **1026 Tests**, `sw` v61 → v62. |

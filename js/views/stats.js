@@ -21,6 +21,7 @@ import {
   todayIso,
   formatDate,
   formatDays,
+  splitUnit,
   formatMonth,
   formatAveragePace,
   round,
@@ -404,7 +405,15 @@ export function renderBestTimes(runs) {
   );
 }
 
-/** Kacheln fürs .stat-grid – dieselbe Form für Zeitraum und Gesamtstand. */
+/**
+ * Kacheln fürs `.stat-grid` – dieselbe Form für Zeitraum und Gesamtstand.
+ *
+ * Die Einheit steht kleiner als die Zahl (D6). Bei 390 px hat eine Kachel
+ * 134 px, und "10:15 min/km" brauchte in einem Grad **131 px** – zwei
+ * Millimeter Luft, die auf einer Schrift mit etwas breiteren Ziffern nicht
+ * mehr da sind. Dann bricht die Kachel um und steht zweizeilig neben einer
+ * einzeiligen; die beiden Zahlen liegen auf verschiedener Höhe.
+ */
 export function buildStatBlocks(werte) {
   return werte.map(([label, wert]) => {
     const block = document.createElement('div');
@@ -413,8 +422,19 @@ export function buildStatBlocks(werte) {
     const dt = document.createElement('dt');
     dt.textContent = label;
 
+    const [zahl, einheit] = splitUnit(wert);
+
     const dd = document.createElement('dd');
-    dd.textContent = wert;
+    dd.textContent = zahl;
+
+    if (einheit !== null) {
+      const teil = document.createElement('span');
+      teil.className = 'stat-unit';
+      teil.textContent = einheit;
+      // Das Leerzeichen gehoert zwischen die beiden Knoten, nicht in einen
+      // von ihnen: sonst haengt es an der Zahl und nimmt deren Groesse an.
+      dd.append(' ', teil);
+    }
 
     block.append(dt, dd);
     return block;

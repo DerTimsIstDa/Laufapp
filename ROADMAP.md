@@ -58,7 +58,7 @@ A. Hygiene              B. Struktur               C. Produkt (hier sind
 
 D. Politur (aus der Sichtprüfung, §4b)
    ✅ D1 Akzent   ✅ D2 Hinweisbanner   ✅ D3 Symbole   ✅ D4 Sprache
-   ✅ D5 Kachel-Waise   ⬅ D6 Pace-Umbruch   ○ D7–D8 offen
+   ✅ D5 Kachel-Waise   ✅ D6 Pace-Umbruch   ⬅ D7 Gesamtstatistik   ○ D8 offen
 ```
 
 **B1 ist in der kleinen Variante umgesetzt**: Trainingsformular und Statistik
@@ -1102,11 +1102,11 @@ Messung etwas anderes ergab als die Beschreibung, steht es im Ergebnis.
 | D3 | Ein buntes Emoji in einer monochromen App | S | ✅ |
 | D4 | Sprachbruch: „Achievements" neben „Trophäen" | S | ✅ |
 | D5 | Kachel-Waise in der Statistik | S | ✅ |
-| D6 | Zeilenumbruch in der Pace-Kachel | S | ⬜ |
+| D6 | Zeilenumbruch in der Pace-Kachel | S | ✅ |
 | D7 | „Statistik" und „Gesamtstatistik" sind nicht unterscheidbar | S | ⬜ |
 | D8 | Filterchips im Trophäen-Tab | S | ⬜ |
 
-**Stand: 5 von 8 erledigt.** Als Nächstes D6.
+**Stand: 6 von 8 erledigt.** Als Nächstes D7.
 
 ### ✅ D1 · Der Akzent ist inflationär · `css/style.css`, `js/app.js`, `js/stats.js`
 
@@ -1261,9 +1261,37 @@ die volle Breite, obwohl sie dort zu zweit steht. Genau diese Zeile
 und bei 720 px. Keine Waise in keinem Fall; die volle Breite greift
 zweispaltig bei 1, 3, 5, 7, 9 und dreispaltig bei 1, 4, 7, 10.
 
-### D6 · Zeilenumbruch in der Pace-Kachel · `css/style.css`, `js/app.js`
+### ✅ D6 · Zeilenumbruch in der Pace-Kachel · `css/style.css`, `js/format.js`, `js/views/stats.js`
 
 Zahl und Einheit stehen im selben Schriftgrad.
+
+**Ergebnis, in Zahlen.** Eine Kachel hat bei 390 px **134 px** Platz.
+
+| Wert | vorher | nachher | Luft vorher | Luft nachher |
+|---|--:|--:|--:|--:|
+| `10:15 min/km` | 131,4 px | 103,2 px | **2,6 px** | 30,8 px |
+| `5:31 min/km` | 119,9 px | 91,7 px | 14,1 px | 42,3 px |
+| `1.234,5 km` | 103,4 px | 92,2 px | 30,6 px | 41,8 px |
+
+**Damit ist auch erklärt, warum der Befund hier zunächst nicht nachzustellen
+war.** Auf dieser Maschine (Segoe UI) passte `5:31 min/km` mit 14 px Luft;
+auf dem iPhone (SF Pro) sind die Ziffern breiter, und dieselbe Zeile bricht.
+Bei `10:15 min/km` waren es **2 Prozent Luft** – das bricht auf jeder Schrift,
+die zwei Prozent breiter setzt. Der Befund war richtig, nur die Maschine eine
+andere. Jetzt sind es 23 Prozent.
+
+**Getrennt wird an einer Stelle, nicht an dreizehn.** `splitUnit()` in
+`format.js` zerlegt den fertigen Anzeigewert; die Kachel setzt die Einheit in
+`.stat-unit`. Ein dritter Eintrag je Kachel hätte die Null-Behandlung von
+Pace und Tagen an jede der dreizehn Stellen kopiert, und
+`formatAveragePace()` wird auch in der Detailansicht gebraucht, wo die
+Einheit dranbleiben soll. Ein Test hält fest, dass es beim einen Aufruf bleibt.
+
+**Die Annahme hinter der Trennung ist aufgeschrieben und geprüft:** getrennt
+wird am *letzten* Leerzeichen, und das trägt nur, weil `Intl.NumberFormat`
+im Deutschen den Punkt als Tausendertrenner setzt. `1.234,5 km` hat genau ein
+Leerzeichen – mit einer Sprache, die dort ein Leerzeichen setzt, wäre das die
+Stelle zum Nachsehen.
 
 ### D7 · „Statistik" und „Gesamtstatistik" sind nicht unterscheidbar · `css/style.css`, `js/app.js`
 
@@ -1332,8 +1360,8 @@ wieder Hierarchie hinzu. Andersherum hätte D1 sie gleich wieder eingerissen.
 | D3 | Buntes Emoji in monochromer App | S | ✅ erledigt |
 | D4 | „Achievements" neben „Trophäen" | S | ✅ erledigt |
 | D5 | Kachel-Waise in der Statistik | S | ✅ erledigt |
-| D6 | Zeilenumbruch in der Pace-Kachel | S | ⬅ **als Nächstes** |
-| D7 | Statistik ≠ Gesamtstatistik | S | offen |
+| D6 | Zeilenumbruch in der Pace-Kachel | S | ✅ erledigt |
+| D7 | Statistik ≠ Gesamtstatistik | S | ⬅ **als Nächstes** |
 | D8 | Filterchips im Trophäen-Tab | S | offen |
 
 ### Später: erst beim Ausbauen
@@ -1523,3 +1551,4 @@ Fleißaufgabe, sondern der halbe Zweck dieser Datei.
 | 2026-08-22 | **D3** umgesetzt: die Zeichen an den Knöpfen sind Inline-SVG mit `currentColor`. **Es waren vier Stellen, nicht zwei** – denselben Stift trugen auch Lauf-Liste und Trainingsplan, und nur einen zu ersetzen hätte drei verschiedene Stifte hinterlassen. Der Kalender stand schon als Geometrie im Training-Tab und steht jetzt einmal in der Sammlung statt zweimal. 1002 → 1008 Tests, `sw` v58 → v59. |
 | 2026-08-22 | **D4** umgesetzt: „Achievements" heißt im sichtbaren Text jetzt „Trophäen". **Es war genau ein Wort** – alle übrigen 30 Treffer sind Bezeichner und Kommentare und bleiben. Das `README.md` brauchte nichts: dort kam das Wort nie vor, anders als der Punkt vermutete. 1008 → 1012 Tests, `sw` v59 → v60. |
 | 2026-08-22 | **D5** umgesetzt: die letzte Kachel zieht über die volle Breite, statt allein neben einem Loch zu stehen. **Das Raster ist ab 40em dreispaltig** – das stand nicht im Befund und braucht eine zweite Regel mit anderer Rechnung, plus die Zeile, die die erste zurücknimmt. Für 1 bis 10 Kacheln bei 390 und 720 px nachgemessen. 1012 → 1016 Tests, `sw` v60 → v61. |
+| 2026-08-22 | **D6** umgesetzt: die Einheit steht kleiner als die Zahl. `10:15 min/km` brauchte 131,4 von 134 px – **2 Prozent Luft**, jetzt 23. **Damit ist auch erklärt, warum der Befund hier zunächst nicht nachzustellen war:** auf Segoe UI passte es knapp, auf SF Pro nicht. Der Befund war richtig, nur die Maschine eine andere. 1016 → 1026 Tests, `sw` v61 → v62. |

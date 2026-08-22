@@ -11,6 +11,7 @@ import {
   formatDays,
   formatMonth,
   formatAveragePace,
+  splitUnit,
   round,
   r1,
 } from '../js/format.js';
@@ -173,5 +174,53 @@ describe('die Zahlenformate', () => {
     // Untereinander stehende Distanzen sollen an derselben Stelle brechen.
     assert.equal(distanceFormat.format(8), '8,00');
     assert.equal(distanceFormat.format(8.4), '8,40');
+  });
+});
+
+/**
+ * Zahl und Einheit trennen (D6).
+ *
+ * Die Einheit steht kleiner als die Zahl, damit "10:15 min/km" nicht umbricht.
+ * Geprueft werden die Werte, die in den Kacheln wirklich vorkommen - und die
+ * laengsten realistischen, denn genau an denen ist es aufgefallen.
+ */
+describe('splitUnit', () => {
+  test('Pace', () => {
+    assert.deepEqual(splitUnit('5:31 min/km'), ['5:31', 'min/km']);
+    assert.deepEqual(splitUnit('10:15 min/km'), ['10:15', 'min/km']);
+  });
+
+  test('Distanzen, auch dreistellig mit Tausenderpunkt', () => {
+    assert.deepEqual(splitUnit('8,99 km'), ['8,99', 'km']);
+    assert.deepEqual(splitUnit('503,4 km'), ['503,4', 'km']);
+    // Der Tausendertrenner ist im Deutschen ein Punkt, kein Leerzeichen -
+    // sonst traefe die Trennung am letzten Leerzeichen daneben.
+    assert.deepEqual(splitUnit('1.234,5 km'), ['1.234,5', 'km']);
+  });
+
+  test('Tage, Einzahl und Mehrzahl', () => {
+    assert.deepEqual(splitUnit('1 Tag'), ['1', 'Tag']);
+    assert.deepEqual(splitUnit('14 Tage'), ['14', 'Tage']);
+  });
+
+  test('ohne Einheit bleibt die Zahl ganz', () => {
+    assert.deepEqual(splitUnit('56'), ['56', null]);
+    assert.deepEqual(splitUnit('–'), ['–', null]);
+  });
+
+  test('was die Formatierer wirklich liefern, laesst sich trennen', () => {
+    // Gegenprobe ueber die echten Funktionen statt ueber abgeschriebene
+    // Zeichenketten: laeuft eine davon weg, faellt es hier auf.
+    assert.deepEqual(splitUnit(formatAveragePace(5.5)), ['5:30', 'min/km']);
+    assert.deepEqual(splitUnit(formatAveragePace(null)), ['–', null]);
+    assert.deepEqual(splitUnit(formatDays(3)), ['3', 'Tage']);
+    assert.deepEqual(splitUnit(formatDays(0)), ['–', null]);
+  });
+
+  test('Randfaelle brechen nichts', () => {
+    assert.deepEqual(splitUnit(''), ['', null]);
+    assert.deepEqual(splitUnit(' km'), [' km', null], 'fuehrendes Leerzeichen ist keine Zahl');
+    assert.deepEqual(splitUnit(null), ['', null]);
+    assert.deepEqual(splitUnit(undefined), ['', null]);
   });
 });

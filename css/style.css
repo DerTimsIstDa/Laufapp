@@ -1501,6 +1501,21 @@ textarea:focus {
   color: var(--text);
 }
 
+/**
+ * Die Einheit kleiner als die Zahl (D6).
+ *
+ * "5:31 min/km" in einem Grad brauchte mehr Platz, als die Kachel bei 390 px
+ * hat, und brach um - die Kachel wurde zweizeilig, die Nachbarin blieb
+ * einzeilig, und die beiden Werte standen auf verschiedener Hoehe. Kleiner
+ * gesetzt passt es, und nebenbei liest sich die Zahl besser: sie ist die
+ * Aussage, die Einheit ist die Fussnote dazu.
+ */
+.stat-unit {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
 /* Zeitraum-Kopf: Beschriftung links, Umschalter rechts. Auf schmalen
    Schirmen bricht der Umschalter unter die Beschriftung. */
 .period-head {

@@ -83,3 +83,31 @@ export function r1(value) {
 export function formatAveragePace(minPerKm) {
   return minPerKm === null ? '–' : `${formatPace(minPerKm)} min/km`;
 }
+
+/**
+ * Zerlegt einen fertigen Anzeigewert in Zahl und Einheit.
+ *
+ * "5:31 min/km" -> ["5:31", "min/km"] · "503,4 km" -> ["503,4", "km"] ·
+ * "56" -> ["56", null] · "–" -> ["–", null]
+ *
+ * Warum nicht an der Quelle trennen: die Werte entstehen an dreizehn Stellen
+ * in zwei Ansichten, und `formatAveragePace()` wird auch dort gebraucht, wo
+ * die Einheit dranbleiben soll. Ein dritter Eintrag je Kachel haette die
+ * Null-Behandlung von Pace und Tagen an jede Stelle kopiert.
+ *
+ * Getrennt wird am **letzten** Leerzeichen. Das traegt, weil die Zahlen aus
+ * `Intl.NumberFormat('de-DE')` kommen und dort der Tausenderpunkt ein Punkt
+ * ist, kein Leerzeichen - "1.234,5 km" hat genau ein Leerzeichen. Kaeme eine
+ * Sprache mit Leerzeichen als Trenner dazu, waere das hier die Stelle.
+ *
+ * @param {string} text
+ * @returns {[string, string | null]}
+ */
+export function splitUnit(text) {
+  if (typeof text !== 'string') return ['', null];
+
+  const letztes = text.lastIndexOf(' ');
+  if (letztes <= 0) return [text, null];
+
+  return [text.slice(0, letztes), text.slice(letztes + 1)];
+}

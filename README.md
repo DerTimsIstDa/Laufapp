@@ -693,14 +693,14 @@ Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 node --test
 ```
 
-**1016 Tests in 27 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
+**1026 Tests in 27 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
 Testrunner von Node — keine Abhängigkeiten, kein Framework, nichts zu
 installieren.
 
 | Datei | Tests | prüft |
 |---|--:|---|
+| `tests/styles.test.mjs` | 90 | CSS- und Markup-Regeln, die Node nicht ausführen kann; Auswahlreihen gegen ihre Datenquelle; keine Farbe ausserhalb der Token |
 | `tests/achievements.test.mjs` | 89 | jede Bedingung knapp darunter und darauf, und dass jede offene Trophäe ihren Stand zeigt |
-| `tests/styles.test.mjs` | 86 | CSS- und Markup-Regeln, die Node nicht ausführen kann; Auswahlreihen gegen ihre Datenquelle; keine Farbe ausserhalb der Token |
 | `tests/stats.test.mjs` | 82 | Summen, Serien mit Lücken, Raster, Pace-Verlauf, Bestzeiten |
 | `tests/validation.test.mjs` | 80 | Pflicht- und Optionalfelder, erfundene Kalendertage, Gefühlsskala, Wetter, Splits |
 | `tests/transfer.test.mjs` | 69 | Export-Roundtrip, kaputte und halbe Importdateien |
@@ -712,7 +712,7 @@ installieren.
 | `tests/pwa.test.mjs` | 33 | Installationshinweis, Cache-Trennung, `APP_SHELL` vollständig |
 | `tests/geo.test.mjs` | 32 | Haversine gegen bekannte Strecken, alle GPS-Filtergrenzen |
 | `tests/tracker.test.mjs` | 32 | Start/Pause/Beenden, Fehlerfälle, Geolocation-Attrappe, Kilometer-Splits |
-| `tests/format.test.mjs` | 25 | Zahlen, Daten, Zeiten – auch die Rundung genau auf der Hälfte |
+| `tests/format.test.mjs` | 31 | Zahlen, Daten, Zeiten – auch die Rundung genau auf der Hälfte |
 | `tests/speech.test.mjs` | 23 | Wann angesagt wird und was – Kilometergrenze, GPS-Sprung, Sprachausgabe-Attrappe |
 | `tests/interval.test.mjs` | 22 | Phasenwechsel, Restzeit, angebrochene Runden |
 | `tests/exercise-plan.test.mjs` | 20 | Tagesgrenze, Reihenfolge, Doppelte |

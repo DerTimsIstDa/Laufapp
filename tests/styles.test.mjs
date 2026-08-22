@@ -952,3 +952,46 @@ describe('Die letzte Kachel bleibt nicht allein', () => {
     );
   });
 });
+
+/**
+ * Die Einheit steht kleiner als die Zahl (D6).
+ *
+ * Bei 390 px hat eine Kachel 134 px Platz. "10:15 min/km" in einem Grad
+ * brauchte 131,4 - zwei Millimeter Luft, die auf einer Schrift mit etwas
+ * breiteren Ziffern nicht mehr da sind. Getrennt gesetzt sind es 103,2 und
+ * damit 23 Prozent Luft statt zwei.
+ */
+describe('Zahl und Einheit stehen nicht im selben Grad', () => {
+  test('die Kachel setzt die Einheit als eigenen Teil', () => {
+    assert.ok(app.includes("teil.className = 'stat-unit'"), 'die Einheit steht nicht eigens da');
+    assert.ok(app.includes('splitUnit(wert)'), 'die Kachel trennt Zahl und Einheit nicht');
+  });
+
+  test('das Leerzeichen steht zwischen den Knoten, nicht in einem', () => {
+    // Haengt es an der Zahl, nimmt es deren Groesse an - und der Abstand
+    // zwischen Zahl und Einheit waere zu gross.
+    assert.ok(app.includes("dd.append(' ', teil)"), 'das Leerzeichen sitzt falsch');
+  });
+
+  test('die Einheit ist wirklich kleiner und ruhiger', () => {
+    const von = css.indexOf('.stat-unit {');
+    assert.ok(von > 0, '.stat-unit fehlt');
+    const block = css.slice(von, css.indexOf('}', von));
+
+    const gross = Number(css.slice(css.indexOf('.stat dd {')).match(/font-size: ([\d.]+)rem/)[1]);
+    const klein = Number(block.match(/font-size: ([\d.]+)rem/)[1]);
+
+    assert.ok(klein < gross, `Einheit ${klein}rem ist nicht kleiner als Zahl ${gross}rem`);
+    assert.ok(block.includes('var(--muted)'), 'die Einheit traegt die volle Textfarbe');
+  });
+
+  test('nur die Kacheln trennen - anderswo bleibt die Einheit dran', () => {
+    // formatAveragePace() wird auch in der Lauf-Detailansicht gebraucht, und
+    // dort soll "5:31 min/km" am Stueck stehen bleiben.
+    assert.equal(
+      app.split('splitUnit(').length - 1,
+      2,
+      'erwartet: die Definition in format.js und der eine Aufruf in der Kachel'
+    );
+  });
+});
