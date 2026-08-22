@@ -862,7 +862,10 @@ function createExerciseCard(exercise, position, { anzahl, heuteErledigt, heuteGe
 
   const knopf = document.createElement('button');
   knopf.type = 'button';
-  knopf.className = heuteErledigt ? 'secondary small' : 'small';
+  // Nicht gefüllt: 27 Übungskarten hätten 27 vollflächige Akzentknöpfe, und
+  // damit markiert der Akzent nichts mehr. Erledigt ist der Knopf ohnehin
+  // getan – dann reicht die stille Variante.
+  knopf.className = heuteErledigt ? 'secondary small' : 'outline small';
   knopf.textContent = 'Erledigt';
   knopf.setAttribute('aria-label', `${exercise.name} als erledigt eintragen`);
   knopf.addEventListener('click', () => handleExerciseDone(exercise));
@@ -3039,7 +3042,12 @@ function renderChart() {
 
 function createChartRow(label, bucket, maximum) {
   const item = document.createElement('li');
-  item.className = bucket.distanceKm > 0 ? 'chart-row' : 'chart-row empty';
+  const klassen = ['chart-row'];
+  if (bucket.distanceKm === 0) klassen.push('empty');
+  // Der einzige grüne Balken. Welcher das ist, rechnet stats.js aus – hier
+  // wird es nur angeschrieben.
+  if (bucket.isCurrent) klassen.push('current');
+  item.className = klassen.join(' ');
 
   const name = document.createElement('span');
   name.className = 'chart-label';

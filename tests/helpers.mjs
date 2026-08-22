@@ -188,6 +188,22 @@ export function moduleDateien(verzeichnis = 'js/') {
 export function quelltextDerModule() {
   const wurzel = new URL('../', import.meta.url);
   return moduleDateien()
-    .map((pfad) => readFileSync(new URL(pfad, wurzel), 'utf8'))
+    .map((pfad) => lies(new URL(pfad, wurzel)))
     .join('\n');
+}
+
+/**
+ * Quelltext lesen und die Zeilenenden vereinheitlichen.
+ *
+ * Git steht hier auf `core.autocrlf=true`: im Repo liegt LF, im
+ * Arbeitsverzeichnis CRLF, und ein frischer Klon auf Windows bekommt CRLF.
+ * Ein Test, der im Quelltext nach einer Regel ueber zwei Zeilen sucht, ist
+ * damit rot oder gruen je nachdem, woher die Datei kommt.
+ *
+ * Genau das ist bei D1 passiert: gruen im Arbeitsverzeichnis, rot im frisch
+ * ausgecheckten Worktree - und rot waere auch jeder Klon gewesen. Deshalb
+ * liest kein Test diese Dateien mehr selbst.
+ */
+export function lies(pfadOderUrl) {
+  return readFileSync(pfadOderUrl, 'utf8').split('\r').join('');
 }

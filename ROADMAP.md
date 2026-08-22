@@ -54,8 +54,10 @@ A. Hygiene              B. Struktur               C. Produkt (hier sind
                                                    ✅ C15 Audio-Ansagen
                                                    ✅ C8 Kilometer-Splits
                                                    ✅ C10 Helles Schema
-                                                  ⬅ C11 Jahresrückblick
                                                     ○ C5–C14 offen
+
+D. Politur (aus der Sichtprüfung, §4b)
+   ✅ D1 Akzent aufgeräumt   ⬅ D2 Hinweisbanner   ○ D3–D8 offen
 ```
 
 **B1 ist in der kleinen Variante umgesetzt**: Trainingsformular und Statistik
@@ -109,7 +111,19 @@ standen daneben mitten im Regelwerk**, und genau die machen ein Umschalten
 unmöglich. Sie sind jetzt Token, und ein Test lässt keine 24. mehr durch. Das
 Ergebnis steht in §4.
 
-**Der nächste Punkt ist C11** – aber der ist saisonal: ein Jahresrückblick im
+**Block D ist neu und kommt vor C11.** Acht Punkte aus einer Sichtprüfung der
+laufenden App bei 390×844 – nichts davon stand vorher in einer der beiden
+Dateien, und **kein Test der Suite hätte einen davon gefunden**. Das ist der
+Unterschied zu A bis C: die kamen aus dem Lesen des Codes, dieser kommt aus
+dem Ansehen des Ergebnisses. Die acht stehen in §4b.
+
+**D1 ist erledigt – und der Kontrast war der eigentliche Fund.** Der
+vorgeschlagene Outline-Knopf hätte im hellen Schema 4,34:1 gehabt, unter den
+4,5:1. Der Kommentar im hellen Block nannte die Zahlen für `--bg` und
+`--surface`, nicht für `--sunken` – und auf der sitzen Übungskarte und
+Trophäenkachel. Das Ergebnis steht in §4b.
+
+**Danach ist C11 dran** – aber der ist saisonal: ein Jahresrückblick im
 August wirkt nicht. Wer im August weiterbauen will, nimmt besser **C5**
 (Läufe filtern) oder **C7** (Trainingsplan-Vorlagen). Die Reihenfolge in §5
 sagt es genauer.
@@ -170,6 +184,7 @@ Gruppiert nach dem, was der Nutzer erlebt, nicht nach Dateien.
 | Pace-Verlauf | `stats.js`, `app.js` | rund; Wochen/Monats-Grenze seit B3 geprüft |
 | Bestzeiten über 6 Standarddistanzen | `stats.js` | rund, Toleranzgrenze geprüft |
 | Wochenziel + Bonus | `goal.js` | rund |
+| Der laufende Zeitraum ist im Balkendiagramm hervorgehoben | `stats.js`, `app.js` | neu (D1) |
 
 ### 1.5 Drumherum
 
@@ -1060,6 +1075,127 @@ als bestätigt.** Wer die Zeile in §1.1 anders liest, liest sie falsch.
 
 ---
 
+## 4b. Block D · Politur
+
+**Warum „4b" und nicht „5":** Die Abschnittsnummern dieses Dokuments werden
+überall zitiert – in `KONTEXT.md` §8, in den Commit-Rümpfen, in den Regeln
+weiter unten („die Häkchen-Runde nach §6"). Ein neuer `## 5.` hätte §5, §6 und
+§7 um eins verschoben und jede dieser Verweisungen still falsch gemacht. Die
+Datei kennt für Nachzügler bereits die Buchstaben-Endung – `B2b`, `B4b` –,
+und dieselbe Regel gilt hier für einen ganzen Block.
+
+**Woher die Punkte kommen:** aus einer Sichtprüfung der laufenden App bei
+390×844 mit 56 Läufen, 90 Übungseinträgen und fünf geplanten Einheiten. Sie
+standen vorher in keiner der beiden Dateien. Das ist der Unterschied zu Block
+A bis C: die kamen aus dem Lesen des Codes, dieser kommt aus dem Ansehen des
+Ergebnisses. **Kein Test der Suite hätte einen dieser acht Punkte gefunden** –
+`styles.test.mjs` prüft Markup und Regeln, nicht, ob etwas gut aussieht.
+
+Jeder Punkt wurde vor der Behebung am laufenden Stand nachgemessen; wo die
+Messung etwas anderes ergab als die Beschreibung, steht es im Ergebnis.
+
+| # | Was | Aufwand | Stand |
+|---|---|--:|---|
+| D1 | Der Akzent ist inflationär | M | ✅ |
+| D2 | Zwei Hinweisbanner fressen den halben ersten Bildschirm | S | ⬜ |
+| D3 | Ein buntes Emoji in einer monochromen App | S | ⬜ |
+| D4 | Sprachbruch: „Achievements" neben „Trophäen" | S | ⬜ |
+| D5 | Kachel-Waise in der Statistik | S | ⬜ |
+| D6 | Zeilenumbruch in der Pace-Kachel | S | ⬜ |
+| D7 | „Statistik" und „Gesamtstatistik" sind nicht unterscheidbar | S | ⬜ |
+| D8 | Filterchips im Trophäen-Tab | S | ⬜ |
+
+**Stand: 1 von 8 erledigt.** Als Nächstes D2.
+
+### ✅ D1 · Der Akzent ist inflationär · `css/style.css`, `js/app.js`, `js/stats.js`
+
+Der Kopfkommentar von `css/style.css` reserviert Neongrün für vier Dinge:
+Fortschritt, freigeschaltete Trophäen, die aufgezeichnete Strecke und die
+primäre Aktion. Auf dem Statistik-Bildschirm waren **14 grüne Flächen**
+gezählt worden. Drei Stellen brechen die Regel:
+
+- `.trophy.unlocked` füllt die ganze Kachel mit `--accent-soft`. Bei 40 von 62
+  freigeschalteten Trophäen ist die Tönung der Normalzustand und trägt keine
+  Information mehr.
+- Der „Erledigt"-Knopf ist vollflächig `--accent` – bei 27 Übungen
+  untereinander 27 neongrüne Blöcke.
+- Die Balken unter „Distanz im Verlauf" sind alle gleich grün, ohne Betonung
+  der laufenden Woche.
+
+**Ergebnis.** Alle drei behoben. Auf der Statistik-Karte stehen statt **13**
+grünen Flächen (12 Balken + Umschalter) noch **2**: der aktive Umschalter und
+der Balken der laufenden Woche.
+
+**Der Kontrast war der eigentliche Fund.** Der vorgeschlagene Outline-Knopf –
+Rahmen in `--accent-line`, Schrift in `--accent` – **reisst im hellen Schema
+die 4,5:1**: `#5a7600` auf `--sunken` (`#e9ebe5`) sind gemessene **4,34:1**,
+und der Knopf ist 13 px. Der Kommentar im hellen Block nannte 4,7:1 und 5,2:1
+– beides stimmt, aber für `--bg` und `--surface`. Die eingesenkte Fläche stand
+nicht in der Liste, und genau auf ihr sitzen Übungskarte und Trophäenkachel.
+
+Deshalb gibt es `--accent-text` (`#547000` hell, `#c4f000` dunkel): **4,73:1**
+gemessen. Dasselbe Muster wie `--danger-text`, nur andersherum – Rot muss im
+Dunklen heller werden, Grün im Hellen dunkler. `.trophy-xp` und
+`.trophy-date` haben es mitbekommen; sie sassen auf derselben Fläche und
+hatten dasselbe Problem, nur bisher unbemerkt.
+
+**Abweichung vom Vorschlag:** Die Balken sind `--dim`, nicht `--fill-track`.
+Die Spur darunter ist `--sunken`, und `--fill-track` ist eine durchscheinende
+Aufhellung für `--surface` – auf `--sunken` bleibt davon fast nichts sichtbar.
+`--dim` ist der Grauwert, den `.trophy-bar` für dieselbe Rolle schon benutzt.
+
+**Ein Test dieses Punkts war zuerst falsch gruen.** Er suchte im Stylesheet
+nach einer Regel über zwei Zeilen und schrieb das Zeilenende als `
+` hin.
+Git steht hier auf `core.autocrlf=true`: im Repo liegt LF, im
+Arbeitsverzeichnis CRLF. Im Arbeitsverzeichnis war der Test grün, in einem
+frisch ausgecheckten Worktree rot – und rot wäre auch jeder Klon gewesen.
+Aufgefallen ist es erst beim Durchprüfen aller acht Commits einzeln, was
+Block A als Gewohnheit hinterlassen hat.
+
+Behoben an der Wurzel: `lies()` in `tests/helpers.mjs` vereinheitlicht die
+Zeilenenden, und **kein Test liest diese Dateien mehr selbst**. Das ist die
+zweite Falle dieser Art nach der aus B1 (ein Test mit festem Dateipfad wird
+beim Verschieben nicht rot, sondern findet nichts). Beide haben dieselbe
+Form: ein Test, der grün ist, weil er nicht findet, wonach er sucht.
+
+**Welcher Balken der laufende ist, rechnet `stats.js`**, nicht die Anzeige.
+Naheliegend wäre „der letzte" gewesen; das stimmt fast immer und genau dann
+nicht, wenn jemand einen Lauf auf morgen datiert – `runsInPeriod()` lässt
+solche Läufe bewusst stehen. `buildBuckets()` führt deshalb `isCurrent` mit.
+Zwei Tests halten genau diesen Fall fest.
+
+### D2 · Zwei Hinweisbanner fressen den halben ersten Bildschirm · `index.html`, `js/app.js`
+
+Update- und Installationshinweis stehen im Markup **vor** den Bereichen und
+hängen damit über allen fünf Tabs.
+
+### D3 · Ein buntes Emoji in einer monochromen App · `index.html`, `js/app.js`
+
+`einplanen.textContent = '📅'` rendert als farbiges System-Emoji.
+
+### D4 · Sprachbruch: „Achievements" neben „Trophäen" · `index.html`, `README.md`
+
+Eine Sache, zwei Namen, auf demselben Bildschirm.
+
+### D5 · Kachel-Waise in der Statistik · `css/style.css`, `js/app.js`
+
+Bei ungerader Kachelzahl bleibt die letzte allein in der Zeile stehen.
+
+### D6 · Zeilenumbruch in der Pace-Kachel · `css/style.css`, `js/app.js`
+
+Zahl und Einheit stehen im selben Schriftgrad.
+
+### D7 · „Statistik" und „Gesamtstatistik" sind nicht unterscheidbar · `css/style.css`, `js/app.js`
+
+Gleiche Labels, gleiche Kacheln, gleiche Reihenfolge.
+
+### D8 · Filterchips im Trophäen-Tab · `css/style.css`
+
+Drei Chips brechen zufällig um.
+
+---
+
 ## 5. Empfohlene Reihenfolge
 
 **Am 2026-08-21 neu geordnet, nach einer Frage von Tim: „Was genau ist der
@@ -1100,6 +1236,26 @@ klare Linie, mit der Bedingung, die sie wieder aufweckt.
 | 14 | **C10** Helles Farbschema | M | ✅ erledigt |
 | 15 | **C7** Trainingsplan-Vorlagen · **C6** eigene Übungen · **C5** Läufe filtern · **C14** GPX-Import | M je | ⬅ **als Nächstes, nach Bedarf.** **C5 erst, wenn die Lauf-Liste unübersichtlich wird** – das hängt an einer Zahl, die niemand kennt (siehe unten) |
 | 16 | **C11** Jahresrückblick | M | Emotional der stärkste Moment einer Lauf-App – aber **saisonal**. Im August gebaut, wirkt er im August nicht. **Ab November**, dann trifft er auf ein volles Jahr |
+
+### Politur – Block D
+
+Acht Punkte aus einer Sichtprüfung der laufenden App. Sie stehen hier als
+eigene Liste und nicht zwischen den C-Punkten, weil sie eine andere Sorte
+Arbeit sind: keine neue Funktion, sondern das Aufräumen dessen, was die
+vorhandenen anrichten, wenn sie zu fünfzigst auf einem Bildschirm stehen.
+**Reihenfolge ist Absicht** – D1 räumt den Akzent auf, und D7 setzt danach
+wieder Hierarchie hinzu. Andersherum hätte D1 sie gleich wieder eingerissen.
+
+| Schritt | Was | Aufwand | Stand |
+|--:|---|--:|---|
+| D1 | Der Akzent ist inflationär | M | ✅ erledigt |
+| D2 | Zwei Hinweisbanner über allen Tabs | S | ⬅ **als Nächstes** |
+| D3 | Buntes Emoji in monochromer App | S | offen |
+| D4 | „Achievements" neben „Trophäen" | S | offen |
+| D5 | Kachel-Waise in der Statistik | S | offen |
+| D6 | Zeilenumbruch in der Pace-Kachel | S | offen |
+| D7 | Statistik ≠ Gesamtstatistik | S | offen |
+| D8 | Filterchips im Trophäen-Tab | S | offen |
 
 ### Später: erst beim Ausbauen
 
@@ -1282,3 +1438,5 @@ Fleißaufgabe, sondern der halbe Zweck dieser Datei.
 | 2026-08-21 | **Zum dritten Mal in Folge grüne Tests, kaputte Oberfläche.** Nach C1 und C3 jetzt C2. Das ist kein Zufall mehr, sondern die Kennzahl von B1: solange `app.js` untestbar ist, sagt eine grüne Suite über die Oberfläche nichts. Der Punkt steht in §3 und wird mit jedem Mal teurer. |
 | 2026-08-21 | Der Vorbehalt im Kopf hat sich zum ersten Mal ausgezahlt und steht jetzt schärfer da: **vor jedem offenen Punkt erst den Code fragen.** C3 hätte sonst einen halben Tag für etwas veranschlagt, das fast fertig war. |
 | 2026-08-21 | Aus B1 mitgenommen, weil es dreimal passierte: Tests, die im Quelltext nach einer Regel suchen, dürfen keinen festen Dateipfad tragen – sie werden beim Verschieben nicht rot, sondern finden nichts und bleiben grün. Der Warnhinweis dazu steht bei B1 in §3. |
+| 2026-08-22 | **Block D angelegt** (§4b) – acht Punkte aus einer Sichtprüfung der laufenden App bei 390×844. Als `4b` nummeriert und nicht als neues `5`, weil §5, §6 und §7 überall zitiert werden und ein Verschieben jede dieser Verweisungen still falsch gemacht hätte; die Datei kennt die Buchstaben-Endung von `B2b` und `B4b` bereits. **Der Anlass ist neu:** A bis C kamen aus dem Lesen des Codes, D kommt aus dem Ansehen des Ergebnisses – kein Test der Suite hätte einen dieser acht Punkte gefunden. |
+| 2026-08-22 | **D1** umgesetzt: der Akzent ist wieder die Ausnahme. Statistik-Karte von 13 auf 2 grüne Flächen. **Dabei einen Kontrastfehler gefunden, den es schon gab:** `--accent` als Schrift auf `--sunken` sind im hellen Schema 4,34:1 – der Kommentar im hellen Block nannte 4,7:1 und 5,2:1, aber für `--bg` und `--surface`. Neu ist `--accent-text` (4,73:1 gemessen). 981 → 993 Tests, `sw` v56 → v57. |

@@ -5,9 +5,27 @@
  * unten erweitert für breitere Schirme.
  *
  * Neongrün ist der einzige Farbakzent und bleibt vier Dingen vorbehalten:
- * Fortschritt, freigeschaltete Achievements, die aufgezeichnete Strecke und
- * die primäre Aktion. Alles andere ist Grauabstufung – sonst verliert der
- * Akzent seine Wirkung.
+ * Fortschritt, freigeschaltete Trophäen, die aufgezeichnete Strecke und die
+ * primäre Aktion. Alles andere ist Grauabstufung – sonst verliert der Akzent
+ * seine Wirkung.
+ *
+ * "Vorbehalten" heisst: der Akzent markiert das Besondere, nicht den
+ * Normalfall. Steht er an etwas, das auf einem Bildschirm vielfach vorkommt,
+ * markiert er nichts mehr. Drei Fälle waren genau so gekippt (D1):
+ *
+ * - Eine **freigeschaltete** Trophäe ist besonders, solange sie die Ausnahme
+ *   ist. Bei 40 von 62 ist sie der Normalfall – deshalb trägt sie Rahmen und
+ *   gefüllte Marke, aber keine getönte Fläche mehr.
+ * - Eine **primäre Aktion** ist die eine Aktion des Bildschirms. 27
+ *   "Erledigt"-Knöpfe untereinander sind keine 27 primären Aktionen –
+ *   deshalb gibt es `button.outline` für den Akzent ohne Fläche.
+ * - **Fortschritt** ist der Wert, um den es gerade geht. Neun gleich grüne
+ *   Balken zeigen keinen Fortschritt, sondern eine Liste – deshalb ist nur
+ *   der Balken der laufenden Woche grün.
+ *
+ * Als Schrift trägt der Akzent `--accent-text`, nicht `--accent`: im hellen
+ * Schema reisst `--accent` auf `--sunken` die 4,5:1. Gleiche Begründung wie
+ * bei `--danger-text`, nur in die andere Richtung.
  */
 
 :root {
@@ -32,6 +50,11 @@
 
   /* Akzent */
   --accent: #c4f000;
+  /* Der Akzent als Schrift. Im Dunklen ist es derselbe Wert – #c4f000 auf
+     --sunken sind 15:1. Er steht hier trotzdem als eigenes Token, weil er im
+     hellen Schema auseinandergeht; ohne den dunklen Gegenpart hätte er dort
+     seine einzige Definition, und genau das lässt ein Test nicht durch. */
+  --accent-text: #c4f000;
   --accent-soft: rgba(196, 240, 0, 0.12);
   --accent-line: rgba(196, 240, 0, 0.34);
   --accent-glow: rgba(196, 240, 0, 0.28);
@@ -165,6 +188,14 @@
      App bei Sonne lesbar bleibt. Wer den Neon-Look will, bleibt bei
      Dunkel – deshalb bleibt die Wahl beim Nutzer und wird nicht erzwungen. */
   --accent: #5a7600;
+  /* Etwas dunkler als --accent, und der Grund steht in einer Zahl:
+     #5a7600 auf --sunken (#e9ebe5) sind **4,34:1** – unter den 4,5:1, die ein
+     13px-Knopf braucht. Auf --bg und --surface hält --accent die Grenze, auf
+     der eingesenkten Fläche nicht, und genau dort stehen Übungskarte und
+     Trophäenkachel. #547000 hält sie auf allen dreien (4,7 / 5,2 / 5,7:1).
+     Dasselbe Muster wie --danger-text, nur andersherum: Rot muss im Dunklen
+     heller werden, Grün im Hellen dunkler. */
+  --accent-text: #547000;
   --accent-hover: #4a6100;
   --accent-soft: rgba(90, 118, 0, 0.12);
   --accent-line: rgba(90, 118, 0, 0.38);
@@ -228,6 +259,14 @@
      App bei Sonne lesbar bleibt. Wer den Neon-Look will, bleibt bei
      Dunkel – deshalb bleibt die Wahl beim Nutzer und wird nicht erzwungen. */
   --accent: #5a7600;
+  /* Etwas dunkler als --accent, und der Grund steht in einer Zahl:
+     #5a7600 auf --sunken (#e9ebe5) sind **4,34:1** – unter den 4,5:1, die ein
+     13px-Knopf braucht. Auf --bg und --surface hält --accent die Grenze, auf
+     der eingesenkten Fläche nicht, und genau dort stehen Übungskarte und
+     Trophäenkachel. #547000 hält sie auf allen dreien (4,7 / 5,2 / 5,7:1).
+     Dasselbe Muster wie --danger-text, nur andersherum: Rot muss im Dunklen
+     heller werden, Grün im Hellen dunkler. */
+  --accent-text: #547000;
   --accent-hover: #4a6100;
   --accent-soft: rgba(90, 118, 0, 0.12);
   --accent-line: rgba(90, 118, 0, 0.38);
@@ -716,6 +755,28 @@ button.secondary {
 button.secondary:hover {
   background: var(--surface-hover);
   border-color: var(--dim);
+  box-shadow: none;
+}
+
+/**
+ * Der Akzent ohne Fläche.
+ *
+ * Für die Aktion, die auf ihrem Bildschirm die wichtigste ist, aber nicht die
+ * einzige: 27 Übungskarten haben 27 "Erledigt"-Knöpfe, und vollflächig sind
+ * das 27 neongrüne Blöcke. Gefüllt (button ohne Klasse) bleibt der Knopf da,
+ * wo er die eine primäre Aktion des Bildschirms ist.
+ *
+ * Schrift in --accent-text, nicht --accent: siehe den Kopfkommentar.
+ */
+button.outline {
+  background: transparent;
+  color: var(--accent-text);
+  border-color: var(--accent-line);
+}
+
+button.outline:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
   box-shadow: none;
 }
 
@@ -1454,13 +1515,37 @@ textarea:focus {
   overflow: hidden;
 }
 
+/**
+ * Grau als Regel, grün als Ausnahme.
+ *
+ * Zwölf gleich grüne Balken untereinander zeigen keinen Fortschritt, sondern
+ * eine Liste – und der Blick findet nicht, wo er gerade ist. Grün trägt
+ * deshalb nur der laufende Zeitraum.
+ *
+ * --dim statt --fill-track: die Spur darunter ist --sunken, und --fill-track
+ * ist eine durchscheinende Aufhellung, die für --surface gedacht ist. Auf
+ * --sunken bleibt davon fast nichts übrig. --dim ist der Grauwert, den
+ * .trophy-bar für dieselbe Rolle schon benutzt.
+ */
 .chart-bar {
   display: block;
   height: 100%;
   min-width: 3px;
-  background: var(--accent);
+  background: var(--dim);
   border-radius: var(--radius-pill);
   transition: width 0.35s var(--ease);
+}
+
+/* Der laufende Zeitraum – der einzige Balken, der grün ist, und die einzige
+   Zeile, deren Beschriftung und Wert die volle Textfarbe tragen. */
+.chart-row.current .chart-bar {
+  background: var(--accent);
+}
+
+.chart-row.current .chart-label,
+.chart-row.current .chart-value {
+  color: var(--text);
+  font-weight: 700;
 }
 
 .chart-value {
@@ -2499,8 +2584,16 @@ button.heatmap-cell[aria-pressed="true"] {
   border-radius: var(--radius-md);
 }
 
+/**
+ * Freigeschaltet, ohne die Fläche zu tönen.
+ *
+ * Die Tönung stand hier, als eine freigeschaltete Trophäe die Ausnahme war.
+ * Bei 40 von 62 ist sie der Normalfall, und ein Normalfall, der eingefärbt
+ * ist, färbt nur noch den Bildschirm. Der Unterschied trägt jetzt an drei
+ * Stellen, die alle schon da waren: Rahmen in --accent-line, gefüllte
+ * .trophy-mark und der hellere Name.
+ */
 .trophy.unlocked {
-  background: var(--accent-soft);
   border-color: var(--accent-line);
 }
 
@@ -2554,7 +2647,7 @@ button.heatmap-cell[aria-pressed="true"] {
 }
 
 .trophy.unlocked .trophy-xp {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .trophy-date {
@@ -2562,7 +2655,7 @@ button.heatmap-cell[aria-pressed="true"] {
   margin-top: var(--space-2);
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .trophy-progress {

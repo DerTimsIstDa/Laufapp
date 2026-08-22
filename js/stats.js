@@ -106,7 +106,9 @@ export function buildStats(runs, { todayIso = localIsoDate(new Date()) } = {}) {
  * Wochen ohne Lauf erscheinen mit 0 – sonst würde ein Balkendiagramm eine
  * Pause verschlucken und den Verlauf schönen.
  *
- * @returns {{ start: string, isoWeek: number, isoYear: number, distanceKm: number, runCount: number }[]}
+ * `isCurrent` markiert die laufende Woche – genau ein Eimer trägt es.
+ *
+ * @returns {{ start: string, isoWeek: number, isoYear: number, distanceKm: number, runCount: number, isCurrent: boolean }[]}
  */
 export function distanceByWeek(runs, { limit = 12, todayIso = localIsoDate(new Date()) } = {}) {
   return buildBuckets(runs, {
@@ -122,7 +124,10 @@ export function distanceByWeek(runs, { limit = 12, todayIso = localIsoDate(new D
 
 /**
  * Distanz je Monat, lückenlos bis zum laufenden Monat.
- * @returns {{ month: string, distanceKm: number, runCount: number }[]}
+ *
+ * `isCurrent` markiert den laufenden Monat – genau ein Eimer trägt es.
+ *
+ * @returns {{ month: string, distanceKm: number, runCount: number, isCurrent: boolean }[]}
  */
 export function distanceByMonth(runs, { limit = 12, todayIso = localIsoDate(new Date()) } = {}) {
   return buildBuckets(runs, {
@@ -463,13 +468,26 @@ function buildBuckets(runs, { limit, todayIso, toIndex, describe }) {
   }
 
   const indices = [...byIndex.keys()];
-  const newest = Math.max(...indices, toIndex(toDayNumber(todayIso)));
+
+  /**
+   * Der laufende Zeitraum, als Index.
+   *
+   * Er wird ausdrücklich mitgeführt und nicht aus "der letzte Eimer ist der
+   * laufende" abgeleitet. Das stimmt nämlich fast immer und genau dann nicht,
+   * wenn jemand einen Lauf auf morgen datiert: dann schiebt `newest` über
+   * heute hinaus, und der letzte Balken wäre eine Woche, die noch gar nicht
+   * angefangen hat. `runsInPeriod()` lässt solche Läufe bewusst stehen
+   * (die Begründung steht dort), also muss diese Rechnung damit umgehen.
+   */
+  const laufend = toIndex(toDayNumber(todayIso));
+
+  const newest = Math.max(...indices, laufend);
   const oldest = Math.max(Math.min(...indices), newest - limit + 1);
 
   const buckets = [];
   for (let index = oldest; index <= newest; index++) {
     const bucket = byIndex.get(index) ?? { distanceKm: 0, runCount: 0 };
-    buckets.push({ ...describe(index), ...bucket });
+    buckets.push({ ...describe(index), ...bucket, isCurrent: index === laufend });
   }
 
   return buckets;

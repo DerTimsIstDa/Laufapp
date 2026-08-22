@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 
 import { ACTIVITY_WEEKS } from '../js/stats.js';
 import { WEATHERS, FEELINGS } from '../js/validation.js';
-import { quelltextDerModule } from './helpers.mjs';
+import { quelltextDerModule, lies } from './helpers.mjs';
 
 /**
  * Der Quelltext aller Module hintereinander.
@@ -20,8 +20,8 @@ const app = quelltextDerModule();
  * CSS-Regeln, die sich in Node nicht am Verhalten prüfen lassen, aber halten
  * müssen. Diese Tests lesen die Quelle – grob, aber besser als nichts.
  */
-const css = readFileSync(new URL('../css/style.css', import.meta.url), 'utf8');
-const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const css = lies(new URL('../css/style.css', import.meta.url));
+const html = lies(new URL('../index.html', import.meta.url));
 
 /**
  * Die Kästchen-Reihen im Formular gegen ihre Datenquelle.
@@ -615,5 +615,95 @@ describe('Erinnerung an die Sicherung', () => {
     // mit genau diesen Daten.
     const aufrufe = app.split('rememberExport()').length - 1;
     assert.equal(aufrufe, 3, 'erwartet: Definition, Aufruf nach Export, Aufruf nach Import');
+  });
+});
+
+/**
+ * Der Akzent bleibt die Ausnahme (D1).
+ *
+ * Der Kopfkommentar von style.css reserviert Neongruen fuer vier Dinge. Die
+ * Regel stand dort seit jeher und wurde trotzdem an drei Stellen gebrochen –
+ * eine Regel im Kommentar haelt nur so lange, wie jemand sie liest. Diese
+ * Tests lesen sie bei jedem Lauf.
+ */
+describe('Neongruen bleibt die Ausnahme', () => {
+  /** Der Rumpf einer Regel, ueber ihren Selektor gefunden. */
+  const regel = (selektor) => {
+    const von = css.indexOf(selektor + ' {');
+    if (von < 0) return null;
+    return css.slice(von, css.indexOf('}', von));
+  };
+
+  test('eine freigeschaltete Trophaee faerbt ihre Flaeche nicht', () => {
+    const block = regel('.trophy.unlocked');
+
+    assert.ok(block, '.trophy.unlocked fehlt');
+    assert.ok(
+      !block.includes('background'),
+      'Bei 40 von 62 freigeschalteten Trophaeen ist die Toenung der Normalfall ' +
+        'und traegt keine Information mehr – der Rahmen genuegt'
+    );
+    assert.ok(block.includes('border-color: var(--accent-line)'), 'der Rahmen fehlt');
+  });
+
+  test('der Unterschied haengt trotzdem an mehr als einer Eigenschaft', () => {
+    // Gegenprobe zum Test darueber: ohne Flaeche muss der Rest umso sicherer
+    // stehen, sonst ist "freigeschaltet" gar nicht mehr zu sehen.
+    assert.ok(css.includes('.trophy.unlocked .trophy-mark {'), 'die gefuellte Marke fehlt');
+    assert.ok(css.includes('.trophy.unlocked .trophy-name {'), 'der hellere Name fehlt');
+  });
+
+  test('nur der laufende Zeitraum bekommt einen gruenen Balken', () => {
+    const grund = regel('.chart-bar');
+
+    assert.ok(grund, '.chart-bar fehlt');
+    assert.ok(
+      !grund.includes('background: var(--accent)'),
+      'alle Balken gruen heisst: keiner sticht heraus'
+    );
+    assert.ok(grund.includes('background: var(--dim)'), 'der Grundbalken ist nicht grau');
+    assert.ok(
+      css.includes('.chart-row.current .chart-bar {\n  background: var(--accent);'),
+      'der laufende Zeitraum bekommt kein Gruen'
+    );
+  });
+
+  test('welcher Zeitraum der laufende ist, entscheidet das pure Modul', () => {
+    // Nicht "der letzte Balken": ein auf morgen datierter Lauf schiebt einen
+    // weiteren dahinter. stats.js fuehrt die Markierung deshalb selbst mit.
+    assert.ok(app.includes('bucket.isCurrent'), 'die Anzeige fragt isCurrent nicht ab');
+    assert.ok(
+      app.includes('isCurrent: index === laufend'),
+      'stats.js markiert den laufenden Zeitraum nicht mehr selbst'
+    );
+  });
+
+  test('es gibt einen Akzentknopf ohne Flaeche', () => {
+    const block = regel('button.outline');
+
+    assert.ok(block, 'button.outline fehlt');
+    assert.ok(block.includes('background: transparent'), 'der Knopf ist gefuellt');
+    assert.ok(
+      block.includes('color: var(--accent-text)'),
+      'die Schrift traegt nicht den Akzent'
+    );
+  });
+
+  test('der Erledigt-Knopf ist einer davon', () => {
+    assert.ok(
+      app.includes("heuteErledigt ? 'secondary small' : 'outline small'"),
+      '27 Uebungskarten haetten 27 vollflaechige Akzentknoepfe'
+    );
+  });
+
+  test('der Akzent als Schrift steht als eigenes Token', () => {
+    // Im hellen Schema reisst --accent auf --sunken die 4,5:1. Gleiche
+    // Begruendung wie bei --danger-text, nur in die andere Richtung.
+    assert.ok(css.includes('--accent-text:'), '--accent-text fehlt');
+    assert.equal(
+      css.split('--accent-text:').length - 1,
+      3,
+      'jedes der drei Schemata braucht seinen eigenen Wert'
+    );
   });
 });

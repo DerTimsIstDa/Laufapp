@@ -262,6 +262,60 @@ describe('Distanz pro Monat', () => {
   });
 });
 
+/**
+ * Welcher Balken grün ist (D1).
+ *
+ * Die Anzeige färbt genau einen Balken – den laufenden Zeitraum. Läge die
+ * Entscheidung dort, hiesse sie "der letzte", und das ist fast immer richtig.
+ * Diese Tests halten die beiden Fälle fest, in denen es das nicht ist.
+ */
+describe('Der laufende Zeitraum ist markiert', () => {
+  test('genau eine Woche trägt isCurrent', () => {
+    const wochen = distanceByWeek([makeRun(0, 5), makeRun(14, 8)], { todayIso: HEUTE(14) });
+
+    assert.deepEqual(wochen.map((w) => w.isCurrent), [false, false, true]);
+  });
+
+  test('genau ein Monat trägt isCurrent', () => {
+    const runs = [
+      { id: 'a', date: '2026-01-15', distanceKm: 10 },
+      { id: 'c', date: '2026-03-02', distanceKm: 7 },
+    ];
+    const monate = distanceByMonth(runs, { todayIso: '2026-03-10' });
+
+    assert.deepEqual(monate.map((m) => m.isCurrent), [false, false, true]);
+  });
+
+  test('auch die laufende Woche ohne Lauf ist markiert', () => {
+    const wochen = distanceByWeek([makeRun(0, 5)], { todayIso: HEUTE(21) });
+
+    assert.equal(wochen.at(-1).distanceKm, 0);
+    assert.equal(wochen.at(-1).isCurrent, true, 'leer heisst nicht "nicht jetzt"');
+  });
+
+  test('ein Lauf in der Zukunft bekommt die Markierung nicht', () => {
+    // Genau der Fall, für den die Markierung mitgeführt wird statt "der
+    // letzte Eimer": runsInPeriod() lässt vertippte Zukunftsläufe stehen,
+    // also steht hier ein Balken hinter der laufenden Woche.
+    const wochen = distanceByWeek([makeRun(0, 5), makeRun(21, 9)], { todayIso: HEUTE(7) });
+
+    assert.equal(wochen.length, 4, 'die Zukunftswoche zählt mit');
+    assert.deepEqual(wochen.map((w) => w.isCurrent), [false, true, false, false]);
+    assert.equal(wochen.at(-1).distanceKm, 9, 'der Zukunftslauf steht am Ende');
+  });
+
+  test('dasselbe für Monate', () => {
+    const runs = [
+      { id: 'a', date: '2026-01-15', distanceKm: 10 },
+      { id: 'b', date: '2026-04-02', distanceKm: 7 },
+    ];
+    const monate = distanceByMonth(runs, { todayIso: '2026-02-10' });
+
+    assert.deepEqual(monate.map((m) => m.month), ['2026-01', '2026-02', '2026-03', '2026-04']);
+    assert.deepEqual(monate.map((m) => m.isCurrent), [false, true, false, false]);
+  });
+});
+
 describe('runsInPeriod', () => {
   /** Der 08.01.2026 ist ein Donnerstag; die Woche läuft vom 05. bis 11.01. */
   const DONNERSTAG = '2026-01-08';

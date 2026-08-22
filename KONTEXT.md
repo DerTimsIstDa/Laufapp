@@ -1,6 +1,6 @@
 # FunRun – Projektkontext (Gedächtnisdatei)
 
-> **Stand: 2026-08-21** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v56`
+> **Stand: 2026-08-22** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v57`
 >
 > **Diese Datei ist das Gedächtnis des Projekts.** Sie ersetzt das Einlesen des
 > Quellcodes beim Start eines neuen Chats. Wird sie nicht gepflegt, ist sie
@@ -117,6 +117,15 @@ fassen das DOM an und laden in Node nicht; für sie gibt es zwei Tests, die den
   Browser auf.
 - `tests/styles.test.mjs` prüft CSS- und Markup-Regeln, die Node nicht ausführen
   kann, und sucht Code-Regeln im Quelltext **aller** Module.
+
+> **Falle bei den Zeilenenden** (seit D1). Git steht hier auf
+> `core.autocrlf=true`: im Repo liegt LF, im Arbeitsverzeichnis CRLF. Ein
+> Test, der im Quelltext nach einer Regel über **zwei Zeilen** sucht und das
+> Zeilenende als `
+` hinschreibt, ist grün im Arbeitsverzeichnis und rot in
+> jedem frischen Klon. Deshalb liest kein Test die Quelldateien mehr selbst –
+> `lies()` aus `tests/helpers.mjs` vereinheitlicht sie. **Neue Testdatei:
+> `lies()` benutzen, nicht `readFileSync`.**
 
 > **Falle beim Verschieben von Code.** Ein Test, der einen festen Dateipfad
 > trägt und im Quelltext nach einer Regel sucht, wird beim Umzug der Regel
@@ -418,6 +427,14 @@ lässt eine neue Trophäe ohne beides nicht durch; die Ausnahmeliste hat genau
 zwei Einträge (`neue-bestzeit`, `comeback`) und ist über `ACHIEVEMENTS`
 begründet. `current: null` heißt „noch nichts gemessen" und ist nicht `0`.
 
+⚠️ **Der Akzent als Schrift ist `--accent-text`, nicht `--accent`** (seit D1).
+Im hellen Schema sind `--accent` (`#5a7600`) auf `--sunken` (`#e9ebe5`) nur
+**4,34:1** – unter den 4,5:1, die 13-px-Schrift braucht. Auf `--bg` und
+`--surface` hält `--accent` die Grenze, auf der eingesenkten Fläche nicht, und
+genau dort stehen Übungskarte und Trophäenkachel. Dieselbe Bauart wie
+`--danger-text`, nur andersherum: Rot muss im Dunklen heller werden, Grün im
+Hellen dunkler. **Wer Akzentschrift auf `--sunken` setzt, nimmt `--accent-text`.**
+
 ⚠️ **Farben gehören ausschliesslich in die Token-Blöcke** von `css/style.css`
 (`:root` und die zwei hellen). Eine Farbe mitten im Regelwerk lässt sich nicht
 umschalten – sie bleibt im hellen Schema stehen, wo sie hingehörte, als alles
@@ -454,13 +471,13 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 
 ---
 
-## 7. Aktueller Stand (2026-08-21)
+## 7. Aktueller Stand (2026-08-22)
 
 - **Trophäen: 62** – 30 Meilensteine, 18 Herausforderungen, 14 Übungen
 - **Übungen: 27** in 5 Kategorien (`warmup`, `drills`, `kraft`, `mobility`, `regeneration`)
 - **Bereiche/Tabs: 5** – `start`, `exercises`, `training`, `trophies`, `profile`
   (`data-view` / `#view-…` in `index.html`)
-- **Tests: 981** in 27 Dateien (`node --test`, alle grün)
+- **Tests: 993** in 27 Dateien (`node --test`, alle grün)
 - **Trophäen mit Anzeige: 60 von 62** – 55 mit Balken (`progress()`), 5 mit
   Zeile (`standing()`, seit C3). Ohne beides nur `neue-bestzeit` und
   `comeback`; warum, steht als Kommentar über `ACHIEVEMENTS`. Trophäen-XP
@@ -469,13 +486,13 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Werkzeuge: 1** – `tools/mess-history.mjs` (kein Teil der App: nicht in
   `APP_SHELL`, keine Testdatei; siehe den Dateikopf dort)
 - **`js/app.js`: 3375 Zeilen**, 145 Funktionen (vor B1: 4132)
-- **`sw.js`: `funrun-v56`**
+- **`sw.js`: `funrun-v57`**
 - Letzte Commits (neueste zuerst, Stand des Repos):
-  1. Ein helles Farbschema – und die Vorarbeit, die angeblich getan war
-  2. Haekchen-Runde nach C8
-  3. Kilometer-Splits – aufgezeichnet statt nachgerechnet
-  4. Haekchen-Runde nach C15
-  5. Ansagen waehrend des Laufs
+  1. Der Akzent markiert wieder das Besondere
+  2. Ein helles Farbschema – und die Vorarbeit, die angeblich getan war
+  3. Haekchen-Runde nach C8
+  4. Kilometer-Splits – aufgezeichnet statt nachgerechnet
+  5. Haekchen-Runde nach C15
 
 ### Roadmap-Block A, B1, B2, B3, B4, C1 bis C4, C8, C10 und C15 sind committet
 
@@ -648,3 +665,4 @@ Bugfix in einer Render-Funktion braucht keinen Eintrag.
 | 2026-08-21 | **C2** umgesetzt: Notiz und Gefühl am Lauf. Neu in §4 `MAX_RUN_NOTE_LENGTH`, `FEELINGS` und `feelingLabel()`; in §5 die zwei Felder am `Run` **und** die Warnung, dass ein neues Feld an drei Stellen gehört. 895 → **913 Tests**, `sw` v51 → v52. |
 | 2026-08-21 | Die Warnung in §5 steht dort, weil genau dieser Fehler passiert ist: `addRun()` kannte die neuen Felder nicht, und nichts hat es gemeldet – der Lauf wurde gespeichert, nur ohne Notiz. Diese Datei nannte bis dahin nur `updateRun()`, und das war die halbe Wahrheit. |
 | 2026-08-21 | **Diese Datei hatte recht und wurde überstimmt.** §7 führte seit `28b277a` die Zeile „Trophäen mit `progress()`: 55 von 62" – währenddessen stand C3 in der Roadmap als offener Punkt für M Aufwand. Niemand hat die beiden Dateien nebeneinandergelegt. Für die Roadmap ist daraus eine Regel geworden (erst den Code, sonst wenigstens die andere Datei); hier steht sie als Erinnerung, dass eine gepflegte Zahl nichts nützt, wenn sie keiner liest. |
+| 2026-08-22 | **D1** umgesetzt (Roadmap-Block D, neu in `ROADMAP.md` §4b): der Akzent ist wieder die Ausnahme. Neu in §6 die Regel zu `--accent-text` – `--accent` als Schrift auf `--sunken` sind im hellen Schema 4,34:1 und reissen die 4,5:1. Der Kommentar im hellen Block nannte 4,7:1 und 5,2:1, aber für `--bg` und `--surface`; die eingesenkte Fläche stand nicht in der Liste. 981 → **993 Tests**, `sw` v56 → v57. |
