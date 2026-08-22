@@ -974,11 +974,14 @@ describe('Zahl und Einheit stehen nicht im selben Grad', () => {
   });
 
   test('die Einheit ist wirklich kleiner und ruhiger', () => {
-    const von = css.indexOf('.stat-unit {');
+    // Am Zeilenanfang gesucht: seit D7 gibt es ".stat-lead .stat-unit", und
+    // das endet ebenfalls auf ".stat-unit {" - eine Suche ohne Anker findet
+    // die falsche Regel.
+    const von = css.indexOf('\n.stat-unit {');
     assert.ok(von > 0, '.stat-unit fehlt');
     const block = css.slice(von, css.indexOf('}', von));
 
-    const gross = Number(css.slice(css.indexOf('.stat dd {')).match(/font-size: ([\d.]+)rem/)[1]);
+    const gross = Number(css.slice(css.indexOf('\n.stat dd {')).match(/font-size: ([\d.]+)rem/)[1]);
     const klein = Number(block.match(/font-size: ([\d.]+)rem/)[1]);
 
     assert.ok(klein < gross, `Einheit ${klein}rem ist nicht kleiner als Zahl ${gross}rem`);
@@ -993,5 +996,74 @@ describe('Zahl und Einheit stehen nicht im selben Grad', () => {
       2,
       'erwartet: die Definition in format.js und der eine Aufruf in der Kachel'
     );
+  });
+});
+
+/**
+ * Gesamtstatistik sieht anders aus als Statistik (D7).
+ *
+ * Beide trugen dieselben Beschriftungen, dieselben Kacheln, dieselbe
+ * Reihenfolge - nur die Ueberschrift verriet, wo man ist. Und
+ * "Gesamtdistanz 503,4 km" ist emotional die wichtigste Zahl der App und sah
+ * aus wie "Aktive Tage 53" daneben.
+ */
+describe('Die Gesamtstatistik hat eine eigene Form', () => {
+  test('die erste Kachel fuehrt und zieht ueber die volle Breite', () => {
+    assert.ok(app.includes("bloecke[0].classList.add('stat-lead')"), 'keine Leitkachel');
+    assert.ok(
+      app.includes("el.profileStats.classList.add('stat-grid--lead')"),
+      'das Raster weiss nichts von der Leitkachel'
+    );
+
+    const von = css.indexOf('.stat-lead {');
+    assert.ok(von > 0, '.stat-lead fehlt');
+    assert.ok(css.slice(von, css.indexOf('}', von)).includes('grid-column: 1 / -1'));
+  });
+
+  test('nur die Gesamtstatistik hat sie, nicht der Zeitraum', () => {
+    // Sonst saehen beide wieder gleich aus, nur anders gleich.
+    assert.ok(
+      !app.includes("el.periodStats.classList.add('stat-grid--lead')"),
+      'der Zeitraum bekommt dieselbe Form'
+    );
+  });
+
+  test('die Leitkachel ist groesser, aber nicht gruen', () => {
+    // D1 hat 13 gruene Flaechen auf eine reduziert. Die vierzehnte hier
+    // wieder hinzuzusetzen waere derselbe Fehler eine Kachel weiter.
+    const von = css.indexOf('.stat-lead dd {');
+    assert.ok(von > 0, '.stat-lead dd fehlt');
+    const block = css.slice(von, css.indexOf('}', von));
+
+    assert.ok(block.includes('font-size: 2rem'), 'die Leitkachel ist nicht groesser');
+    assert.ok(!block.includes('--accent'), 'die Leitkachel traegt den Akzent');
+
+    const leadBlock = css.slice(css.indexOf('.stat-lead {'), css.indexOf('.stat-unit {'));
+    assert.ok(!leadBlock.includes('var(--accent)'), 'irgendwo traegt die Leitkachel doch Akzent');
+  });
+
+  test('.stat-lead dd steht hinter .stat dd', () => {
+    // Gleiche Spezifitaet - davor gesetzt bliebe die Leitkachel bei 1,25rem.
+    // Genau so stand es zuerst da.
+    assert.ok(css.indexOf('.stat dd {') < css.indexOf('.stat-lead dd {'), 'die Reihenfolge kippt die Regel');
+  });
+
+  test('die Leitkachel dreht die Waisen-Rechnung um', () => {
+    // Sie belegt eine ganze Zeile: allein steht die letzte dann bei gerader
+    // Gesamtzahl, nicht bei ungerader.
+    assert.ok(css.includes('.stat-grid--lead > .stat:last-child:nth-child(even):not(.stat-lead)'));
+    assert.ok(css.includes('.stat-grid--lead > .stat:last-child:nth-child(3n + 2):not(.stat-lead)'));
+  });
+
+  test('das :not(.stat-lead) steht an jeder der vier Regeln', () => {
+    // Es traegt Gewicht, nicht Bedeutung: ohne es gewinnt die Ruecknahme mit
+    // ihrer zusaetzlichen Klasse, und die letzte Kachel bleibt schmal.
+    // Aufgefallen beim Durchmessen bei fuenf und elf Kacheln.
+    const regeln = css.split('\n').filter((z) => z.includes('.stat-grid--lead > .stat:last-child'));
+
+    assert.equal(regeln.length, 4, 'erwartet: zwei Spalten und drei Spalten, je Ruecknahme und Setzung');
+    for (const r of regeln) {
+      assert.ok(r.includes(':not(.stat-lead)'), 'ohne Gewicht: ' + r.trim());
+    }
   });
 });

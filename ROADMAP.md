@@ -58,7 +58,7 @@ A. Hygiene              B. Struktur               C. Produkt (hier sind
 
 D. Politur (aus der Sichtprüfung, §4b)
    ✅ D1 Akzent   ✅ D2 Hinweisbanner   ✅ D3 Symbole   ✅ D4 Sprache
-   ✅ D5 Kachel-Waise   ✅ D6 Pace-Umbruch   ⬅ D7 Gesamtstatistik   ○ D8 offen
+   ✅ D5 Kachel-Waise   ✅ D6 Pace-Umbruch   ✅ D7 Gesamtstatistik   ⬅ D8 Filterchips
 ```
 
 **B1 ist in der kleinen Variante umgesetzt**: Trainingsformular und Statistik
@@ -185,6 +185,7 @@ Gruppiert nach dem, was der Nutzer erlebt, nicht nach Dateien.
 | Pace-Verlauf | `stats.js`, `app.js` | rund; Wochen/Monats-Grenze seit B3 geprüft |
 | Bestzeiten über 6 Standarddistanzen | `stats.js` | rund, Toleranzgrenze geprüft |
 | Wochenziel + Bonus | `goal.js` | rund |
+| Gesamtdistanz als hervorgehobene Leitkachel | `views/stats.js` | neu (D7) |
 | Der laufende Zeitraum ist im Balkendiagramm hervorgehoben | `stats.js`, `app.js` | neu (D1) |
 
 ### 1.5 Drumherum
@@ -1103,10 +1104,10 @@ Messung etwas anderes ergab als die Beschreibung, steht es im Ergebnis.
 | D4 | Sprachbruch: „Achievements" neben „Trophäen" | S | ✅ |
 | D5 | Kachel-Waise in der Statistik | S | ✅ |
 | D6 | Zeilenumbruch in der Pace-Kachel | S | ✅ |
-| D7 | „Statistik" und „Gesamtstatistik" sind nicht unterscheidbar | S | ⬜ |
+| D7 | „Statistik" und „Gesamtstatistik" sind nicht unterscheidbar | S | ✅ |
 | D8 | Filterchips im Trophäen-Tab | S | ⬜ |
 
-**Stand: 6 von 8 erledigt.** Als Nächstes D7.
+**Stand: 7 von 8 erledigt.** Als Nächstes D8.
 
 ### ✅ D1 · Der Akzent ist inflationär · `css/style.css`, `js/app.js`, `js/stats.js`
 
@@ -1293,9 +1294,40 @@ im Deutschen den Punkt als Tausendertrenner setzt. `1.234,5 km` hat genau ein
 Leerzeichen – mit einer Sprache, die dort ein Leerzeichen setzt, wäre das die
 Stelle zum Nachsehen.
 
-### D7 · „Statistik" und „Gesamtstatistik" sind nicht unterscheidbar · `css/style.css`, `js/app.js`
+### ✅ D7 · „Statistik" und „Gesamtstatistik" sind nicht unterscheidbar · `css/style.css`, `js/views/stats.js`
 
-Gleiche Labels, gleiche Kacheln, gleiche Reihenfolge.
+Gleiche Labels, gleiche Kacheln, gleiche Reihenfolge. Vier der fünf
+Beschriftungen sind wortgleich (`Läufe`, `Ø pro Lauf`, `Ø Pace`,
+`Längster Lauf`).
+
+**Ergebnis.** Die Gesamtdistanz steht als Leitkachel voran, über die volle
+Breite und mit **2rem statt 1,25rem**. Der Rest folgt unverändert darunter.
+Damit unterscheiden sich die beiden Bereiche auf den ersten Blick, und die
+Zahl, wegen der man überhaupt nachsieht, sieht nicht mehr aus wie
+„Aktive Tage 53".
+
+**Nicht grün** – ausdrücklich. D1 hat die Statistik-Karte von 13 grünen
+Flächen auf 2 gebracht; die vierzehnte hier wieder hinzuzusetzen wäre
+derselbe Fehler eine Kachel weiter. Die Hervorhebung trägt allein die Größe.
+Ein Test hält das fest.
+
+**Zwei Fehler, die nur das Nachmessen gefunden hat:**
+
+1. `.stat-lead dd` stand **vor** `.stat dd`. Gleiche Spezifitäten, also
+   entscheidet die Reihenfolge – die Leitkachel blieb stumm bei 1,25 rem,
+   obwohl die Regel dastand.
+2. Die Leitkachel belegt eine ganze Zeile und **dreht damit die
+   Waisen-Rechnung aus D5 um**: allein steht die letzte Kachel jetzt bei
+   *gerader* Gesamtzahl (zwei Spalten) bzw. bei Rest 2 (drei Spalten). Die
+   nötige Rücknahme der D5-Regel bekam ein `:not(.stat-lead)` – das trägt
+   kein Bedeutung, sondern **Gewicht**: ohne es gewann die Rücknahme mit ihrer
+   zusätzlichen Klasse, und bei 5 und 11 Kacheln blieb die letzte schmal
+   stehen. Ausserdem hätte die Rücknahme der einzigen Kachel ihre volle
+   Breite genommen, wenn die Leitkachel zugleich die letzte ist.
+
+**Nachgemessen** für 1 bis 12 Kacheln, mit und ohne Leitkachel, bei 390 px und
+720 px: keine Waise, und die Leitkachel zieht in jedem Fall über die volle
+Breite.
 
 ### D8 · Filterchips im Trophäen-Tab · `css/style.css`
 
@@ -1361,8 +1393,8 @@ wieder Hierarchie hinzu. Andersherum hätte D1 sie gleich wieder eingerissen.
 | D4 | „Achievements" neben „Trophäen" | S | ✅ erledigt |
 | D5 | Kachel-Waise in der Statistik | S | ✅ erledigt |
 | D6 | Zeilenumbruch in der Pace-Kachel | S | ✅ erledigt |
-| D7 | Statistik ≠ Gesamtstatistik | S | ⬅ **als Nächstes** |
-| D8 | Filterchips im Trophäen-Tab | S | offen |
+| D7 | Statistik ≠ Gesamtstatistik | S | ✅ erledigt |
+| D8 | Filterchips im Trophäen-Tab | S | ⬅ **als Nächstes** |
 
 ### Später: erst beim Ausbauen
 
@@ -1552,3 +1584,4 @@ Fleißaufgabe, sondern der halbe Zweck dieser Datei.
 | 2026-08-22 | **D4** umgesetzt: „Achievements" heißt im sichtbaren Text jetzt „Trophäen". **Es war genau ein Wort** – alle übrigen 30 Treffer sind Bezeichner und Kommentare und bleiben. Das `README.md` brauchte nichts: dort kam das Wort nie vor, anders als der Punkt vermutete. 1008 → 1012 Tests, `sw` v59 → v60. |
 | 2026-08-22 | **D5** umgesetzt: die letzte Kachel zieht über die volle Breite, statt allein neben einem Loch zu stehen. **Das Raster ist ab 40em dreispaltig** – das stand nicht im Befund und braucht eine zweite Regel mit anderer Rechnung, plus die Zeile, die die erste zurücknimmt. Für 1 bis 10 Kacheln bei 390 und 720 px nachgemessen. 1012 → 1016 Tests, `sw` v60 → v61. |
 | 2026-08-22 | **D6** umgesetzt: die Einheit steht kleiner als die Zahl. `10:15 min/km` brauchte 131,4 von 134 px – **2 Prozent Luft**, jetzt 23. **Damit ist auch erklärt, warum der Befund hier zunächst nicht nachzustellen war:** auf Segoe UI passte es knapp, auf SF Pro nicht. Der Befund war richtig, nur die Maschine eine andere. 1016 → 1026 Tests, `sw` v61 → v62. |
+| 2026-08-22 | **D7** umgesetzt: die Gesamtdistanz führt als Leitkachel über die volle Breite, 2rem statt 1,25rem – und **nicht grün**, sonst wäre D1 gleich wieder eingerissen. **Zwei Fehler fand erst das Nachmessen:** die Größenregel stand vor der allgemeinen und blieb wirkungslos, und die Leitkachel dreht die Waisen-Rechnung aus D5 um. 1026 → 1032 Tests, `sw` v62 → v63. |

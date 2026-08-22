@@ -1477,6 +1477,45 @@ textarea:focus {
   grid-column: 1 / -1;
 }
 
+/**
+ * Mit Leitkachel dreht sich die Rechnung um.
+ *
+ * Die Leitkachel belegt eine ganze Zeile fuer sich. Allein steht die letzte
+ * Kachel deshalb nicht bei ungerader Gesamtzahl, sondern bei gerader - es
+ * kommt auf die Zahl **dahinter** an. Erst die Regel darueber zuruecknehmen,
+ * dann die eigene setzen; gleiche Spezifitaet, also entscheidet die
+ * Reihenfolge.
+ *
+ * Das :not(.stat-lead) ist nicht Zierde. Ist die Leitkachel die einzige
+ * Kachel, ist sie zugleich die letzte und ungerade - dann naehme die
+ * Ruecknahme ihr die volle Breite wieder weg, und zwar mit hoeherer
+ * Spezifitaet als .stat-lead selbst. Aufgefallen beim Durchmessen von einer
+ * bis zehn Kacheln; im Betrieb hat die Gesamtstatistik immer acht.
+ */
+.stat-grid--lead > .stat:last-child:nth-child(odd):not(.stat-lead) {
+  grid-column: auto;
+}
+
+.stat-grid--lead > .stat:last-child:nth-child(even):not(.stat-lead) {
+  grid-column: 1 / -1;
+}
+
+/**
+ * Die Leitkachel der Gesamtstatistik (D7).
+ *
+ * "Statistik" und "Gesamtstatistik" trugen dieselben Beschriftungen, dieselben
+ * Kacheln, dieselbe Reihenfolge - nur die Ueberschrift verriet, wo man ist.
+ * Und "Gesamtdistanz 503,4 km" ist emotional die wichtigste Zahl der App und
+ * sah aus wie "Aktive Tage 53" daneben.
+ *
+ * Die Hervorhebung traegt allein die Groesse - **kein Akzent**. D1 hat gerade
+ * 13 gruene Flaechen auf einen reduziert; die vierzehnte hier wieder
+ * hinzuzusetzen waere derselbe Fehler eine Kachel weiter.
+ */
+.stat-lead {
+  grid-column: 1 / -1;
+}
+
 .stat {
   min-width: 0;
   padding: var(--space-3);
@@ -1499,6 +1538,18 @@ textarea:focus {
   font-weight: 700;
   line-height: 1.2;
   color: var(--text);
+}
+
+/* Muss hinter ".stat dd" stehen: gleiche Spezifitaet, also entscheidet die
+   Reihenfolge. Davor gesetzt bleibt die Leitkachel stumm bei 1,25rem. */
+.stat-lead dd {
+  font-size: 2rem;
+}
+
+/* Die Einheit waechst nicht mit: sie ist die Fussnote zur Zahl, und neben
+   einer 2rem-Zahl faellt eine mitgewachsene Einheit erst recht ins Gewicht. */
+.stat-lead .stat-unit {
+  font-size: 0.875rem;
 }
 
 /**
@@ -3199,6 +3250,21 @@ button.heatmap-cell[aria-pressed="true"] {
   }
 
   .stat-grid > .stat:last-child:nth-child(3n + 1) {
+    grid-column: 1 / -1;
+  }
+
+  /* Drei Spalten mit Leitkachel: allein steht die letzte, wenn die Zahl
+     dahinter bei Teilung durch drei den Rest 1 laesst - also bei Rest 2
+     insgesamt. */
+  .stat-grid--lead > .stat:last-child:nth-child(3n + 1):not(.stat-lead) {
+    grid-column: auto;
+  }
+
+  /* Das :not() traegt hier keine Bedeutung, sondern Gewicht: ohne es haette
+     die Ruecknahme oben eine Klasse mehr und gewaenne trotz spaeterer Regel.
+     Aufgefallen beim Durchmessen - bei fuenf und elf Kacheln blieb die letzte
+     schmal stehen. */
+  .stat-grid--lead > .stat:last-child:nth-child(3n + 2):not(.stat-lead) {
     grid-column: 1 / -1;
   }
 

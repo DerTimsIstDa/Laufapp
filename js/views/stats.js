@@ -75,18 +75,30 @@ export function renderProfileStats(runs) {
   el.profileStats.hidden = stats.runCount === 0;
   if (stats.runCount === 0) return;
 
-  el.profileStats.replaceChildren(
-    ...buildStatBlocks([
-      ['Gesamtdistanz', `${numberFormat.format(round(stats.totalDistanceKm))} km`],
-      ['Läufe', String(stats.runCount)],
-      ['Ø pro Lauf', `${numberFormat.format(round(stats.averageDistanceKm))} km`],
-      ['Ø Pace', formatAveragePace(stats.averagePaceMinPerKm)],
-      ['Längster Lauf', `${numberFormat.format(stats.longestRun.distanceKm)} km`],
-      ['Aktive Tage', String(stats.activeDays)],
-      ['Aktuelle Serie', formatDays(stats.currentDayStreak)],
-      ['Längste Serie', formatDays(stats.longestDayStreak)],
-    ])
-  );
+  const bloecke = buildStatBlocks([
+    ['Gesamtdistanz', `${numberFormat.format(round(stats.totalDistanceKm))} km`],
+    ['Läufe', String(stats.runCount)],
+    ['Ø pro Lauf', `${numberFormat.format(round(stats.averageDistanceKm))} km`],
+    ['Ø Pace', formatAveragePace(stats.averagePaceMinPerKm)],
+    ['Längster Lauf', `${numberFormat.format(stats.longestRun.distanceKm)} km`],
+    ['Aktive Tage', String(stats.activeDays)],
+    ['Aktuelle Serie', formatDays(stats.currentDayStreak)],
+    ['Längste Serie', formatDays(stats.longestDayStreak)],
+  ]);
+
+  // Die Gesamtdistanz ist die eine Zahl, wegen der man hier nachsieht - und
+  // sie sah aus wie "Aktive Tage 53" daneben. Sie steht deshalb voran, ueber
+  // die volle Breite und groesser (D7). Zugleich ist das der Unterschied
+  // zwischen diesem Bereich und "Statistik" darueber: gleiche Beschriftungen,
+  // gleiche Kacheln, gleiche Reihenfolge - nur die Ueberschrift verriet, wo
+  // man ist.
+  //
+  // Ausdruecklich **nicht** in der Akzentfarbe: D1 hat gerade aufgeraeumt,
+  // und Groesse allein traegt die Hervorhebung.
+  bloecke[0].classList.add('stat-lead');
+  el.profileStats.classList.add('stat-grid--lead');
+
+  el.profileStats.replaceChildren(...bloecke);
 }
 
 /**

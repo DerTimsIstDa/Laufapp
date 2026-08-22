@@ -1,6 +1,6 @@
 # FunRun – Projektkontext (Gedächtnisdatei)
 
-> **Stand: 2026-08-22** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v62`
+> **Stand: 2026-08-22** · Repo-Ordner `Laufapp` · Branch `master` · `sw.js` `CACHE_VERSION = funrun-v63`
 >
 > **Diese Datei ist das Gedächtnis des Projekts.** Sie ersetzt das Einlesen des
 > Quellcodes beim Start eines neuen Chats. Wird sie nicht gepflegt, ist sie
@@ -485,7 +485,7 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Übungen: 27** in 5 Kategorien (`warmup`, `drills`, `kraft`, `mobility`, `regeneration`)
 - **Bereiche/Tabs: 5** – `start`, `exercises`, `training`, `trophies`, `profile`
   (`data-view` / `#view-…` in `index.html`)
-- **Tests: 1026** in 27 Dateien (`node --test`, alle grün)
+- **Tests: 1032** in 27 Dateien (`node --test`, alle grün)
 - **Trophäen mit Anzeige: 60 von 62** – 55 mit Balken (`progress()`), 5 mit
   Zeile (`standing()`, seit C3). Ohne beides nur `neue-bestzeit` und
   `comeback`; warum, steht als Kommentar über `ACHIEVEMENTS`. Trophäen-XP
@@ -494,13 +494,13 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Werkzeuge: 1** – `tools/mess-history.mjs` (kein Teil der App: nicht in
   `APP_SHELL`, keine Testdatei; siehe den Dateikopf dort)
 - **`js/app.js`: 3375 Zeilen**, 145 Funktionen (vor B1: 4132)
-- **`sw.js`: `funrun-v62`**
+- **`sw.js`: `funrun-v63`**
 - Letzte Commits (neueste zuerst, Stand des Repos):
-  1. Die Einheit steht kleiner als die Zahl
-  2. Keine Kachel bleibt allein in ihrer Zeile
-  3. Eine Sache traegt einen Namen
-  4. Symbole statt Zeichen an vier Knoepfen
-  5. Hoechstens ein Hinweis, und der nur wo er hingehoert
+  1. Die wichtigste Zahl sieht aus wie die wichtigste Zahl
+  2. Die Einheit steht kleiner als die Zahl
+  3. Keine Kachel bleibt allein in ihrer Zeile
+  4. Eine Sache traegt einen Namen
+  5. Symbole statt Zeichen an vier Knoepfen
 
 ### Roadmap-Block A, B1, B2, B3, B4, C1 bis C4, C8, C10 und C15 sind committet
 
@@ -679,3 +679,4 @@ Bugfix in einer Render-Funktion braucht keinen Eintrag.
 | 2026-08-22 | **D4** umgesetzt: eine Sache, ein Name. Nur Text, den der Nutzer liest – `achievements.js`, die Exports und die Bezeichner bleiben. Ein Test hält das ausdrücklich fest, damit die Umbenennung nicht beim nächsten Aufräumen quer durch acht Dateien weiterläuft. 1008 → **1012 Tests**, `sw` v59 → v60. |
 | 2026-08-22 | **D5** umgesetzt: keine allein stehende Kachel mehr im `.stat-grid`. Reines CSS, kein JavaScript. Zu merken: **das Raster ist ab `40em` dreispaltig**, und dort steht die letzte Kachel bei Rest 1 allein, nicht bei ungerade – zwei Regeln, und die zweite muss die erste mit `grid-column: auto` zurücknehmen. 1012 → **1016 Tests**, `sw` v60 → v61. |
 | 2026-08-22 | **D6** umgesetzt: neu in §3/§4 `splitUnit()` in `format.js`. Die Einheit steht kleiner als die Zahl, damit die Pace-Kachel nicht umbricht. **Zu merken:** die Trennung am letzten Leerzeichen trägt nur, weil `Intl.NumberFormat` im Deutschen den Punkt als Tausendertrenner setzt. 1016 → **1026 Tests**, `sw` v61 → v62. |
+| 2026-08-22 | **D7** umgesetzt: Leitkachel in der Gesamtstatistik. **Zu merken:** eine Kachel, die eine ganze Zeile belegt, dreht die Waisen-Regel aus D5 um – und das `:not(.stat-lead)` an den vier Regeln trägt Gewicht, nicht Bedeutung. Ohne es gewinnt die Rücknahme. 1026 → **1032 Tests**, `sw` v62 → v63. |
