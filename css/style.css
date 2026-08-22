@@ -459,6 +459,32 @@ h1 {
   border-radius: var(--radius-md);
 }
 
+/**
+ * Die kompakte Fassung: eine Zeile, Text und Knopf nebeneinander.
+ *
+ * Update- und Installationshinweis hingen mit je drei Zeilen Fliesstext ueber
+ * der Tab-Ebene und damit ueber allen fuenf Bereichen - zusammen 160 px, und
+ * im Trophaeen-Tab begann die Liste erst darunter. Die Erklaerung liegt jetzt
+ * im Satz selbst statt in einer eigenen Zeile, und laufen darf sie hoechstens
+ * auf zwei um.
+ *
+ * .install-hint-text daneben bleibt, wie es war: der Speicherhinweis traegt
+ * eine wechselnde Meldung und braucht die zweite Zeile wirklich.
+ */
+.hint-line {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.hint-line strong {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
 .install-hint-text {
   display: flex;
   flex-direction: column;
@@ -477,13 +503,15 @@ h1 {
   color: var(--muted);
 }
 
-/* Gleiche Form wie der Installationshinweis, nur mit Handlungsknopf. */
-.update-hint {
+/* Beide kompakten Hinweise sind einzeilig gedacht - dann steht der Knopf
+   auf der Mittelachse und nicht am oberen Rand. */
+.update-hint,
+.install-hint:not(.storage-hint):not(.update-hint) {
   align-items: center;
 }
 
 .update-hint strong {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* Der einzige Hinweis, der nicht neongrün ist. Er meldet keinen Fortschritt,

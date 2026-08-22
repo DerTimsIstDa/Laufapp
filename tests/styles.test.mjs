@@ -707,3 +707,63 @@ describe('Neongruen bleibt die Ausnahme', () => {
     );
   });
 });
+
+/**
+ * Die zwei Hinweise ueber der Tab-Ebene (D2).
+ *
+ * Sie stehen im Markup vor den Bereichen und haengen damit ueber allen fuenf.
+ * Mit je drei Zeilen Fliesstext waren das 160 px, bevor der erste Inhalt
+ * anfing. Diese Tests halten die kompakte Form fest.
+ */
+describe('Hinweise ueber der Tab-Ebene bleiben schmal', () => {
+  test('beide tragen eine Textzeile, keinen Textblock', () => {
+    for (const id of ['update-hint', 'install-hint']) {
+      const von = html.indexOf(`id="${id}"`);
+      assert.ok(von > 0, `${id} fehlt`);
+      const block = html.slice(von, html.indexOf('</aside>', von));
+
+      assert.ok(block.includes('class="hint-line"'), `${id} nutzt nicht die schmale Zeile`);
+      assert.ok(
+        !block.includes('install-hint-text'),
+        `${id} traegt noch die zweizeilige Textspalte`
+      );
+    }
+  });
+
+  test('der Speicherhinweis behaelt seine zwei Zeilen', () => {
+    // Gegenprobe: er meldet einen Verlust und traegt eine wechselnde
+    // Meldung - da ist die zweite Zeile keine Verschwendung.
+    const von = html.indexOf('id="storage-hint"');
+    const block = html.slice(von, html.indexOf('</aside>', von));
+
+    assert.ok(block.includes('install-hint-text'), 'der Speicherhinweis wurde mitgekuerzt');
+  });
+
+  test('die schmale Zeile ist im Stylesheet definiert', () => {
+    assert.ok(css.includes('.hint-line {'), '.hint-line fehlt');
+  });
+
+  test('der Installationshinweis haengt am Bereich und am Update', () => {
+    // Ohne den Aufruf in setView bliebe er stehen, wo er nicht hingehoert.
+    assert.ok(app.includes('view: activeView'), 'der Hinweis kennt den Bereich nicht');
+    assert.ok(app.includes('updateReady,'), 'der Hinweis weicht dem Update nicht');
+    assert.ok(
+      app.split('maybeShowInstallHint()').length - 1 >= 4,
+      'erwartet: Definition, Start, Bereichswechsel, Update'
+    );
+  });
+
+  test('der Update-Hinweis steht weiterhin ueber allen Bereichen', () => {
+    // Er ist der einzige Weg aus einer haengenden alten Fassung. Wuerde er
+    // wie der Installationshinweis an den Start-Tab gebunden, waere genau
+    // das verloren.
+    const von = html.indexOf('id="update-hint"');
+    const views = html.indexOf('id="view-start"');
+
+    assert.ok(von > 0 && views > 0 && von < views, 'der Update-Hinweis steht nicht mehr davor');
+    assert.ok(
+      !app.includes("view: activeView,\n    updateReady"),
+      'der Update-Hinweis darf nicht an einen Bereich gebunden werden'
+    );
+  });
+});

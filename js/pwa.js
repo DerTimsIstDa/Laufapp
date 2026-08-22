@@ -62,9 +62,29 @@ export function rememberInstallHintDismissed(storage) {
   }
 }
 
-export function shouldShowInstallHint({ standalone, dismissed }) {
-  return !standalone && !dismissed;
+/**
+ * Ob der Installationshinweis gezeigt wird.
+ *
+ * Vier Bedingungen, und drei davon kamen mit D2 dazu:
+ *
+ * - `standalone` – in der installierten App waere der Hinweis sinnlos.
+ * - `dismissed` – einmal weggeklickt bleibt weggeklickt.
+ * - `updateReady` – **der Update-Hinweis sticht.** Beide zusammen sind
+ *   160 px auf einem 844-px-Schirm, und sie standen ueber allen fuenf Tabs.
+ *   Wenn einer weichen muss, dann dieser: der andere ist der einzige Weg,
+ *   eine haengende alte Fassung loszuwerden, waehrend dieser hier nur ein
+ *   Vorschlag ist, der morgen genauso gilt.
+ * - `view` – nur im Start-Tab. Ein Vorschlag zur Installation gehoert an den
+ *   Anfang, nicht ueber die Trophaeenliste, die man gerade durchsieht.
+ *
+ * @param {{ standalone: boolean, dismissed: boolean, updateReady?: boolean, view?: string }} zustand
+ */
+export function shouldShowInstallHint({ standalone, dismissed, updateReady = false, view = INSTALL_HINT_VIEW }) {
+  return !standalone && !dismissed && !updateReady && view === INSTALL_HINT_VIEW;
 }
+
+/** Der einzige Bereich, in dem der Installationshinweis erscheint. */
+export const INSTALL_HINT_VIEW = 'start';
 
 /**
  * Filtert die eigenen Caches heraus.

@@ -57,7 +57,7 @@ A. Hygiene              B. Struktur               C. Produkt (hier sind
                                                     ○ C5–C14 offen
 
 D. Politur (aus der Sichtprüfung, §4b)
-   ✅ D1 Akzent aufgeräumt   ⬅ D2 Hinweisbanner   ○ D3–D8 offen
+   ✅ D1 Akzent aufgeräumt   ✅ D2 Hinweisbanner   ⬅ D3 Emoji   ○ D4–D8 offen
 ```
 
 **B1 ist in der kleinen Variante umgesetzt**: Trainingsformular und Statistik
@@ -194,7 +194,7 @@ Gruppiert nach dem, was der Nutzer erlebt, nicht nach Dateien.
 | Erinnerung an die Sicherung nach 30 Tagen | `transfer.js`, `storage.js` | neu (C1) |
 | Warnung bei fehlgeschlagenem Speichern | `storage.js`, `app.js` | neu (B2) |
 | Teilen-Karte 1080×1350 auf Canvas | `share-card.js` | rund |
-| PWA: Installierbar, App-Shell-Cache, Update-Hinweis | `sw.js`, `pwa.js` | rund; `APP_SHELL` seit A4 testgeprüft, `CACHE_VERSION` weiterhin von Hand |
+| PWA: Installierbar, App-Shell-Cache, Update-Hinweis | `sw.js`, `pwa.js` | rund; `APP_SHELL` seit A4 testgeprüft, `CACHE_VERSION` weiterhin von Hand; seit D2 einzeilig und höchstens einer gleichzeitig |
 | Profil: Name, Wochenziel | `storage.js` | minimal |
 
 **Das architektonische Tafelsilber:** 20 von 28 Modulen sind pur – kein DOM,
@@ -1097,7 +1097,7 @@ Messung etwas anderes ergab als die Beschreibung, steht es im Ergebnis.
 | # | Was | Aufwand | Stand |
 |---|---|--:|---|
 | D1 | Der Akzent ist inflationär | M | ✅ |
-| D2 | Zwei Hinweisbanner fressen den halben ersten Bildschirm | S | ⬜ |
+| D2 | Zwei Hinweisbanner fressen den halben ersten Bildschirm | S | ✅ |
 | D3 | Ein buntes Emoji in einer monochromen App | S | ⬜ |
 | D4 | Sprachbruch: „Achievements" neben „Trophäen" | S | ⬜ |
 | D5 | Kachel-Waise in der Statistik | S | ⬜ |
@@ -1105,7 +1105,7 @@ Messung etwas anderes ergab als die Beschreibung, steht es im Ergebnis.
 | D7 | „Statistik" und „Gesamtstatistik" sind nicht unterscheidbar | S | ⬜ |
 | D8 | Filterchips im Trophäen-Tab | S | ⬜ |
 
-**Stand: 1 von 8 erledigt.** Als Nächstes D2.
+**Stand: 2 von 8 erledigt.** Als Nächstes D3.
 
 ### ✅ D1 · Der Akzent ist inflationär · `css/style.css`, `js/app.js`, `js/stats.js`
 
@@ -1165,10 +1165,34 @@ nicht, wenn jemand einen Lauf auf morgen datiert – `runsInPeriod()` lässt
 solche Läufe bewusst stehen. `buildBuckets()` führt deshalb `isCurrent` mit.
 Zwei Tests halten genau diesen Fall fest.
 
-### D2 · Zwei Hinweisbanner fressen den halben ersten Bildschirm · `index.html`, `js/app.js`
+### ✅ D2 · Zwei Hinweisbanner fressen den halben ersten Bildschirm · `index.html`, `js/app.js`, `js/pwa.js`
 
 Update- und Installationshinweis stehen im Markup **vor** den Bereichen und
-hängen damit über allen fünf Tabs.
+hängen damit über allen fünf Tabs. Gemessen bei 390×844: **70 px + 90 px**,
+und im Trophäen-Tab begann die erste Trophäe erst bei **y = 429**.
+
+**Ergebnis.** Beide sind einzeilig (63 px bzw. 70 px), und es steht höchstens
+einer da. Die erste Trophäe beginnt jetzt bei **y = 245** – 184 px gewonnen.
+
+**Die Vorrangregel liegt in `pwa.js`, nicht in der Anzeige.**
+`shouldShowInstallHint()` hat zwei Bedingungen dazubekommen: `updateReady`
+und `view`. Der Update-Hinweis sticht, weil er der einzige Weg aus einer
+hängenden alten Fassung ist – der Installationsvorschlag gilt morgen genauso.
+**Der Update-Hinweis bleibt über allen fünf Tabs**; nur der
+Installationshinweis ist an den Start-Tab gebunden. Ein Test hält
+ausdrücklich fest, dass er nicht ebenfalls gebunden wird.
+
+**Was dabei verloren ging, und warum.** Die Begründung neben dem Titel („Als
+installierte App bleiben deine Läufe zuverlässiger erhalten") ist weg. Bei
+390 px hat die Textzeile **278 px**; der Titel allein braucht **205**, mit
+Begründung wären es **340** – also wieder zwei Zeilen. Beides zusammen ging
+nicht. Der Titel ist die Aufforderung und damit der Zweck des Hinweises; die
+Begründung steht jetzt im `title`-Attribut und im README.
+
+**Der Speicherhinweis wurde nicht mitgekürzt.** Er meldet einen Verlust statt
+eines Vorschlags und trägt eine wechselnde Meldung – da ist die zweite Zeile
+keine Verschwendung. Ein Test hält diese Ausnahme fest, damit sie nicht beim
+nächsten Aufräumen mitgeht.
 
 ### D3 · Ein buntes Emoji in einer monochromen App · `index.html`, `js/app.js`
 
@@ -1249,8 +1273,8 @@ wieder Hierarchie hinzu. Andersherum hätte D1 sie gleich wieder eingerissen.
 | Schritt | Was | Aufwand | Stand |
 |--:|---|--:|---|
 | D1 | Der Akzent ist inflationär | M | ✅ erledigt |
-| D2 | Zwei Hinweisbanner über allen Tabs | S | ⬅ **als Nächstes** |
-| D3 | Buntes Emoji in monochromer App | S | offen |
+| D2 | Zwei Hinweisbanner über allen Tabs | S | ✅ erledigt |
+| D3 | Buntes Emoji in monochromer App | S | ⬅ **als Nächstes** |
 | D4 | „Achievements" neben „Trophäen" | S | offen |
 | D5 | Kachel-Waise in der Statistik | S | offen |
 | D6 | Zeilenumbruch in der Pace-Kachel | S | offen |
@@ -1440,3 +1464,4 @@ Fleißaufgabe, sondern der halbe Zweck dieser Datei.
 | 2026-08-21 | Aus B1 mitgenommen, weil es dreimal passierte: Tests, die im Quelltext nach einer Regel suchen, dürfen keinen festen Dateipfad tragen – sie werden beim Verschieben nicht rot, sondern finden nichts und bleiben grün. Der Warnhinweis dazu steht bei B1 in §3. |
 | 2026-08-22 | **Block D angelegt** (§4b) – acht Punkte aus einer Sichtprüfung der laufenden App bei 390×844. Als `4b` nummeriert und nicht als neues `5`, weil §5, §6 und §7 überall zitiert werden und ein Verschieben jede dieser Verweisungen still falsch gemacht hätte; die Datei kennt die Buchstaben-Endung von `B2b` und `B4b` bereits. **Der Anlass ist neu:** A bis C kamen aus dem Lesen des Codes, D kommt aus dem Ansehen des Ergebnisses – kein Test der Suite hätte einen dieser acht Punkte gefunden. |
 | 2026-08-22 | **D1** umgesetzt: der Akzent ist wieder die Ausnahme. Statistik-Karte von 13 auf 2 grüne Flächen. **Dabei einen Kontrastfehler gefunden, den es schon gab:** `--accent` als Schrift auf `--sunken` sind im hellen Schema 4,34:1 – der Kommentar im hellen Block nannte 4,7:1 und 5,2:1, aber für `--bg` und `--surface`. Neu ist `--accent-text` (4,73:1 gemessen). 981 → 993 Tests, `sw` v56 → v57. |
+| 2026-08-22 | **D2** umgesetzt: beide Hinweise einzeilig, höchstens einer gleichzeitig, der Installationshinweis nur im Start-Tab. Erste Trophäe von y=429 auf y=245. **Die Begründung neben dem Titel ist dabei entfallen** – bei 390 px hat die Zeile 278 px, der Titel braucht 205, mit Begründung wären es 340. Sie steht jetzt im `title` und im README. §1.5 nachgezogen. 993 → 1002 Tests, `sw` v57 → v58. |

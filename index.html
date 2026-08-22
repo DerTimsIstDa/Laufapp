@@ -98,12 +98,12 @@
       >Aktualisieren</button>
     </header>
 
-    <!-- Erscheint, sobald der Service Worker eine neue Fassung geholt hat. -->
+    <!-- Erscheint, sobald der Service Worker eine neue Fassung geholt hat.
+         Eine Zeile, kein Fliesstext: der Knopf daneben sagt bereits, was zu
+         tun ist, und zwei Hinweise ueber der Tab-Ebene fressen sonst den
+         halben ersten Bildschirm (D2). -->
     <aside class="install-hint update-hint" id="update-hint" role="status" hidden>
-      <div class="install-hint-text">
-        <strong>Neue Version bereit</strong>
-        <span>Einmal neu laden, dann ist sie aktiv.</span>
-      </div>
+      <p class="hint-line"><strong>Neue Version bereit</strong></p>
       <button type="button" id="update-reload" class="small">Neu laden</button>
     </aside>
 
@@ -124,12 +124,25 @@
       >×</button>
     </aside>
 
-    <!-- Erscheint nur im Browser-Tab, nicht in der installierten App. -->
-    <aside class="install-hint" id="install-hint" role="note" hidden>
-      <div class="install-hint-text">
+    <!-- Erscheint nur im Browser-Tab, nicht in der installierten App - und
+         nur im Start-Tab, und nur wenn kein Update ansteht. Die Regel dazu
+         steht als shouldShowInstallHint() in pwa.js.
+
+         Nur der Titel, keine Begruendung daneben: bei 390 px stehen der
+         Zeile 278 px zur Verfuegung, der Titel braucht 205 - fuer "Laeufe
+         bleiben sicherer" waeren es 340 und damit wieder zwei Zeilen. Der
+         Grund steht im title-Attribut und im README; sichtbar bleibt die
+         Aufforderung, und die ist der Zweck des Hinweises. -->
+    <aside
+      class="install-hint"
+      id="install-hint"
+      role="note"
+      title="Als installierte App bleiben deine Läufe zuverlässiger erhalten."
+      hidden
+    >
+      <p class="hint-line">
         <strong>Zum Startbildschirm hinzufügen</strong>
-        <span>Als installierte App bleiben deine Läufe zuverlässiger erhalten.</span>
-      </div>
+      </p>
       <button
         type="button"
         id="install-hint-close"

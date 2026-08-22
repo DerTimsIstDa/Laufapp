@@ -10,6 +10,7 @@ import {
   ownCacheNames,
   ownRegistrations,
   INSTALL_HINT_KEY,
+  INSTALL_HINT_VIEW,
   CACHE_PREFIX,
   LEGACY_CACHE_PREFIXES,
 } from '../js/pwa.js';
@@ -100,6 +101,47 @@ describe('shouldShowInstallHint', () => {
     assert.equal(shouldShowInstallHint({ standalone: false, dismissed: true }), false);
     assert.equal(shouldShowInstallHint({ standalone: true, dismissed: false }), false);
     assert.equal(shouldShowInstallHint({ standalone: true, dismissed: true }), false);
+  });
+
+  test('der Update-Hinweis sticht (D2)', () => {
+    // Beide zusammen waren 160 px ueber jedem der fuenf Bereiche. Weichen
+    // muss der hier: der andere ist der einzige Weg aus einer haengenden
+    // alten Fassung, dieser gilt morgen genauso.
+    assert.equal(
+      shouldShowInstallHint({ standalone: false, dismissed: false, updateReady: true }),
+      false
+    );
+    assert.equal(
+      shouldShowInstallHint({ standalone: false, dismissed: false, updateReady: false }),
+      true
+    );
+  });
+
+  test('nur im Start-Tab (D2)', () => {
+    for (const view of ['exercises', 'training', 'trophies', 'profile']) {
+      assert.equal(
+        shouldShowInstallHint({ standalone: false, dismissed: false, view }),
+        false,
+        `${view} soll den Hinweis nicht zeigen`
+      );
+    }
+
+    assert.equal(
+      shouldShowInstallHint({ standalone: false, dismissed: false, view: INSTALL_HINT_VIEW }),
+      true
+    );
+  });
+
+  test('der Start-Tab heisst so, wie ihn das Markup nennt', () => {
+    // Ein Tippfehler hier waere kein Fehler, sondern ein Hinweis, der nirgends
+    // mehr erscheint - und das faellt niemandem auf.
+    assert.equal(INSTALL_HINT_VIEW, 'start');
+  });
+
+  test('ohne Angabe bleibt es beim alten Verhalten', () => {
+    // Die zwei neuen Bedingungen haben Vorgaben, damit ein Aufruf ohne sie
+    // nicht stillschweigend "nie zeigen" bedeutet.
+    assert.equal(shouldShowInstallHint({ standalone: false, dismissed: false }), true);
   });
 });
 

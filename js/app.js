@@ -482,6 +482,10 @@ function setView(view) {
   if (view === 'exercises') renderExercises();
   if (view === 'training') renderTraining();
 
+  // Der Installationshinweis steht nur im Start-Tab (D2) und muss deshalb
+  // bei jedem Wechsel neu entscheiden, ob er noch hingehoert.
+  maybeShowInstallHint();
+
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
@@ -2146,6 +2150,8 @@ function maybeShowInstallHint() {
   const show = shouldShowInstallHint({
     standalone: isStandalone(window),
     dismissed: wasInstallHintDismissed(safeLocalStorage()),
+    updateReady,
+    view: activeView,
   });
 
   el.installHint.hidden = !show;
@@ -3380,4 +3386,9 @@ function markUpdateReady() {
  */
 function maybeShowUpdateHint() {
   el.updateHint.hidden = !(updateReady && !isRecording());
+
+  // Beide zusammen waren 160 px ueber jedem Bereich. Der Update-Hinweis
+  // sticht, weil er der einzige Weg aus einer haengenden alten Fassung ist -
+  // der Installationsvorschlag gilt morgen genauso.
+  maybeShowInstallHint();
 }

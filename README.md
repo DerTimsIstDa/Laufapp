@@ -71,6 +71,20 @@ Startbildschirm, erscheint einmalig ein Banner mit dem Hinweis, sie zu
 installieren – dort überleben die Daten zuverlässiger. Weggeklickt kommt es
 nicht wieder; gemerkt wird das unter `laufapp.installHint.dismissed`.
 
+**Er erscheint nur im Start-Tab und nur, wenn kein Update ansteht.** Beide
+Hinweise stehen im Markup vor den Bereichen und hängen damit über allen fünf
+Tabs; mit je drei Zeilen Fließtext waren das 160 px, bevor der erste Inhalt
+anfing – im Trophäen-Tab begann die Liste erst darunter. Jetzt ist jeder
+einzeilig, und von beiden steht höchstens einer da. **Wenn einer weichen
+muss, dann dieser:** der Update-Hinweis ist der einzige Weg aus einer
+hängenden alten Fassung, der Installationsvorschlag gilt morgen genauso. Die
+Regel steht als `shouldShowInstallHint()` in `pwa.js` und ist dort geprüft.
+
+Die Begründung („dort überleben die Daten zuverlässiger") steht nicht mehr
+neben dem Titel: bei 390 px hat die Zeile 278 px, der Titel braucht 205, und
+mit Begründung wären es 340 und damit wieder zwei Zeilen. Sie steht als
+`title` am Banner und hier.
+
 **Aktualisieren-Knopf** oben rechts: leert den Zwischenspeicher, meldet den
 Service Worker ab und lädt neu. Eingetragene Läufe liegen im `localStorage`
 und bleiben unberührt.
@@ -679,27 +693,27 @@ Roboto, auf iOS bei SF Pro, beide modern und ohne Ladezeit oder Drittanbieter.
 node --test
 ```
 
-**981 Tests in 27 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
+**1002 Tests in 27 Dateien** im Ordner `tests/`, ausgeführt vom eingebauten
 Testrunner von Node — keine Abhängigkeiten, kein Framework, nichts zu
 installieren.
 
 | Datei | Tests | prüft |
 |---|--:|---|
 | `tests/achievements.test.mjs` | 89 | jede Bedingung knapp darunter und darauf, und dass jede offene Trophäe ihren Stand zeigt |
-| `tests/stats.test.mjs` | 77 | Summen, Serien mit Lücken, Raster, Pace-Verlauf, Bestzeiten |
-| `tests/transfer.test.mjs` | 69 | Export-Roundtrip, kaputte und halbe Importdateien |
-| `tests/imports.test.mjs` | 60 | jeder Import-Pfad und -Name gegen den Dateibaum |
-| `tests/training.test.mjs` | 59 | Abschnitte, Intervall-Vorgabe, Abgleich, Plantreue und XP |
+| `tests/stats.test.mjs` | 82 | Summen, Serien mit Lücken, Raster, Pace-Verlauf, Bestzeiten |
 | `tests/validation.test.mjs` | 80 | Pflicht- und Optionalfelder, erfundene Kalendertage, Gefühlsskala, Wetter, Splits |
+| `tests/styles.test.mjs` | 72 | CSS- und Markup-Regeln, die Node nicht ausführen kann; Auswahlreihen gegen ihre Datenquelle; keine Farbe ausserhalb der Token |
+| `tests/transfer.test.mjs` | 69 | Export-Roundtrip, kaputte und halbe Importdateien |
 | `tests/storage.test.mjs` | 64 | Anlegen/Ändern/Löschen/Ersetzen, Neuberechnung, volles Fach, kein Feld geht verloren |
-| `tests/speech.test.mjs` | 23 | Wann angesagt wird und was – Kilometergrenze, GPS-Sprung, Sprachausgabe-Attrappe |
-| `tests/styles.test.mjs` | 60 | CSS- und Markup-Regeln, die Node nicht ausführen kann; Auswahlreihen gegen ihre Datenquelle; keine Farbe ausserhalb der Token |
+| `tests/imports.test.mjs` | 62 | jeder Import-Pfad und -Name gegen den Dateibaum |
+| `tests/training.test.mjs` | 59 | Abschnitte, Intervall-Vorgabe, Abgleich, Plantreue und XP |
 | `tests/exercise-log.test.mjs` | 37 | Tageslimit, Zähler, Kategorien für Vielseitig |
 | `tests/route.test.mjs` | 33 | Projektion, Seitenverhältnis, Geraden, Ausdünnen |
+| `tests/pwa.test.mjs` | 33 | Installationshinweis, Cache-Trennung, `APP_SHELL` vollständig |
 | `tests/geo.test.mjs` | 32 | Haversine gegen bekannte Strecken, alle GPS-Filtergrenzen |
-| `tests/pwa.test.mjs` | 29 | Installationshinweis, Cache-Trennung, `APP_SHELL` vollständig |
 | `tests/tracker.test.mjs` | 32 | Start/Pause/Beenden, Fehlerfälle, Geolocation-Attrappe, Kilometer-Splits |
 | `tests/format.test.mjs` | 25 | Zahlen, Daten, Zeiten – auch die Rundung genau auf der Hälfte |
+| `tests/speech.test.mjs` | 23 | Wann angesagt wird und was – Kilometergrenze, GPS-Sprung, Sprachausgabe-Attrappe |
 | `tests/interval.test.mjs` | 22 | Phasenwechsel, Restzeit, angebrochene Runden |
 | `tests/exercise-plan.test.mjs` | 20 | Tagesgrenze, Reihenfolge, Doppelte |
 | `tests/exercises.test.mjs` | 20 | Vollständigkeit der Übungsdaten, Filter, Zählung |
