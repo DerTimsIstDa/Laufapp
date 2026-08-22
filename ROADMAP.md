@@ -63,7 +63,7 @@ D. Politur (aus der Sichtprüfung, §4b) – abgeschlossen
 
 **B1 ist in der kleinen Variante umgesetzt**: Trainingsformular und Statistik
 liegen jetzt in `js/views/`, dazu die Markup-Verweise und die Formatierung.
-`app.js` ist von 4.132 auf **3.091 Zeilen** geschrumpft, ein Viertel weniger.
+`app.js` ist von 4.184 auf **3.091 Zeilen** geschrumpft, ein Viertel weniger.
 Das Ergebnis samt der Frage, ob der Rest folgen soll, steht in §3.
 
 **C3 war zu 90 % schon gebaut.** Der Balken hing an 55 von 62 Trophäen, seit
@@ -217,7 +217,7 @@ Rückschritt – auch wenn sie kurzfristig bequem ist.**
 > B1 vier neue angelegt hat – drei davon fassen das DOM an. Rein gewonnen hat
 > nur `format.js`. Der Anteil sieht damit schlechter aus, der Zustand ist es
 > nicht: dieselbe DOM-Logik liegt jetzt in vier lesbaren Dateien statt in einer
-> von 4.132 Zeilen, und mit `format.js` ist zum ersten Mal etwas aus `app.js`
+> von 4.184 Zeilen, und mit `format.js` ist zum ersten Mal etwas aus `app.js`
 > testbar geworden. **Wer diesen Anteil als Kennzahl liest, misst das Falsche.**
 
 ---
@@ -312,7 +312,7 @@ B2b und B5 danach.
 
 ### ✅ B1 · `js/app.js` entflechten · `js/app.js` → `js/views/`, `js/format.js`
 
-**Das Problem war:** 4.132 Zeilen, alle Funktionen modulintern. `KONTEXT.md`
+**Das Problem war:** 4.184 Zeilen, alle Funktionen modulintern. `KONTEXT.md`
 selbst sagte: „dort **nie** komplett lesen". Eine Datei, die man nicht mehr lesen
 kann, ist eine Datei, in der Fehler wohnen können, ohne gefunden zu werden. Und
 sie war der einzige Ort, für den es keine Tests gab – weil DOM.
@@ -327,7 +327,7 @@ Browser-Durchlauf:
 | `js/views/training.js` | 498 | Trainingsformular, Planliste, Löschrückfrage |
 | `js/views/stats.js` | 422 | Profil-Kennzahlen, Aktivitätsraster, Pace-Verlauf, Bestzeiten, Trophäen-Übersicht |
 
-`app.js`: **4.132 → 3.091 Zeilen**, ein Viertel weniger. Reines Verschieben –
+`app.js`: **4.184 → 3.091 Zeilen**, ein Viertel weniger. Reines Verschieben –
 geändert wurden nur die Stellen, die auf gemeinsamen Zustand zugreifen.
 
 **Wie die Ansichten an den Zustand kommen.** Nicht per Import: ein Import wäre
@@ -1656,3 +1656,4 @@ Fleißaufgabe, sondern der halbe Zweck dieser Datei.
 | 2026-08-22 | **D6** umgesetzt: die Einheit steht kleiner als die Zahl. `10:15 min/km` brauchte 131,4 von 134 px – **2 Prozent Luft**, jetzt 23. **Damit ist auch erklärt, warum der Befund hier zunächst nicht nachzustellen war:** auf Segoe UI passte es knapp, auf SF Pro nicht. Der Befund war richtig, nur die Maschine eine andere. 1016 → 1026 Tests, `sw` v61 → v62. |
 | 2026-08-22 | **D7** umgesetzt: die Gesamtdistanz führt als Leitkachel über die volle Breite, 2rem statt 1,25rem – und **nicht grün**, sonst wäre D1 gleich wieder eingerissen. **Zwei Fehler fand erst das Nachmessen:** die Größenregel stand vor der allgemeinen und blieb wirkungslos, und die Leitkachel dreht die Waisen-Rechnung aus D5 um. 1026 → 1032 Tests, `sw` v62 → v63. |
 | 2026-08-22 | **D8** umgesetzt – **Block D abgeschlossen**. Die Filterchips stehen bewusst untereinander: nebeneinander bräuchten sie 444 von 332 px, und waagerecht scrollend blieben vom dritten Chip 5 px sichtbar, was sich als abgeschnitten liest. **Zwei weitere Kontrastfunde**, beide dieselbe Falle wie D1: `--accent` und `--dim` halten ihre 4,5:1 nicht auf `--sunken`. 1032 → 1039 Tests, `sw` v63 → v64. |
+| 2026-08-22 | **Zahlendreher berichtigt: `app.js` hatte vor B1 4.184 Zeilen, nicht 4.132.** §5 wusste das seit dem 2026-08-21 („Richtig ist 4.184"), §0, §3 und §1.5 sagten weiter 4.132 – eine Korrektur, die nur an der Stelle landete, an der sie auffiel. Am Code nachgezählt (`git show a18a661:js/app.js`). Die Zeile im Verlauf unten bleibt stehen, wie sie geschrieben wurde; ein Verlauf, den man rückwirkend glattzieht, ist keiner. |

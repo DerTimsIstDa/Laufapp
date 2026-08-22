@@ -14,7 +14,7 @@
    Datenmodell und Regeln. Sie genügt für Planung, Beratung und Diskussion.
 2. **Erst konkret werden, dann Dateien laden.** Für eine Änderung nur die
    Dateien lesen, die die Modulkarte (§3) für das Anliegen nennt – plus die
-   zugehörige Testdatei. `js/app.js` ist seit B1 3.375 statt 4.132 Zeilen, aber
+   zugehörige Testdatei. `js/app.js` ist seit B1 3.409 statt 4.184 Zeilen, aber
    immer noch zu lang zum Am-Stück-Lesen: dort gezielt nach Funktionsnamen oder
    Kommentarmarken aus §4 greifen. Die Ansichten unter `js/views/` sind klein
    genug, um ganz gelesen zu werden.
@@ -56,10 +56,11 @@ manifest.json         PWA-Manifest
 sw.js                 Service Worker, App-Shell-Cache (CACHE_VERSION hochzählen!)
 README.md             Erklärungen und Begründungen für Menschen
 KONTEXT.md            diese Datei
-css/style.css         ~61 KB, alle Werte als Custom Properties oben
-js/*.js               25 Module (siehe §3)
+css/style.css         ~88 KB, alle Werte als Custom Properties oben
+js/*.js               26 Module (siehe §3)
 js/views/*.js         3 Ansichten – DOM und Interaktion, seit B1
-tests/*.test.mjs      26 Testdateien + helpers.mjs
+tests/*.test.mjs      27 Testdateien + helpers.mjs
+tools/mess-history.mjs  Messwerkzeug, kein Teil der App (siehe §7)
 icons/icon-*.png      App-Icons (192, 512, maskable-512, 180)
 icons/badges/*.png    6 Rang-Abzeichen: neuling, laeufer, ausdauerlaeufer,
                       veteran, elite, legende
@@ -77,30 +78,30 @@ schaut nie in beide.
 
 | Datei | Zeilen | Zuständig für | Anfassen wenn … |
 |---|--:|---|---|
-| `js/app.js` | 3375 | Verdrahtung und die noch nicht herausgelösten Bereiche | Start, Läufe, Übungen, Trophäen, Profil, Intervall, Teilen, Export |
+| `js/app.js` | 3409 | Verdrahtung und die noch nicht herausgelösten Bereiche | Start, Läufe, Übungen, Trophäen, Profil, Intervall, Teilen, Export |
 | `js/views/training.js` | 498 | Trainingsformular, Planliste, Löschrückfrage | irgendetwas am Trainingsplan |
-| `js/views/stats.js` | 442 | Profil-Kennzahlen, Aktivitätsraster, Pace-Verlauf, Bestzeiten, Trophäen-Übersicht | irgendetwas an der Statistik im Profil |
+| `js/views/stats.js` | 454 | Profil-Kennzahlen, Aktivitätsraster, Pace-Verlauf, Bestzeiten, Trophäen-Übersicht | irgendetwas an der Statistik im Profil |
 | `js/views/dom.js` | 270 | die `getElementById`-Verweise (`el`), `SVG_NS`, `createSvg`, `createIcon` | ein neues Element im Markup, ein neues Symbol am Knopf |
 | `js/format.js` | 113 | rein: Zahlen, Daten, Zeiten in Anzeigeform | eine neue Formatierung |
 | `js/storage.js` | 786 | Laden/Speichern/Ändern aller Datentöpfe | neues persistiertes Feld, neuer Datentopf |
 | `js/achievements.js` | 997 | Trophäen-Definitionen + `buildRunStats()` | neue Trophäe, neue Kennzahl für Bedingungen, Stand einer offenen Trophäe |
 | `js/training.js` | 590 | geplante Einheiten, Intervall-Vorgaben, Abgleich mit Läufen | Trainingsplan, Plantreue-XP |
-| `js/stats.js` | 551 | Summen, Serien, Zeitreihen, Aktivitätsraster, Pace-Trend, Bestzeiten | Statistik, Diagramme |
+| `js/stats.js` | 569 | Summen, Serien, Zeitreihen (mit `isCurrent`), Aktivitätsraster, Pace-Trend, Bestzeiten | Statistik, Diagramme |
 | `js/validation.js` | 455 | Prüfung aller Eingaben, `parseNumber`, `parsePace` | neues Eingabefeld, neue Grenze |
 | `js/exercises.js` | 297 | Übungsbibliothek (fest) + Filter | Übung ergänzen/ändern |
 | `js/transfer.js` | 348 | Export-/Importformat | Datenformat erweitern |
-| `js/tracker.js` | 249 | Live-Aufzeichnung über `watchPosition` | GPS-Aufzeichnung |
+| `js/tracker.js` | 295 | Live-Aufzeichnung über `watchPosition` | GPS-Aufzeichnung |
 | `js/share-card.js` | 252 | Teilen-Karte auf Canvas (1080×1350) | Teilen-Bild |
 | `js/exercise-log.js` | 239 | erledigte Übungen: Zähler, Tageslimit, XP | Übungs-Häkchen |
 | `js/route.js` | 165 | GPS-Strecke → SVG-Koordinaten | Routenanzeige |
 | `js/geo.js` | 158 | Haversine, GPS-Filter, Pace-/Zeitformatierung | Streckenberechnung, Formatierung |
-| `js/stopwatch.js` | 147 | Aufzeichnung ohne GPS, gleiche Form wie `tracker.js` | Stoppuhr |
+| `js/stopwatch.js` | 151 | Aufzeichnung ohne GPS, gleiche Form wie `tracker.js` | Stoppuhr |
 | `js/exercise-plan.js` | 129 | für einen Tag vorgenommene Übungen | Tagesplan Übungen |
 | `js/titles.js` | 114 | Titel + Abzeichen zum Level | neuer Rang |
 | `js/beep.js` | 109 | Töne für die Intervall-Stoppuhr (WebAudio) | Signaltöne |
-| `js/speech.js` | 175 | Ansagen beim Laufen: was gesagt wird (pur) + Sprachausgabe | Ansagetext, Schrittweite |
+| `js/speech.js` | 182 | Ansagen beim Laufen: was gesagt wird (pur) + Sprachausgabe | Ansagetext, Schrittweite |
 | `js/interval.js` | 107 | Phasenberechnung Belastung/Pause | Intervall-Ablauf |
-| `js/pwa.js` | 94 | Installationshinweis, eigene Caches erkennen | Update-/Installlogik |
+| `js/pwa.js` | 114 | Installationshinweis (wann er weicht), eigene Caches erkennen | Update-/Installlogik |
 | `js/xp.js` | 84 | XP und Level – die Kernformel | XP-Regeln |
 | `js/goal.js` | 79 | Wochenziel: erreichte Wochen, Bonus-XP | Wochenziel |
 | `js/history.js` | 78 | Freischaltdaten (Replay, O(n²) – **teuer**, siehe §6) | „freigeschaltet am" |
@@ -133,6 +134,10 @@ fassen das DOM an und laden in Node nicht; für sie gibt es zwei Tests, die den
 > passiert. Deshalb liest `quelltextDerModule()` aus `tests/helpers.mjs` `js/`
 > rekursiv, und kein Test in `styles.test.mjs` nennt mehr eine einzelne Datei.
 > **Nach jedem Verschieben: `grep` auf den Funktionsnamen in `tests/`.**
+>
+> Beide Fallen haben dieselbe Form: **ein Test, der grün ist, weil er nicht
+> findet, wonach er sucht.** Wer einen Test schreibt, der im Quelltext sucht,
+> prüft einmal, ob er auch rot wird.
 
 ---
 
@@ -175,7 +180,11 @@ fassen das DOM an und laden in Node nicht; für sie gibt es zwei Tests, die den
 `saveExercisePlan` · `loadProfile` · `saveProfile` · `loadGpsPreference` ·
 `saveGpsPreference` · `loadLastExport` · `saveLastExport(isoDate)`
 
-**`stats.js`** `buildStats(runs,{todayIso})` · `distanceByWeek/ByMonth(runs,{limit=12,todayIso})` ·
+**`stats.js`** `buildStats(runs,{todayIso})` ·
+`distanceByWeek/ByMonth(runs,{limit=12,todayIso})` – die Eimer tragen seit D1
+`isCurrent`, und **genau einer** ist es. Nicht „der letzte": ein auf morgen
+datierter Lauf schiebt einen Eimer dahinter, und `runsInPeriod()` lässt solche
+Läufe bewusst stehen ·
 `runsInPeriod(runs,{period,todayIso})` · `ACTIVITY_WEEKS=18` ·
 `ACTIVITY_LEVELS=[5,10,15]` · `activityCalendar(...)` ·
 `PACE_TREND_MIN_POINTS=3` · `paceTrend(runs,{limit=12})` ·
@@ -225,9 +234,17 @@ fassen das DOM an und laden in Node nicht; für sie gibt es zwei Tests, die den
 `canLock({status,locked})` · `controlsEnabled` · `shouldReleaseLock`
 
 **`pwa.js`** `INSTALL_HINT_KEY='laufapp.installHint.dismissed'` ·
-`CACHE_PREFIX='funrun-'` · `LEGACY_CACHE_PREFIXES=['laufapp-']` ·
-`isStandalone` · `wasInstallHintDismissed` · `rememberInstallHintDismissed` ·
-`shouldShowInstallHint` · `ownCacheNames` · `ownRegistrations`
+`INSTALL_HINT_VIEW='start'` · `CACHE_PREFIX='funrun-'` ·
+`LEGACY_CACHE_PREFIXES=['laufapp-']` · `isStandalone` ·
+`wasInstallHintDismissed` · `rememberInstallHintDismissed` ·
+`shouldShowInstallHint({standalone,dismissed,updateReady=false,view='start'})` ·
+`ownCacheNames` · `ownRegistrations`
+Seit D2 hat `shouldShowInstallHint` zwei Bedingungen mehr: **der Update-Hinweis
+sticht** (`updateReady`), und der Installationshinweis steht **nur im
+Start-Tab** (`view`). Beide haben Vorgaben, damit ein Aufruf ohne sie nicht
+stillschweigend „nie zeigen" bedeutet. Der Update-Hinweis selbst bleibt an
+keinen Bereich gebunden – er ist der einzige Weg aus einer hängenden alten
+Fassung.
 
 **`beep.js`** `isSoundOn` · `setSoundOn` · `unlock()` · `beepWork` · `beepRest` ·
 `beepFinish`
@@ -271,7 +288,7 @@ als farbiges System-Emoji rendert.
 > `getSessions`, `setSessions` und `render`. **Wächst dieses Objekt bei der
 > nächsten Ansicht deutlich, ist der Schnitt falsch gelegt.**
 
-### `js/app.js` – Orientierung (135 Funktionen, alle modulintern)
+### `js/app.js` – Orientierung (145 Funktionen, alle modulintern)
 
 `app.js` trägt Kommentarmarken der Form `/* ---- Bereich */`. **Danach greifen,
 nicht nach Zeilennummern** – die stimmen nach der nächsten Änderung nicht mehr,
@@ -281,33 +298,34 @@ die Marke schon:
 grep -n '^/\* -' js/app.js
 ```
 
-Stand nach B1 (Zeilennummern als Richtwert, Marken als Anker):
+Stand nach Block D (Zeilennummern als Richtwert, Marken als Anker):
 
 | Marke | ab Zeile | Funktionen (Auswahl) |
 |---|--:|---|
 | (Kopf, ohne Marke) | 1 | `recorder`, `isRecording`, `verdrahtung`, `init` |
-| `Bereiche` | 367 | `bindTabs`, `setView` |
-| `Begrüßung` | 417 | `renderGreeting` |
-| `Heute geplant` | 438 | `renderToday`, `createTodaySession`, `createTodayItem` |
-| `Übungen` | 536 | `renderExercises`, `createExerciseCard`, `createCountEditor`, `handleCountCorrection`, `handlePlan/handleUnplan` |
-| `Trophäen` | 1002 | `renderTrophies`, `renderTrophyFilter`, `createTrophyTile`, `createTrophyProgress`, `createTrophyStanding` |
-| `Profil` | 1161 | `renderProfile`, `fillProfileForm`, `handleProfileSubmit`, `renderGoal` |
-| `Intervall-Stoppuhr` | 1308 | `setupQuickInterval`, `startIntervalRun`, `renderIntervalScreen`, `finishIntervalRun`, `saveIntervalRun` |
-| `Teilen` | 1766 | `setupShare`, `handleShare`, `buildShareData`, `downloadCard` |
-| `Speicher-Warnung` | 1982 | `showStorageError` |
-| `Installationshinweis` | 2010 | `maybeShowInstallHint`, `dismissInstallHint` |
-| `Aktualisieren` | 2035 | `handleRefresh`, `clearOwnCaches`, `unregisterOwnServiceWorkers` |
-| `Events` | 2072 | `handleSubmit`, `showWarnings`, `handleListClick` |
-| `Detailansicht` | 2147 | `toggleDetail`, `renderDetail`, `createRouteSvg`, `createRouteMarker` |
-| `Bearbeiten` | 2284 | `startEditing`, `stopEditing`, `renderFormMode` |
-| `Sichern` | 2334 | `renderExportReminder`, `handleExport`, `handleImportFile`, `buildImportSummary`, `handleImportApply` |
-| `Tracking` | 2495 | `setTrackGps`, `handleTrackStart/Pause/Stop/Discard` |
-| `Tastensperre` | 2594 | `setLocked`, `bindUnlockHold`, `pollUnlockHold` |
-| `Anzeige` | 2707 | nur `render({announceUnlocks})` |
-| `Statistik` | 2734 | `setStatsPeriod`, `renderPeriodStats`, `renderChart`, `renderTracking`, `renderProgress`, `renderAchievements`, `renderRuns`, `createRunItem`, `fillDeleteConfirm`, `showError`, `registerServiceWorker`, `markUpdateReady`, `maybeShowUpdateHint` |
+| `Bereiche` | 438 | `bindTabs`, `setView` |
+| `Begrüßung` | 492 | `renderGreeting` |
+| `Heute geplant` | 513 | `renderToday`, `createTodaySession`, `createTodayItem` |
+| `Übungen` | 611 | `renderExercises`, `createExerciseCard`, `createCountEditor`, `handleCountCorrection`, `handlePlan/handleUnplan` |
+| `Trophäen` | 1080 | `renderTrophies`, `renderTrophyFilter`, `createTrophyTile`, `createTrophyProgress`, `createTrophyStanding` |
+| `Farbschema` | 1254 | `setupTheme`, `applyTheme`, `applyThemeColor` |
+| `Profil` | 1313 | `renderProfile`, `fillProfileForm`, `handleProfileSubmit`, `renderGoal` |
+| `Intervall-Stoppuhr` | 1460 | `setupQuickInterval`, `startIntervalRun`, `renderIntervalScreen`, `finishIntervalRun`, `saveIntervalRun` |
+| `Teilen` | 1918 | `setupShare`, `handleShare`, `buildShareData`, `downloadCard` |
+| `Speicher-Warnung` | 2134 | `showStorageError` |
+| `Installationshinweis` | 2162 | `maybeShowInstallHint`, `dismissInstallHint` |
+| `Aktualisieren` | 2189 | `handleRefresh`, `clearOwnCaches`, `unregisterOwnServiceWorkers` |
+| `Events` | 2226 | `handleSubmit`, `showWarnings`, `handleListClick` |
+| `Detailansicht` | 2331 | `toggleDetail`, `renderDetail`, `createRouteSvg`, `createRouteMarker` |
+| `Bearbeiten` | 2527 | `startEditing`, `stopEditing`, `renderFormMode` |
+| `Sichern` | 2580 | `renderExportReminder`, `handleExport`, `handleImportFile`, `buildImportSummary`, `handleImportApply` |
+| `Tracking` | 2741 | `setTrackGps`, `handleTrackStart/Pause/Stop/Discard` |
+| `Tastensperre` | 2854 | `setLocked`, `bindUnlockHold`, `pollUnlockHold` |
+| `Anzeige` | 2967 | nur `render({announceUnlocks})` |
+| `Statistik` | 2994 | `setStatsPeriod`, `renderPeriodStats`, `renderChart`, `createChartRow`, `renderTracking`, `renderProgress`, `renderAchievements`, `renderRuns`, `createRunItem`, `fillDeleteConfirm`, `showError`, `registerServiceWorker`, `markUpdateReady`, `maybeShowUpdateHint` |
 
 > **Achtung, die letzte Marke lügt.** `Statistik` ist die letzte im File und
-> begrenzt deshalb nichts – alles von Zeile 2686 bis zum Ende steht unter ihr,
+> begrenzt deshalb nichts – alles ab Zeile 2994 bis zum Ende steht unter ihr,
 > auch die Lauf-Liste, die Fehleranzeige und der Service-Worker. Wer dort etwas
 > sucht und beim Namen der Marke stehen bleibt, sucht am falschen Ort. (Das war
 > schon vor B1 so; hier steht es zum ersten Mal.)
@@ -470,6 +488,23 @@ Raster, das die Zeilen von `.fields` erbt (subgrid), damit nebeneinander stehend
 Felder trotz unterschiedlich langer Beschriftungen auf einer Höhe stehen.
 Akzentfarbe Neongrün `#c4f000`, Hintergrund `#0d0f12`, Textkontrast mind. 4,5:1.
 
+**Das `.stat-grid` rechnet, es zählt nicht** (seit D5/D7). Die letzte Kachel
+soll nie allein neben einem Loch stehen, und die Kachelzahl ist nicht fest –
+Woche hat 5, Gesamtstand 8. Zu bedenken sind **drei** Dinge, und jedes ist
+schon einmal danebengegangen:
+
+1. Das Raster ist ab `40em` **dreispaltig**. Zweispaltig steht die letzte
+   Kachel bei ungerader Anzahl allein, dreispaltig bei Rest 1.
+2. Eine Kachel, die eine ganze Zeile belegt (`.stat-lead`), **dreht die
+   Parität um** – dann gilt gerade statt ungerade bzw. Rest 2 statt Rest 1.
+3. Jede Regel, die eine andere zurücknimmt, braucht **dieselbe Spezifität**.
+   Das `:not(.stat-lead)` an den vier `--lead`-Regeln trägt kein Bedeutung,
+   sondern Gewicht.
+
+**Wer hier etwas ändert, misst im Browser für 1 bis 12 Kacheln bei beiden
+Breiten nach.** Kein Test sieht ein Loch – `styles.test.mjs` liest Selektoren,
+es rechnet kein Layout.
+
 **Service Worker**: `CACHE_VERSION` in `sw.js` bei **jeder** Änderung an
 App-Dateien hochzählen. Cache-Befüllung mit `cache: 'reload'`. Nur eigene Caches
 (`funrun-`, `laufapp-`) anfassen – auf `github.io` teilen sich alle Projekte den
@@ -501,7 +536,7 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
 - **Module: 29** – 26 in `js/`, 3 in `js/views/`
 - **Werkzeuge: 1** – `tools/mess-history.mjs` (kein Teil der App: nicht in
   `APP_SHELL`, keine Testdatei; siehe den Dateikopf dort)
-- **`js/app.js`: 3375 Zeilen**, 145 Funktionen (vor B1: 4132)
+- **`js/app.js`: 3409 Zeilen**, 145 Funktionen (vor B1: **4184**, danach 3091)
 - **`sw.js`: `funrun-v64`**
 - Letzte Commits (neueste zuerst, Stand des Repos):
   1. Filterchips untereinander statt zufaellig umgebrochen
@@ -510,11 +545,12 @@ aufrufen** – sonst verschwindet ihr Fehler wieder unbemerkt auf der Konsole.
   4. Keine Kachel bleibt allein in ihrer Zeile
   5. Eine Sache traegt einen Namen
 
-### Roadmap-Block A, B1, B2, B3, B4, C1 bis C4, C8, C10 und C15 sind committet
+### Roadmap-Block A, B1–B4, C1–C4, C8, C10, C15 und **Block D vollständig** sind committet
 
 Die Änderungen aus A1, A2, A4, B1, B2, B3, B4, C1 bis C4, C8, C10 und C15
-liegen seit dem 2026-08-21 auf `master`; `dertimsistda.github.io` liefert immer den letzten
-Stand von `master`. Das Arbeitsverzeichnis ist sauber.
+liegen seit dem 2026-08-21 auf `master`, **Block D (D1 bis D8) seit dem
+2026-08-22**; `dertimsistda.github.io` liefert immer den letzten Stand von
+`master`. Das Arbeitsverzeichnis ist sauber.
 
 > **Zur Tabelle:** Der Commit, der diese Zeilen schreibt, kann nicht in ihr
 > stehen – er entsteht erst danach. Die Doku-Commits (`1134dca`, `af9b35f`, …)
@@ -553,6 +589,14 @@ Stand von `master`. Das Arbeitsverzeichnis ist sauber.
 | C8 | `b58687b` | `splits` in `tracker.js`, `validation.js`, `storage.js`; `CACHE_VERSION` auf v55 |
 | – | `278bb04` | Häkchen-Runde nach C8; die track-Warnung in §5 |
 | C10 | `29eddae` | 23 Farben zu Token gemacht, helles Schema, `laufapp.display.v1`; `CACHE_VERSION` auf v56 |
+| D1 | `3a6fa86` | Akzent nur noch für das Besondere; `--accent-text`, `isCurrent` in `stats.js`; v57 |
+| D2 | `c4837b7` | Hinweise einzeilig, höchstens einer; `shouldShowInstallHint` erweitert; v58 |
+| D3 | `65c97e8` | `createIcon()`; zwei Symbole statt vier Zeichen; v59 |
+| D4 | `56d5308` | „Achievements" → „Trophäen" im sichtbaren Text; v60 |
+| D5 | `45976c6` | Keine allein stehende Kachel im `.stat-grid`; v61 |
+| D6 | `658d84e` | `splitUnit()`; Einheit kleiner als die Zahl; v62 |
+| D7 | `8acdf02` | Leitkachel in der Gesamtstatistik; v63 |
+| D8 | `1a22355` | Filterchips untereinander; `chip-count`; v64 |
 
 `css/style.css` steckte in A1 und B2 und wurde auf beide Commits aufgeteilt –
 die gelöschte Regel in A1, die `.storage-hint`-Regel in B2. Jeder Commit ist
@@ -561,13 +605,26 @@ für sich grün geprüft (706 / 706 / 711 / 725 / – / 749 / – / 802 / – / 
 landet. Die Striche sind die reinen Dokument-Commits – dort ändert sich keine
 Testzahl.
 
+**Block D ebenso** (993 / 1002 / 1008 / 1012 / 1016 / 1026 / 1032 / 1039), und
+zwar **in einem frisch ausgecheckten Worktree** statt im Arbeitsverzeichnis.
+Das hat sich sofort ausgezahlt: ein Test aus D1 war im Arbeitsverzeichnis grün
+und im Worktree rot (Zeilenenden, siehe §3). Ohne die Runde wäre er in acht
+Commits mitgereist und bei jedem Klon rot gewesen. **Im Arbeitsverzeichnis zu
+prüfen genügt nicht** – dort steht, was man selbst geschrieben hat, nicht, was
+Git ausliefert.
+
 **B1 hat drei Commits statt einem.** Das ist keine Ausnahme von „ein Punkt =
 ein Commit", sondern stand so im Punkt: einen Bereich pro Commit, nach jedem
 die Seite im Browser öffnen. Genau so ist es gelaufen.
 
-**Nächster Punkt laut Roadmap §5: C3** – ein Fortschrittsbalken an den
-Trophäen. Nach drei Commits, die für den Nutzer nichts geändert haben, ist
-wieder etwas Sichtbares dran. Details in `ROADMAP.md` §4.
+**Nächster Punkt laut Roadmap §5: C7, C6, C5 oder C14** – nach Bedarf, kein
+Zwang zur Reihenfolge. **C11** (Jahresrückblick) ist gebaut sinnvoll, aber
+saisonal: ab November. Details in `ROADMAP.md` §4 und §5.
+
+> **Diese Zeile stand seit dem 2026-08-21 auf „C3"**, während C3 an
+> demselben Tag erledigt wurde und danach noch sechs weitere Punkte folgten.
+> Sie ist die einzige Stelle in §7, die keine Zahl ist und deshalb von keiner
+> Nachzähl-Runde erwischt wurde. Wer hier etwas ändert: diese Zeile mit.
 
 **Aus B3 mitzunehmen:** `beep.js` und `wake-lock.js` hatten bis dahin gar keine
 Testdatei – Regel 3 aus `ROADMAP.md` §6 war bei beiden nur zur Hälfte befolgt
@@ -689,3 +746,8 @@ Bugfix in einer Render-Funktion braucht keinen Eintrag.
 | 2026-08-22 | **D6** umgesetzt: neu in §3/§4 `splitUnit()` in `format.js`. Die Einheit steht kleiner als die Zahl, damit die Pace-Kachel nicht umbricht. **Zu merken:** die Trennung am letzten Leerzeichen trägt nur, weil `Intl.NumberFormat` im Deutschen den Punkt als Tausendertrenner setzt. 1016 → **1026 Tests**, `sw` v61 → v62. |
 | 2026-08-22 | **D7** umgesetzt: Leitkachel in der Gesamtstatistik. **Zu merken:** eine Kachel, die eine ganze Zeile belegt, dreht die Waisen-Regel aus D5 um – und das `:not(.stat-lead)` an den vier Regeln trägt Gewicht, nicht Bedeutung. Ohne es gewinnt die Rücknahme. 1026 → **1032 Tests**, `sw` v62 → v63. |
 | 2026-08-22 | **D8** umgesetzt, **Block D abgeschlossen**. §6 neu gefasst: nicht nur der Akzent, sondern `--sunken` selbst ist die Falle im hellen Schema – `--accent` (4,34:1) und `--dim` (4,15:1) reissen beide die 4,5:1, während ihre Kommentare Zahlen für `--bg` und `--surface` nennen. Dreimal in einem Block aufgetreten, jedes Mal an einer anderen Farbe. 1032 → **1039 Tests**, `sw` v63 → v64. |
+| 2026-08-22 | **Pflegerunde nach §10 am Ende der Sitzung.** §3: sieben Zeilenzahlen am Code nachgezählt und korrigiert. **Vier davon waren schon vor Block D falsch** – `tracker.js` 249 → **295** (seit C8), `stopwatch.js` 147 → 151, `speech.js` 175 → **182** (seit C15), dazu `stats.js`. Dieselbe Drift wie bei `storage.js` in B1, nur drei Dateien weiter: die Zeilenzahl wird beim Bauen nie mitgezogen, weil sie niemandem wehtut. |
+| 2026-08-22 | §2 hatte drei falsche Zahlen und **widersprach §7**: „25 Module" gegen 26, „26 Testdateien" gegen 27, „~61 KB" gegen 88. §7 stand richtig, weil es bei jedem Commit angefasst wird; §2 wird nur angefasst, wenn eine Datei dazukommt – und dann vergisst man die Zahl daneben. `tools/` fehlte im Dateibaum ganz, seit B4. |
+| 2026-08-22 | **§7 sagte seit dem 2026-08-21 „Nächster Punkt: C3"** – C3 wurde am selben Tag erledigt, sechs Punkte folgten danach. Die Zeile ist die einzige in §7, die keine Zahl ist, und wurde deshalb von keiner Nachzähl-Runde erwischt. Jetzt steht der echte Stand da und ein Hinweis, sie mitzuziehen. |
+| 2026-08-22 | **Block D (D1–D8)** eingearbeitet: §3 um `isCurrent` und die Hinweis-Vorrangregel, §4 um `createIcon()`, `splitUnit()`, `INSTALL_HINT_VIEW` und die erweiterte `shouldShowInstallHint`-Signatur, §6 um die `--sunken`-Kontrastfalle und die Rechenregeln des `.stat-grid`, §7 um acht Commit-Zeilen. §5 blieb unberührt – Block D hat kein persistiertes Feld angefasst. 981 → **1039 Tests**, `sw` v56 → **v64**. |
+| 2026-08-22 | Neu in §3 die **Zeilenenden-Falle**: ein Test, der im Quelltext über zwei Zeilen sucht und das Zeilenende als `\n` hinschreibt, ist bei `autocrlf` grün im Arbeitsverzeichnis und rot in jedem Klon. Zusammen mit der Falle aus B1 dieselbe Form – **ein Test, der grün ist, weil er nicht findet, wonach er sucht**. Gefunden hat es nur die Grünprüfung jedes Commits im frischen Worktree; im Arbeitsverzeichnis zu prüfen genügt dafür nicht. |

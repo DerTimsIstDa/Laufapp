@@ -929,10 +929,10 @@ voller Farbigkeit.
 
 ## Struktur
 
-28 Module: 25 in `js/`, 3 in `js/views/`. Alle sind pur – kein DOM, kein
+29 Module: 26 in `js/`, 3 in `js/views/`. Alle sind pur – kein DOM, kein
 Storage – ausser den unten mit `*` markierten.
 
-Die Ansichten unter `js/views/` gibt es seit dem Umbau, der `app.js` von 4.132
+Die Ansichten unter `js/views/` gibt es seit dem Umbau, der `app.js` von 4.184
 auf 3.091 Zeilen gebracht hat. Der Gedanke dahinter: eine Datei, die man nicht
 mehr am Stück lesen kann, ist eine Datei, in der Fehler wohnen können, ohne
 gefunden zu werden. Herausgelöst sind bisher das Trainingsformular und die
